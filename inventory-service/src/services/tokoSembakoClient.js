@@ -1,0 +1,212 @@
+const axios = require('axios');
+require('dotenv').config();
+
+// URLs untuk Toko Sembako services
+const TOKO_SEMBAKO_PRODUCT_URL = process.env.TOKO_SEMBAKO_PRODUCT_URL || 'http://localhost:4001/graphql';
+const TOKO_SEMBAKO_INVENTORY_URL = process.env.TOKO_SEMBAKO_INVENTORY_URL || 'http://localhost:4000/graphql';
+const TOKO_SEMBAKO_ORDER_URL = process.env.TOKO_SEMBAKO_ORDER_URL || 'http://localhost:4002/graphql';
+
+/**
+ * Helper function untuk memanggil GraphQL service dari Toko Sembako
+ */
+async function callTokoSembakoService(url, query, variables = {}) {
+  try {
+    const response = await axios.post(url, {
+      query,
+      variables
+    }, {
+      timeout: 10000, // 10 seconds timeout
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
+
+    if (response.data.errors) {
+      throw new Error(response.data.errors[0].message);
+    }
+
+    return response.data.data;
+  } catch (error) {
+    console.error(`Error calling Toko Sembako service at ${url}:`, error.message);
+    throw error;
+  }
+}
+
+/**
+ * Get products (sayur) dari Toko Sembako Product Service
+ */
+async function getProductsFromTokoSembako(category = null) {
+  try {
+    const query = category
+      ? `
+        query GetProducts($category: String) {
+          products(category: $category) {
+            id
+            name
+            category
+            price
+            unit
+            available
+            description
+          }
+        }
+      `
+      : `
+        query GetProducts {
+          products {
+            id
+            name
+            category
+            price
+            unit
+            available
+            description
+          }
+        }
+      `;
+
+    const data = await callTokoSembakoService(TOKO_SEMBAKO_PRODUCT_URL, query, { category });
+    return data.products || [];
+  } catch (error) {
+    console.error('Error fetching products from Toko Sembako:', error.message);
+    return [];
+  }
+}
+
+/**
+ * Get product by ID dari Toko Sembako
+ */
+async function getProductByIdFromTokoSembako(productId) {
+  try {
+    const query = `
+      query GetProduct($id: ID!) {
+        product(id: $id) {
+          id
+          name
+          category
+          price
+          unit
+          available
+          description
+        }
+      }
+    `;
+
+    const data = await callTokoSembakoService(TOKO_SEMBAKO_PRODUCT_URL, query, { id: productId });
+    return data.product;
+  } catch (error) {
+    console.error('Error fetching product from Toko Sembako:', error.message);
+    return null;
+  }
+}
+
+/**
+ * Check stock dari Toko Sembako Inventory Service
+ */
+async function checkStockFromTokoSembako(productId, quantity) {
+  try {
+    const query = `
+      query CheckStock($productId: ID!, $quantity: Float!) {
+        checkStock(productId: $productId, quantity: $quantity) {
+          available
+          currentStock
+          requestedQuantity
+          message
+        }
+      }
+    `;
+
+    const data = await callTokoSembakoService(TOKO_SEMBAKO_INVENTORY_URL, query, {
+      productId,
+      quantity
+    });
+
+    return data.checkStock;
+  } catch (error) {
+    console.error('Error checking stock from Toko Sembako:', error.message);
+    return {
+      available: false,
+      currentStock: 0,
+      requestedQuantity: quantity,
+      message: `Error checking stock: ${error.message}`
+    };
+  }
+}
+
+/**
+ * Create order di Toko Sembako Order Service
+ */
+async function createOrderAtTokoSembako(orderInput) {
+  try {
+    const query = `
+      mutation CreateOrder($input: CreateOrderInput!) {
+        createOrder(input: $input) {
+          id
+          orderId
+          status
+          total
+          items {
+            productId
+            name
+            quantity
+            price
+          }
+          createdAt
+        }
+      }
+    `;
+
+    const data = await callTokoSembakoService(TOKO_SEMBAKO_ORDER_URL, query, {
+      input: orderInput
+    });
+
+    return data.createOrder;
+  } catch (error) {
+    console.error('Error creating order at Toko Sembako:', error.message);
+    throw error;
+  }
+}
+
+/**
+ * Get order status dari Toko Sembako
+ */
+async function getOrderStatusFromTokoSembako(orderId) {
+  try {
+    const query = `
+      query GetOrder($orderId: String!) {
+        orderByOrderId(orderId: $orderId) {
+          id
+          orderId
+          status
+          items {
+            productId
+            name
+            quantity
+          }
+        }
+      }
+    `;
+
+    const data = await callTokoSembakoService(TOKO_SEMBAKO_ORDER_URL, query, { orderId });
+    return data.orderByOrderId;
+  } catch (error) {
+    console.error('Error fetching order from Toko Sembako:', error.message);
+    return null;
+  }
+}
+
+module.exports = {
+  getProductsFromTokoSembako,
+  getProductByIdFromTokoSembako,
+  checkStockFromTokoSembako,
+  createOrderAtTokoSembako,
+  getOrderStatusFromTokoSembako
+};
+
+
+
+
+
+
+
+

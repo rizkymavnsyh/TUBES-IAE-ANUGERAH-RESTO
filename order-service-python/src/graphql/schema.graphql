@@ -1,0 +1,150 @@
+type Query {
+  menus(category: String, available: Boolean): [Menu!]!
+  menu(id: String!): Menu
+  menuCategories: [String!]!
+  cart(userId: String!): Cart
+  orders(customerId: String, status: String): [Order!]!
+  order(id: String!): Order
+  checkMenuStock(menuId: String!, quantity: Int!): [StockCheckResult!]!
+}
+
+type Mutation {
+  createMenu(input: CreateMenuInput!): Menu!
+  updateMenu(id: String!, input: UpdateMenuInput!): Menu!
+  deleteMenu(id: String!): Boolean!
+  addToCart(userId: String!, menuId: String!, quantity: Int!, specialInstructions: String): Cart!
+  updateCartItem(userId: String!, menuId: String!, quantity: Int!): Cart!
+  removeFromCart(userId: String!, menuId: String!): Cart!
+  clearCart(userId: String!): Cart!
+  createOrder(input: CreateOrderInput!): Order!
+  updateOrderStatus(id: String!, status: String!): Order!
+  cancelOrder(id: String!): Order!
+}
+
+type IngredientInfo {
+  ingredientId: String!
+  ingredientName: String!
+  quantity: Float!
+  unit: String!
+}
+
+type Menu {
+  id: String!
+  menuId: String!
+  name: String!
+  description: String
+  category: String!
+  price: Float!
+  image: String
+  ingredients: [IngredientInfo!]!
+  available: Boolean!
+  preparationTime: Int!
+  tags: [String!]!
+  createdAt: String!
+  updatedAt: String!
+}
+
+type OrderItem {
+  menuId: String!
+  name: String!
+  quantity: Int!
+  price: Float!
+  specialInstructions: String
+}
+
+type Cart {
+  id: String!
+  userId: String!
+  items: [OrderItem!]!
+  subtotal: Float!
+  itemCount: Int!
+  createdAt: String!
+  updatedAt: String!
+}
+
+type Order {
+  id: String!
+  orderId: String!
+  customerId: String
+  tableNumber: String
+  items: [OrderItem!]!
+  subtotal: Float!
+  tax: Float!
+  serviceCharge: Float!
+  discount: Float!
+  loyaltyPointsUsed: Float!
+  loyaltyPointsEarned: Float!
+  total: Float!
+  paymentMethod: String!
+  paymentStatus: String!
+  orderStatus: String!
+  kitchenStatus: String
+  staffId: String
+  notes: String
+  createdAt: String!
+  updatedAt: String!
+}
+
+type StockCheckResult {
+  available: Boolean!
+  message: String!
+  ingredientId: String!
+  ingredientName: String!
+  required: Float!
+  availableQuantity: Float!
+}
+
+input IngredientInfoInput {
+  ingredientId: String!
+  ingredientName: String!
+  quantity: Float!
+  unit: String!
+}
+
+input CreateMenuInput {
+  menuId: String!
+  name: String!
+  description: String
+  category: String!
+  price: Float!
+  image: String
+  ingredients: [IngredientInfoInput!]!
+  available: Boolean
+  preparationTime: Int
+  tags: [String!]
+}
+
+input UpdateMenuInput {
+  name: String
+  description: String
+  category: String
+  price: Float
+  image: String
+  ingredients: [IngredientInfoInput!]
+  available: Boolean
+  preparationTime: Int
+  tags: [String!]
+}
+
+input CreateOrderInput {
+  customerId: String
+  tableNumber: String
+  items: [OrderItemInput!]!
+  paymentMethod: String!
+  loyaltyPointsUsed: Float
+  notes: String
+}
+
+input OrderItemInput {
+  menuId: String!
+  name: String!
+  quantity: Int!
+  price: Float!
+  specialInstructions: String
+}
+
+
+
+
+
+

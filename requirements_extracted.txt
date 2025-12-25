@@ -1,0 +1,134 @@
+=== Page 1 ===
+ 
+Tugas Besar Mata Kuliah: Integrasi Aplikasi Enterprise 
+Judul: 
+Pengembangan Sistem Terintegrasi Antar Kelompok Berbasis Microservices dengan 
+GraphQL dan Docker 
+ 
+Tujuan Pembelajaran: 
+Mahasiswa mampu: 
+●​ Membangun sistem aplikasi enterprise yang modular dan terintegrasi. 
+●​ Menggunakan Docker untuk deployment berbasis container. 
+●​ Mengimplementasikan GraphQL untuk komunikasi data yang fleksibel  
+●​ Melakukan integrasi layanan lintas kelompok dengan standar interoperabilitas. 
+ 
+Spesifikasi Umum: 
+1.​ Teknologi Wajib Digunakan: 
+o​ Docker (untuk containerisasi layanan) 
+o​ GraphQL (sebagai API layer untuk komunikasi data) 
+o​ Database (PostgreSQL / MongoDB / sesuai kebutuhan) 
+o​ Framework: Bebas (Node.js, Spring Boot, Django, PHP, dll) 
+2.​ Struktur Sistem: 
+o​ Sistem terdiri dari beberapa layanan (microservices). 
+o​ 1 orang 1 layanan per kelompok: contoh User Service, Order Service, Product 
+Service. 
+o​ Antar kelompok wajib terintegrasi, minimal 2 kelompok saling bertukar data melalui 
+API lintas layanan (misalnya data pemesanan dari Kelompok A dibutuhkan oleh 
+Kelompok B). 
+o​ Database terpisah minimal 2 database (1 layanan 1 database lebih baik) 
+3.​ Integrasi Antar Kelompok: 
+o​ Endpoint lintas kelompok harus tersedia dan terdokumentasi. 
+o​ Masing-masing kelompok harus mengkonsumsi/memanfaatkan minimal 1 endpoint 
+GraphQL dari kelompok lain. 
+ 
+Deliverables (Output yang Wajib Diserahkan): 
+1.​ Dokumentasi Proyek (PDF) laporan yang memuat : 
+o​ Deskripsi arsitektur sistem (dilengkapi diagram integrasi) 
+o​ Desain skema GraphQL service 
+o​ Penjelasan integrasi lintas kelompok 
+o​ Screenshot komunikasi antar layanan 
+Np : template soon  
+2.​ Kode Program (Github/Repository): 
+o​ Struktur folder rapi 
+o​ File konfigurasi docker-compose.yml (opsional, tapi direkomendasikan) 
+o​ .graphql schema dan query files 
+3.​ Presentasi & Demo: 
+
+
+=== Page 2 ===
+o​ Demo integrasi antar kelompok 
+o​ Penjelasan fungsi masing-masing layanan dan komunikasi antar container 
+ 
+Timeline: 
+●​ Minggu 13–16: Pengerjaan dengan setiap minggu daily report 
+●​ Minggu 16: Pengujian & presentasi tugas besar 
+ 
+Penilaian: 
+No Aspek Penilaian Skor 
+Maks Memenuhi (100%) 
+Standar (±70%) 
+Tidak Memenuhi 
+(≤50%) 
+1 
+GraphQL 
+Implementation 20 
+Skema lengkap, 
+query efisien, 
+dokumentasi jelas 
+Skema ada tapi query 
+terbatas, dokumentasi 
+minim 
+Skema tidak 
+jelas, query tidak 
+berjalan 
+2 
+Docker 
+Deployment 
+20 
+Semua service 
+berjalan terpisah 
+dalam container 
+berbeda, setup bisa 
+dijalankan 
+Ada beberapa service 
+dalam 1 container, setup 
+kurang rapi 
+Docker tidak 
+berfungsi atau 
+tidak digunakan 
+3 
+Integrasi Antar 
+Kelompok 
+25 
+Ada komunikasi 
+nyata antar kelompok 
+& digunakan 
+(sebagai provider 
+dan consumer) 
+Ada integrasi tapi tidak 
+aktif digunakan (sebagai 
+salah satu peran saja) 
+Tidak ada 
+integrasi lintas 
+kelompok 
+4 
+Dokumentasi & 
+Arsitektur 
+15 
+Ada diagram, 
+deskripsi sistem & 
+tools lengkap 
+Hanya ada sebagian 
+(diagram/deskripsi saja) 
+Tidak ada 
+dokumentasi 
+atau sangat 
+minim 
+5 
+Presentasi & 
+Demo 
+20 
+Demo lancar, sistem 
+dijelaskan dengan 
+baik 
+Demo kurang lancar, 
+penjelasan kurang fokus 
+Demo gagal 
+atau tidak bisa 
+dijelaskan 
+Total Skor 
+100 
+ 
+ 
+
+

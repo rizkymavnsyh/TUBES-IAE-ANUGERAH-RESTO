@@ -1,0 +1,126 @@
+type Query {
+  ingredients(category: String, status: String): [Ingredient!]!
+  ingredient(id: String!): Ingredient
+  checkStock(ingredientId: String!, quantity: Float!): StockCheckResult!
+  tokoSembakoProducts(category: String): [TokoSembakoProduct!]!
+  checkTokoSembakoStock(productId: String!, quantity: Float!): TokoSembakoStockCheck!
+}
+
+type Mutation {
+  reduceStock(ingredientId: String!, quantity: Float!, reason: String, referenceId: String, referenceType: String): StockMovement!
+  purchaseFromTokoSembako(input: PurchaseFromTokoSembakoInput!): PurchaseFromTokoSembakoResult!
+}
+
+enum SupplierStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum IngredientStatus {
+  ACTIVE
+  INACTIVE
+  OUT_OF_STOCK
+}
+
+enum MovementType {
+  IN
+  OUT
+  ADJUSTMENT
+}
+
+type Supplier {
+  id: String!
+  name: String!
+  contactPerson: String
+  email: String
+  phone: String
+  address: String
+  status: String!
+}
+
+type Ingredient {
+  id: String!
+  name: String!
+  unit: String!
+  category: String
+  minStockLevel: Float!
+  currentStock: Float!
+  supplier: Supplier
+  costPerUnit: Float!
+  status: String!
+}
+
+type StockMovement {
+  id: String!
+  ingredient: Ingredient!
+  movementType: String!
+  quantity: Float!
+  reason: String
+  referenceId: String
+  referenceType: String
+  createdAt: String!
+}
+
+type StockCheckResult {
+  available: Boolean!
+  currentStock: Float!
+  requestedQuantity: Float!
+  message: String!
+}
+
+type TokoSembakoProduct {
+  id: String!
+  name: String!
+  category: String
+  price: Float!
+  unit: String!
+  available: Boolean!
+  description: String
+}
+
+type TokoSembakoStockCheck {
+  available: Boolean!
+  currentStock: Float!
+  requestedQuantity: Float!
+  message: String!
+}
+
+type TokoSembakoOrderItem {
+  productId: String!
+  name: String!
+  quantity: Float!
+  price: Float!
+}
+
+type TokoSembakoOrder {
+  id: String!
+  orderId: String!
+  status: String!
+  total: Float!
+  items: [TokoSembakoOrderItem!]!
+  createdAt: String
+}
+
+type PurchaseFromTokoSembakoResult {
+  success: Boolean!
+  message: String!
+  tokoSembakoOrder: TokoSembakoOrder
+  stockAdded: Boolean!
+}
+
+input TokoSembakoOrderItemInput {
+  productId: String!
+  quantity: Float!
+}
+
+input PurchaseFromTokoSembakoInput {
+  orderNumber: String!
+  items: [TokoSembakoOrderItemInput!]!
+  notes: String
+}
+
+
+
+
+
+

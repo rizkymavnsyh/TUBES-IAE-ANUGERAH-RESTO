@@ -1,0 +1,242 @@
+# Contoh Queries untuk Integrasi dengan Toko Sembako
+# Gunakan di Inventory Service GraphQL Playground: http://localhost:4002/graphql
+
+# ============================================
+# QUERY: Get Products from Toko Sembako
+# ============================================
+query GetTokoSembakoProducts {
+  tokoSembakoProducts {
+    id
+    name
+    category
+    price
+    unit
+    available
+    description
+  }
+}
+
+# Get products by category
+query GetTokoSembakoProductsByCategory {
+  tokoSembakoProducts(category: "Sayur") {
+    id
+    name
+    price
+    unit
+    available
+  }
+}
+
+# ============================================
+# QUERY: Get Single Product
+# ============================================
+query GetTokoSembakoProduct {
+  tokoSembakoProduct(id: "1") {
+    id
+    name
+    category
+    price
+    unit
+    available
+    description
+  }
+}
+
+# ============================================
+# QUERY: Check Stock from Toko Sembako
+# ============================================
+query CheckTokoSembakoStock {
+  checkTokoSembakoStock(productId: "1", quantity: 10) {
+    available
+    currentStock
+    requestedQuantity
+    message
+  }
+}
+
+# ============================================
+# QUERY: Check Order Status
+# ============================================
+query GetTokoSembakoOrderStatus {
+  tokoSembakoOrderStatus(orderId: "TS-ORD-001") {
+    id
+    orderId
+    status
+    total
+    items {
+      productId
+      name
+      quantity
+      price
+    }
+  }
+}
+
+# ============================================
+# MUTATION: Purchase from Toko Sembako
+# ============================================
+# Ini akan:
+# 1. Check stock di Toko Sembako
+# 2. Create order di Toko Sembako
+# 3. Create purchase order di database lokal
+# 4. Auto-create ingredients jika belum ada
+# 5. Add stock ke inventory
+mutation PurchaseFromTokoSembako {
+  purchaseFromTokoSembako(input: {
+    orderNumber: "PO-TS-001"
+    items: [
+      {
+        productId: "1"
+        quantity: 10
+      }
+      {
+        productId: "2"
+        quantity: 5
+      }
+    ]
+    notes: "Pembelian sayur untuk restoran"
+  }) {
+    success
+    message
+    purchaseOrder {
+      id
+      orderNumber
+      totalAmount
+      status
+      items {
+        ingredient {
+          name
+        }
+        quantity
+        unitPrice
+      }
+    }
+    tokoSembakoOrder {
+      id
+      orderId
+      status
+      total
+      items {
+        productId
+        name
+        quantity
+        price
+      }
+    }
+    stockAdded
+  }
+}
+
+# ============================================
+# MUTATION: Sync Stock from Toko Sembako
+# ============================================
+# Sync stock langsung tanpa membuat order
+mutation SyncStockFromTokoSembako {
+  syncStockFromTokoSembako(productId: "1", quantity: 20) {
+    id
+    quantity
+    movementType
+    reason
+    referenceId
+    referenceType
+    createdAt
+    ingredient {
+      name
+      currentStock
+    }
+  }
+}
+
+# ============================================
+# VERIFY: Check Stock After Purchase
+# ============================================
+query VerifyStockAfterPurchase {
+  ingredients(category: "Vegetable") {
+    id
+    name
+    currentStock
+    minStockLevel
+    supplier {
+      name
+    }
+    costPerUnit
+  }
+  
+  stockMovements(movementType: in) {
+    id
+    ingredient {
+      name
+    }
+    quantity
+    reason
+    referenceId
+    referenceType
+    createdAt
+  }
+}
+
+# ============================================
+# COMPLETE FLOW: Full Purchase Process
+# ============================================
+# Step 1: Browse products
+query Step1_BrowseProducts {
+  tokoSembakoProducts {
+    id
+    name
+    price
+    unit
+    available
+  }
+}
+
+# Step 2: Check stock
+query Step2_CheckStock {
+  checkTokoSembakoStock(productId: "1", quantity: 10) {
+    available
+    currentStock
+    message
+  }
+}
+
+# Step 3: Make purchase
+mutation Step3_Purchase {
+  purchaseFromTokoSembako(input: {
+    orderNumber: "PO-TS-002"
+    items: [
+      {
+        productId: "1"
+        quantity: 10
+      }
+    ]
+  }) {
+    success
+    message
+    purchaseOrder {
+      orderNumber
+      totalAmount
+    }
+    tokoSembakoOrder {
+      orderId
+      status
+    }
+  }
+}
+
+# Step 4: Verify
+query Step4_Verify {
+  ingredients {
+    name
+    currentStock
+    supplier {
+      name
+    }
+  }
+}
+
+
+
+
+
+
+
+

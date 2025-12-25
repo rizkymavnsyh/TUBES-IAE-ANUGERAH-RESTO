@@ -1,0 +1,99 @@
+# ==================================================
+# KITCHEN SERVICE - GraphQL Schema
+# Anugerah Resto - Sistem Manajemen Restoran
+# ==================================================
+# Service: Kitchen Service (Kitchen Queue Management)
+# Port: 4001
+# Database: MySQL (kitchen_db)
+# ==================================================
+
+# ==================== TYPES ====================
+
+type KitchenOrder {
+  id: ID!
+  orderId: String!
+  tableNumber: String
+  status: OrderStatus!
+  items: [OrderItem]
+  priority: Int
+  estimatedTime: Int
+  chefId: Int
+  chef: Chef
+  notes: String
+  createdAt: String!
+  updatedAt: String!
+}
+
+type OrderItem {
+  menuId: String!
+  name: String!
+  quantity: Int!
+  specialInstructions: String
+}
+
+type Chef {
+  id: ID!
+  name: String!
+  specialization: String
+  status: ChefStatus!
+  currentOrders: Int!
+}
+
+# ==================== ENUMS ====================
+
+enum OrderStatus {
+  pending
+  preparing
+  ready
+  completed
+  cancelled
+}
+
+enum ChefStatus {
+  available
+  busy
+  offline
+}
+
+# ==================== QUERIES ====================
+
+type Query {
+  # Kitchen order queries
+  kitchenOrders(status: OrderStatus): [KitchenOrder!]!
+  kitchenOrder(id: ID!): KitchenOrder
+  kitchenOrderByOrderId(orderId: String!): KitchenOrder
+  
+  # Chef queries
+  chefs: [Chef!]!
+  chef(id: ID!): Chef
+  ordersByChef(chefId: ID!): [KitchenOrder!]!
+}
+
+# ==================== MUTATIONS ====================
+
+type Mutation {
+  # Kitchen order operations
+  createKitchenOrder(input: CreateKitchenOrderInput!): KitchenOrder!
+  updateOrderStatus(id: ID!, status: OrderStatus!): KitchenOrder!
+  assignChef(orderId: ID!, chefId: ID!): KitchenOrder!
+  updateEstimatedTime(orderId: ID!, estimatedTime: Int!): KitchenOrder!
+  completeOrder(orderId: ID!): KitchenOrder!
+  cancelOrder(orderId: ID!): KitchenOrder!
+}
+
+# ==================== INPUTS ====================
+
+input CreateKitchenOrderInput {
+  orderId: String!
+  tableNumber: String
+  items: [OrderItemInput!]!
+  priority: Int
+  notes: String
+}
+
+input OrderItemInput {
+  menuId: String!
+  name: String!
+  quantity: Int!
+  specialInstructions: String
+}
