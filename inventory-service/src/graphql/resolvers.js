@@ -325,7 +325,7 @@ const resolvers = {
     addStock: async (parent, { ingredientId, quantity, reason }, { db }) => {
       try {
         // Start transaction
-        await db.execute('START TRANSACTION');
+        await db.query('START TRANSACTION');
 
         // Update stock
         await db.execute(
@@ -351,7 +351,7 @@ const resolvers = {
           [ingredientId, quantity, reason]
         );
 
-        await db.execute('COMMIT');
+        await db.query('COMMIT');
 
         const [movements] = await db.execute('SELECT * FROM stock_movements WHERE id = ?', [result.insertId]);
         return {
@@ -360,7 +360,7 @@ const resolvers = {
           quantity: parseFloat(movements[0].quantity)
         };
       } catch (error) {
-        await db.execute('ROLLBACK');
+        await db.query('ROLLBACK');
         throw new Error(`Error adding stock: ${error.message}`);
       }
     },
@@ -379,7 +379,7 @@ const resolvers = {
         }
 
         // Start transaction
-        await db.execute('START TRANSACTION');
+        await db.query('START TRANSACTION');
 
         // Update stock
         await db.execute(
@@ -405,7 +405,7 @@ const resolvers = {
           [ingredientId, quantity, reason, referenceId, referenceType]
         );
 
-        await db.execute('COMMIT');
+        await db.query('COMMIT');
 
         const [movements] = await db.execute('SELECT * FROM stock_movements WHERE id = ?', [result.insertId]);
         return {
@@ -414,7 +414,7 @@ const resolvers = {
           quantity: parseFloat(movements[0].quantity)
         };
       } catch (error) {
-        await db.execute('ROLLBACK');
+        await db.query('ROLLBACK');
         throw new Error(`Error reducing stock: ${error.message}`);
       }
     },
@@ -424,7 +424,7 @@ const resolvers = {
         const { supplierId, orderNumber, orderDate, expectedDeliveryDate, notes, items } = input;
 
         // Start transaction
-        await db.execute('START TRANSACTION');
+        await db.query('START TRANSACTION');
 
         // Calculate total
         let totalAmount = 0;
@@ -448,7 +448,7 @@ const resolvers = {
           );
         }
 
-        await db.execute('COMMIT');
+        await db.query('COMMIT');
 
         const [orders] = await db.execute('SELECT * FROM purchase_orders WHERE id = ?', [orderResult.insertId]);
         return {
@@ -457,7 +457,7 @@ const resolvers = {
           totalAmount: parseFloat(orders[0].total_amount)
         };
       } catch (error) {
-        await db.execute('ROLLBACK');
+        await db.query('ROLLBACK');
         throw new Error(`Error creating purchase order: ${error.message}`);
       }
     },
@@ -487,7 +487,7 @@ const resolvers = {
     receivePurchaseOrder: async (parent, { id }, { db }) => {
       try {
         // Start transaction
-        await db.execute('START TRANSACTION');
+        await db.query('START TRANSACTION');
 
         // Get purchase order items
         const [items] = await db.execute(
@@ -534,7 +534,7 @@ const resolvers = {
           [id]
         );
 
-        await db.execute('COMMIT');
+        await db.query('COMMIT');
 
         const [orders] = await db.execute('SELECT * FROM purchase_orders WHERE id = ?', [id]);
         return {
@@ -543,7 +543,7 @@ const resolvers = {
           totalAmount: parseFloat(orders[0].total_amount)
         };
       } catch (error) {
-        await db.execute('ROLLBACK');
+        await db.query('ROLLBACK');
         throw new Error(`Error receiving purchase order: ${error.message}`);
       }
     },
@@ -623,7 +623,7 @@ const resolvers = {
         }
 
         // Start transaction
-        await db.execute('START TRANSACTION');
+        await db.query('START TRANSACTION');
 
         // Create purchase order
         const [orderResult] = await db.execute(
@@ -685,7 +685,7 @@ const resolvers = {
           stockAdded = true;
         }
 
-        await db.execute('COMMIT');
+        await db.query('COMMIT');
 
         // Get created purchase order
         const [orders] = await db.execute('SELECT * FROM purchase_orders WHERE id = ?', [orderResult.insertId]);
@@ -702,7 +702,7 @@ const resolvers = {
           stockAdded: stockAdded
         };
       } catch (error) {
-        await db.execute('ROLLBACK');
+        await db.query('ROLLBACK');
         throw new Error(`Error purchasing from Toko Sembako: ${error.message}`);
       }
     },
@@ -752,7 +752,7 @@ const resolvers = {
         }
 
         // Start transaction
-        await db.execute('START TRANSACTION');
+        await db.query('START TRANSACTION');
 
         // Add stock
         await db.execute(
@@ -778,7 +778,7 @@ const resolvers = {
           [ingredientId, quantity, `Sync from Toko Sembako product ${productId}`, productId, 'toko_sembako_product']
         );
 
-        await db.execute('COMMIT');
+        await db.query('COMMIT');
 
         const [movements] = await db.execute('SELECT * FROM stock_movements WHERE id = ?', [result.insertId]);
         return {
@@ -787,7 +787,7 @@ const resolvers = {
           quantity: parseFloat(movements[0].quantity)
         };
       } catch (error) {
-        await db.execute('ROLLBACK');
+        await db.query('ROLLBACK');
         throw new Error(`Error syncing stock from Toko Sembako: ${error.message}`);
       }
     }
