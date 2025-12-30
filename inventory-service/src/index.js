@@ -128,33 +128,33 @@ async function startServer() {
         )
       `);
 
-      // Add missing columns to existing tables (safe migration)
+      // Add missing columns to existing tables (safe migration - without IF NOT EXISTS for older MySQL)
       const alterStatements = [
         // suppliers
-        "ALTER TABLE suppliers ADD COLUMN IF NOT EXISTS status VARCHAR(50) DEFAULT 'active'",
-        "ALTER TABLE suppliers ADD COLUMN IF NOT EXISTS contact_person VARCHAR(255)",
-        "ALTER TABLE suppliers ADD COLUMN IF NOT EXISTS email VARCHAR(255)",
-        "ALTER TABLE suppliers ADD COLUMN IF NOT EXISTS phone VARCHAR(50)",
+        "ALTER TABLE suppliers ADD COLUMN status VARCHAR(50) DEFAULT 'active'",
+        "ALTER TABLE suppliers ADD COLUMN contact_person VARCHAR(255)",
+        "ALTER TABLE suppliers ADD COLUMN email VARCHAR(255)",
+        "ALTER TABLE suppliers ADD COLUMN phone VARCHAR(50)",
         // ingredients  
-        "ALTER TABLE ingredients ADD COLUMN IF NOT EXISTS category VARCHAR(100)",
-        "ALTER TABLE ingredients ADD COLUMN IF NOT EXISTS min_stock_level FLOAT DEFAULT 0",
-        "ALTER TABLE ingredients ADD COLUMN IF NOT EXISTS current_stock FLOAT DEFAULT 0",
-        "ALTER TABLE ingredients ADD COLUMN IF NOT EXISTS cost_per_unit DECIMAL(10,2) DEFAULT 0",
-        "ALTER TABLE ingredients ADD COLUMN IF NOT EXISTS status VARCHAR(50) DEFAULT 'active'",
+        "ALTER TABLE ingredients ADD COLUMN category VARCHAR(100)",
+        "ALTER TABLE ingredients ADD COLUMN min_stock_level FLOAT DEFAULT 0",
+        "ALTER TABLE ingredients ADD COLUMN current_stock FLOAT DEFAULT 0",
+        "ALTER TABLE ingredients ADD COLUMN cost_per_unit DECIMAL(10,2) DEFAULT 0",
+        "ALTER TABLE ingredients ADD COLUMN status VARCHAR(50) DEFAULT 'active'",
         // stock_movements
-        "ALTER TABLE stock_movements ADD COLUMN IF NOT EXISTS movement_type VARCHAR(20)",
-        "ALTER TABLE stock_movements ADD COLUMN IF NOT EXISTS reason TEXT",
-        "ALTER TABLE stock_movements ADD COLUMN IF NOT EXISTS reference_id VARCHAR(100)",
-        "ALTER TABLE stock_movements ADD COLUMN IF NOT EXISTS reference_type VARCHAR(50)",
+        "ALTER TABLE stock_movements ADD COLUMN movement_type VARCHAR(20)",
+        "ALTER TABLE stock_movements ADD COLUMN reason TEXT",
+        "ALTER TABLE stock_movements ADD COLUMN reference_id VARCHAR(100)",
+        "ALTER TABLE stock_movements ADD COLUMN reference_type VARCHAR(50)",
         // purchase_orders
-        "ALTER TABLE purchase_orders ADD COLUMN IF NOT EXISTS order_number VARCHAR(100)",
-        "ALTER TABLE purchase_orders ADD COLUMN IF NOT EXISTS notes TEXT",
-        "ALTER TABLE purchase_orders ADD COLUMN IF NOT EXISTS expected_delivery_date DATE",
-        "ALTER TABLE purchase_orders ADD COLUMN IF NOT EXISTS received_date DATE",
+        "ALTER TABLE purchase_orders ADD COLUMN order_number VARCHAR(100)",
+        "ALTER TABLE purchase_orders ADD COLUMN notes TEXT",
+        "ALTER TABLE purchase_orders ADD COLUMN expected_delivery_date DATE",
+        "ALTER TABLE purchase_orders ADD COLUMN received_date DATE",
         // purchase_order_items
-        "ALTER TABLE purchase_order_items ADD COLUMN IF NOT EXISTS unit_price DECIMAL(10,2) DEFAULT 0",
-        "ALTER TABLE purchase_order_items ADD COLUMN IF NOT EXISTS total_price DECIMAL(10,2) DEFAULT 0",
-        "ALTER TABLE purchase_order_items ADD COLUMN IF NOT EXISTS received_quantity FLOAT DEFAULT 0"
+        "ALTER TABLE purchase_order_items ADD COLUMN unit_price DECIMAL(10,2) DEFAULT 0",
+        "ALTER TABLE purchase_order_items ADD COLUMN total_price DECIMAL(10,2) DEFAULT 0",
+        "ALTER TABLE purchase_order_items ADD COLUMN received_quantity FLOAT DEFAULT 0"
       ];
 
       for (const sql of alterStatements) {
