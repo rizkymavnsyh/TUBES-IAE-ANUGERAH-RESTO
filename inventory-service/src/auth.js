@@ -44,7 +44,21 @@ function getUserFromToken(token) {
  */
 function getAuthContext(req) {
     const authHeader = req?.headers?.authorization || req?.headers?.Authorization;
+
+    // Debug Log
+    if (authHeader) {
+        console.log(`🔐 Auth Header received: ${authHeader.substring(0, 15)}...`);
+    } else {
+        console.log('⚠️ No Authorization header found');
+    }
+
     const user = getUserFromToken(authHeader);
+
+    if (user) {
+        console.log(`✅ User verified: ${user.role} (${user.employeeId})`);
+    } else if (authHeader) {
+        console.log('❌ Token verification failed');
+    }
 
     return {
         user,
