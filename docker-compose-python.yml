@@ -15,7 +15,7 @@ services:
     networks:
       - resto-network
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-prootpassword"]
+      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-prootpassword" ]
       interval: 10s
       timeout: 10s
       retries: 10
@@ -37,7 +37,7 @@ services:
     networks:
       - resto-network
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-prootpassword"]
+      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-prootpassword" ]
       interval: 10s
       timeout: 10s
       retries: 10
@@ -59,7 +59,7 @@ services:
     networks:
       - resto-network
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-prootpassword"]
+      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-prootpassword" ]
       interval: 10s
       timeout: 10s
       retries: 10
@@ -81,7 +81,7 @@ services:
     networks:
       - resto-network
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-prootpassword"]
+      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-prootpassword" ]
       interval: 10s
       timeout: 10s
       retries: 10
@@ -128,10 +128,10 @@ services:
       DB_PASSWORD: inventory_pass
       DB_NAME: inventory_db
       ORDER_SERVICE_URL: http://order-service-python:4004/graphql
-      # Toko Sembako Integration URLs
-      TOKO_SEMBAKO_PRODUCT_URL: http://host.docker.internal:4001/graphql
-      TOKO_SEMBAKO_INVENTORY_URL: http://host.docker.internal:4000/graphql
-      TOKO_SEMBAKO_ORDER_URL: http://host.docker.internal:4002/graphql
+      # Toko Sembako Integration URLs (Railway Cloud)
+      TOKO_SEMBAKO_PRODUCT_URL: https://tubes-iae-anugerah-resto-production-3278.up.railway.app/graphql/product
+      TOKO_SEMBAKO_INVENTORY_URL: https://tubes-iae-anugerah-resto-production-3278.up.railway.app/graphql/inventory
+      TOKO_SEMBAKO_ORDER_URL: https://tubes-iae-anugerah-resto-production-3278.up.railway.app/graphql/order
     depends_on:
       inventory-db:
         condition: service_healthy
@@ -195,8 +195,7 @@ volumes:
   user_db_data:
   order_db_data:
 
+
 networks:
   resto-network:
     driver: bridge
-
-
