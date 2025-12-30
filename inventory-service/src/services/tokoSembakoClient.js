@@ -167,7 +167,7 @@ async function createOrderAtTokoSembako(orderInput) {
           items {
             productId
             name
-            quantity
+            quantity: qty
             price
           }
           createdAt
