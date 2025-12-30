@@ -1,0 +1,8 @@
+[phases.setup]
+nixPkgs = ["nodejs"]
+
+[phases.build]
+cmds = ["cd inventory-service && npm install"]
+
+[start]
+cmd = "cd inventory-service && npm start"

@@ -586,7 +586,7 @@ const resolvers = {
         let tokoSembakoOrder = null;
         try {
           tokoSembakoOrder = await tokoSembakoClient.createOrderAtTokoSembako({
-            orderId: orderNumber,
+            orderNumber: orderNumber,
             items: productDetails.map(item => ({
               productId: item.productId,
               qty: item.quantity
