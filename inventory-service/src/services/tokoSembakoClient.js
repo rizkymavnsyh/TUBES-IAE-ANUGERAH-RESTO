@@ -47,12 +47,7 @@ async function callTokoSembakoService(url, query, variables = {}) {
 
     return response.data.data;
   } catch (error) {
-    if (error.response) {
-      console.error(`❌ Axious Error ${error.response.status} at ${url}`);
-      console.error("Response Data:", JSON.stringify(error.response.data, null, 2));
-    } else {
-      console.error(`Error calling Toko Sembako service at ${url}:`, error.message);
-    }
+    console.error(`Error calling Toko Sembako service at ${url}:`, error.message);
     throw error;
   }
 }
@@ -157,29 +152,48 @@ async function checkStockFromTokoSembako(productId, quantity) {
  */
 async function createOrderAtTokoSembako(orderInput) {
   try {
+    // Build items array for the mutation
+    const itemsStr = orderInput.items.map(item =>
+      `{ productId: "${item.productId}", qty: ${Math.floor(item.quantity)} }`
+    ).join(', ');
+
     const query = `
-      mutation CreateOrder($input: CreateOrderInput!) {
-        createOrder(input: $input) {
+      mutation {
+        createOrder(
+          restaurantId: "${orderInput.restaurantId || 'anugerah-resto'}"
+          items: [${itemsStr}]
+        ) {
           id
-          orderId
-          status
-          total
+          restaurantId
           items {
             productId
-            name
-            quantity: qty
+            qty
             price
+            subtotal
           }
-          createdAt
+          total
+          status
         }
       }
     `;
 
-    const data = await callTokoSembakoService(TOKO_SEMBAKO_ORDER_URL, query, {
-      input: orderInput
-    });
+    const data = await callTokoSembakoService(TOKO_SEMBAKO_ORDER_URL, query);
 
-    return data.createOrder;
+    // Map response to expected format
+    const order = data.createOrder;
+    return {
+      id: order.id,
+      orderId: `TS-${order.id}`,
+      status: order.status,
+      total: order.total,
+      items: order.items.map(i => ({
+        productId: i.productId,
+        name: `Product ${i.productId}`, // Mock name
+        quantity: i.qty,
+        price: i.price
+      })),
+      createdAt: new Date().toISOString()
+    };
   } catch (error) {
     console.error('Error creating order at Toko Sembako:', error.message);
     throw error;

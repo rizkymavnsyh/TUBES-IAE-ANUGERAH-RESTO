@@ -3,19 +3,13 @@ const fetch = require("node-fetch");
 
 const orders = [];
 
-const getProductUrl = () => process.env.PRODUCT_SERVICE_URL || "http://localhost:5001/graphql";
-const getInventoryUrl = () => process.env.INVENTORY_SERVICE_URL || "http://localhost:5000/graphql";
+const PRODUCT_URL = process.env.PRODUCT_SERVICE_URL || "http://localhost:5001/graphql";
+const INVENTORY_URL = process.env.INVENTORY_SERVICE_URL || "http://localhost:5000/graphql";
 
 const typeDefs = gql`
   input OrderItemInput {
     productId: ID!
     qty: Int!
-  }
-
-  input CreateOrderInput {
-    orderNumber: String!
-    items: [OrderItemInput!]!
-    notes: String
   }
 
   type OrderItem {
@@ -27,21 +21,23 @@ const typeDefs = gql`
 
   type Order {
     id: ID!
-    orderId: String!
-    status: String!
-    total: Int!
+    restaurantId: String!
     items: [OrderItem!]!
-    createdAt: String
+    total: Int!
+    status: String!
   }
 
   type Query {
     getOrders: [Order]
-    getOrderById(orderId: String!): Order
-    orderByOrderId(orderId: String!): Order
+    getOrderById(orderId: ID!): Order
   }
 
   type Mutation {
-    createOrder(input: CreateOrderInput!): Order
+    createOrder(
+      restaurantId: String!
+      items: [OrderItemInput!]!
+    ): Order
+
     cancelOrder(orderId: ID!): Order
   }
 `;
@@ -49,7 +45,7 @@ const typeDefs = gql`
 // 🔁 rollback stok
 async function rollbackStock(items) {
   for (const item of items) {
-    await fetch(getInventoryUrl(), {
+    await fetch(INVENTORY_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -74,27 +70,21 @@ const resolvers = {
     getOrders: () => orders,
 
     getOrderById: (_, { orderId }) => {
-      const order = orders.find(o => o.id == orderId || o.orderId == orderId);
+      const order = orders.find(o => o.id == orderId);
       if (!order) throw new Error("Order not found");
-      return order;
-    },
-
-    orderByOrderId: (_, { orderId }) => {
-      const order = orders.find(o => o.orderId == orderId);
       return order;
     }
   },
 
   Mutation: {
-    createOrder: async (_, { input }) => {
-      const { orderNumber, items } = input;
+    createOrder: async (_, { restaurantId, items }) => {
       let total = 0;
       const orderItems = [];
 
       try {
         for (const item of items) {
           // 🔹 ambil harga product
-          const productRes = await fetch(getProductUrl(), {
+          const productRes = await fetch(PRODUCT_URL, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
@@ -110,7 +100,7 @@ const resolvers = {
 
           const productData = await productRes.json();
           if (!productData.data?.getProductById) {
-            throw new Error(`Product ${item.productId} not found`);
+            throw new Error("Product not found");
           }
 
           const price = productData.data.getProductById.price;
@@ -118,7 +108,7 @@ const resolvers = {
           total += subtotal;
 
           // 🔹 kurangi stok
-          const inventoryRes = await fetch(getInventoryUrl(), {
+          const inventoryRes = await fetch(INVENTORY_URL, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
@@ -138,9 +128,7 @@ const resolvers = {
 
           const inventoryData = await inventoryRes.json();
           if (inventoryData.errors) {
-            // Log error from inventory
-            console.error("Inventory Error:", JSON.stringify(inventoryData.errors));
-            throw new Error("Stock insufficient or inventory error");
+            throw new Error("Stock insufficient");
           }
 
           orderItems.push({
@@ -152,22 +140,19 @@ const resolvers = {
         }
 
         const order = {
-          id: String(orders.length + 1),
-          orderId: orderNumber,
-          restaurantId: "ANUGERAH_RESTO", // Default
+          id: orders.length + 1,
+          restaurantId,
           items: orderItems,
           total,
-          status: "CONFIRMED",
-          createdAt: new Date().toISOString()
+          status: "CONFIRMED"
         };
 
         orders.push(order);
         return order;
 
       } catch (err) {
-        console.error("Order Creation Failed:", err.message);
         await rollbackStock(orderItems);
-        throw new Error(`Order failed: ${err.message}`);
+        throw new Error("Order failed, stock rolled back");
       }
     },
 

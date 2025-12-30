@@ -586,10 +586,12 @@ const resolvers = {
         let tokoSembakoOrder = null;
         try {
           tokoSembakoOrder = await tokoSembakoClient.createOrderAtTokoSembako({
-            orderNumber: orderNumber,
+            orderId: orderNumber,
             items: productDetails.map(item => ({
               productId: item.productId,
-              qty: item.quantity
+              name: item.name,
+              quantity: item.quantity,
+              price: item.price
             })),
             notes: notes || `Purchase order from Anugerah Resto: ${orderNumber}`
           });
