@@ -653,9 +653,9 @@ const resolvers = {
 
           // Create purchase order item
           await db.execute(
-            `INSERT INTO purchase_order_items (purchase_order_id, ingredient_id, quantity, unit_price, total_price, received_quantity)
-             VALUES (?, ?, ?, ?, ?, ?)`,
-            [orderResult.insertId, ingredientId, item.quantity, item.price, item.price * item.quantity, item.quantity]
+            `INSERT INTO purchase_order_items (purchase_order_id, ingredient_id, quantity, price_per_unit)
+             VALUES (?, ?, ?, ?)`,
+            [orderResult.insertId, ingredientId, item.quantity, item.price]
           );
 
           // Add stock immediately (karena order sudah dibuat di Toko Sembako)
