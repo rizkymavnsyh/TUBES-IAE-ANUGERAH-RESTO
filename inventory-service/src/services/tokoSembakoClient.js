@@ -47,7 +47,12 @@ async function callTokoSembakoService(url, query, variables = {}) {
 
     return response.data.data;
   } catch (error) {
-    console.error(`Error calling Toko Sembako service at ${url}:`, error.message);
+    if (error.response) {
+      console.error(`❌ Axious Error ${error.response.status} at ${url}`);
+      console.error("Response Data:", JSON.stringify(error.response.data, null, 2));
+    } else {
+      console.error(`Error calling Toko Sembako service at ${url}:`, error.message);
+    }
     throw error;
   }
 }
