@@ -1,0 +1,18 @@
+{
+    "name": "toko-sembako-combined",
+    "version": "1.0.0",
+    "description": "Mock Toko Sembako Services for Integration",
+    "main": "deploy.js",
+    "scripts": {
+        "start": "node deploy.js",
+        "dev": "nodemon deploy.js"
+    },
+    "dependencies": {
+        "apollo-server": "^3.11.1",
+        "apollo-server-core": "^3.11.1",
+        "apollo-server-express": "^3.11.1",
+        "express": "^4.18.2",
+        "graphql": "^16.6.0",
+        "node-fetch": "^2.6.7"
+    }
+}

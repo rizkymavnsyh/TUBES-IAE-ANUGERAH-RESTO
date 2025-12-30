@@ -1,0 +1,13 @@
+type Inventory {
+  productId: ID!
+  stock: Int!
+}
+
+type Query {
+  getInventory(productId: ID!): Inventory
+}
+
+type Mutation {
+  increaseStock(productId: ID!, qty: Int!): Inventory
+  decreaseStock(productId: ID!, qty: Int!): Inventory
+}
