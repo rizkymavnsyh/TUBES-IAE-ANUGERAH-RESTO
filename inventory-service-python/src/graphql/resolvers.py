@@ -272,32 +272,121 @@ def resolve_reduce_stock(_, info, ingredientId: str, quantity: float, reason: Op
 async def resolve_purchase_from_toko_sembako(_, info, input: Dict[str, Any]):
     """Purchase from Toko Sembako - requires manager role"""
     require_min_role(info.context, 'manager')
+    
+    order_number = input['orderNumber']
+    items = input['items']
+    notes = input.get('notes')
+    
     try:
-        # Create order at Toko Sembako
-        order_result = await create_order_at_toko_sembako(
-            input['orderNumber'],
-            input['items'],
-            input.get('notes')
-        )
+        # 1. Check stock availability for all items
+        for item in items:
+            stock_check = await check_stock_from_toko_sembako(item['productId'], item['quantity'])
+            if not stock_check.get('available'):
+                raise Exception(f"Stock tidak tersedia untuk product {item['productId']}: {stock_check.get('message')}")
+        
+        # 2. Get product details
+        product_details = []
+        for item in items:
+            product = await get_product_by_id_from_toko_sembako(item['productId'])
+            if not product:
+                raise Exception(f"Product {item['productId']} tidak ditemukan")
+            product_details.append({
+                'productId': item['productId'],
+                'quantity': item['quantity'],
+                'name': product.get('name', f"Product {item['productId']}"),
+                'price': product.get('price', 0),
+                'unit': product.get('unit', 'pcs')
+            })
+        
+        # 3. Create order at Toko Sembako
+        order_result = await create_order_at_toko_sembako(order_number, items, notes)
         
         if not order_result.get('success'):
-            return {
-                'success': False,
-                'message': order_result.get('message', 'Failed to create order'),
-                'tokoSembakoOrder': None,
-                'stockAdded': False
-            }
+            raise Exception(f"Gagal membuat order: {order_result.get('message')}")
         
-        # Add stock to inventory (simplified - you may need to map products to ingredients)
+        # 4. Add stock to local inventory
         conn = get_db_connection()
         cursor = conn.cursor(dictionary=True)
         
         try:
+            # Find or create Toko Sembako supplier
+            cursor.execute("SELECT id FROM suppliers WHERE name = %s", ('Toko Sembako',))
+            supplier = cursor.fetchone()
+            
+            if not supplier:
+                cursor.execute(
+                    "INSERT INTO suppliers (name, status) VALUES (%s, %s)",
+                    ('Toko Sembako', 'active')
+                )
+                supplier_id = cursor.lastrowid
+            else:
+                supplier_id = supplier['id']
+            
+            # Calculate total
+            total_amount = sum(p['price'] * p['quantity'] for p in product_details)
+            
+            # Create purchase order
+            cursor.execute(
+                """INSERT INTO purchase_orders (supplier_id, order_number, total_amount, status, notes)
+                   VALUES (%s, %s, %s, %s, %s)""",
+                (supplier_id, order_number, total_amount, 'ordered', notes or f"Order from Toko Sembako")
+            )
+            purchase_order_id = cursor.lastrowid
+            
             stock_added = False
-            # TODO: Implement stock addition logic based on order items
-            # This is a placeholder
+            
+            # Process each item
+            for item in product_details:
+                # Find or create ingredient
+                cursor.execute("SELECT id FROM ingredients WHERE name = %s", (item['name'],))
+                ingredient = cursor.fetchone()
+                
+                if not ingredient:
+                    cursor.execute(
+                        """INSERT INTO ingredients (name, unit, category, min_stock_level, current_stock, 
+                           supplier_id, cost_per_unit, status)
+                           VALUES (%s, %s, %s, %s, %s, %s, %s, %s)""",
+                        (item['name'], item['unit'], 'Sembako', 10, 0, supplier_id, item['price'], 'active')
+                    )
+                    ingredient_id = cursor.lastrowid
+                else:
+                    ingredient_id = ingredient['id']
+                
+                # Create purchase order item
+                cursor.execute(
+                    """INSERT INTO purchase_order_items (purchase_order_id, ingredient_id, quantity, price_per_unit)
+                       VALUES (%s, %s, %s, %s)""",
+                    (purchase_order_id, ingredient_id, item['quantity'], item['price'])
+                )
+                
+                # Add stock immediately
+                cursor.execute(
+                    "UPDATE ingredients SET current_stock = current_stock + %s WHERE id = %s",
+                    (item['quantity'], ingredient_id)
+                )
+                
+                # Update status
+                cursor.execute(
+                    """UPDATE ingredients SET status = CASE 
+                       WHEN current_stock > 0 THEN 'active' ELSE status END 
+                       WHERE id = %s""",
+                    (ingredient_id,)
+                )
+                
+                # Create stock movement
+                cursor.execute(
+                    """INSERT INTO stock_movements (ingredient_id, movement_type, quantity, reason, 
+                       reference_id, reference_type)
+                       VALUES (%s, %s, %s, %s, %s, %s)""",
+                    (ingredient_id, 'in', item['quantity'], 
+                     f"Purchase from Toko Sembako: {order_number}",
+                     str(order_result.get('order', {}).get('orderId', '')), 'toko_sembako_order')
+                )
+                
+                stock_added = True
             
             conn.commit()
+            
         except Exception as e:
             conn.rollback()
             raise Exception(f"Error adding stock: {str(e)}")
@@ -307,7 +396,7 @@ async def resolve_purchase_from_toko_sembako(_, info, input: Dict[str, Any]):
         
         return {
             'success': True,
-            'message': 'Order created successfully',
+            'message': 'Order berhasil dibuat di Toko Sembako dan stock telah ditambahkan',
             'tokoSembakoOrder': order_result.get('order'),
             'stockAdded': stock_added
         }
