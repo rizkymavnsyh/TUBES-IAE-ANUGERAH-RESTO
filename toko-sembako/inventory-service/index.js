@@ -1,10 +1,23 @@
 const { ApolloServer, gql } = require("apollo-server");
 
-const inventory = [];
+const inventory = [
+  { productId: "1", stock: 100 },
+  { productId: "2", stock: 50 },
+  { productId: "3", stock: 200 }
+];
 
 const typeDefs = gql`
   type Inventory { productId: ID!, stock: Int! }
-  type Query { getInventory(productId: ID!): Inventory }
+  type StockCheckResult {
+     available: Boolean!
+     currentStock: Int!
+     requestedQuantity: Int!
+     message: String!
+  }
+  type Query { 
+    getInventory(productId: ID!): Inventory
+    checkStock(productId: ID!, quantity: Float!): StockCheckResult
+  }
   type Mutation {
     increaseStock(productId: ID!, qty: Int!): Inventory
     decreaseStock(productId: ID!, qty: Int!): Inventory
@@ -14,7 +27,20 @@ const typeDefs = gql`
 const resolvers = {
   Query: {
     getInventory: (_, { productId }) =>
-      inventory.find(i => i.productId == productId)
+      inventory.find(i => i.productId == productId),
+
+    checkStock: (_, { productId, quantity }) => {
+      const item = inventory.find(i => i.productId == productId);
+      const currentStock = item ? item.stock : 0;
+      const available = currentStock >= quantity;
+
+      return {
+        available,
+        currentStock,
+        requestedQuantity: quantity,
+        message: available ? "Stock available" : "Insufficient stock"
+      };
+    }
   },
   Mutation: {
     increaseStock: (_, { productId, qty }) => {
