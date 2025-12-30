@@ -1,0 +1,12 @@
+{
+    "name": "tubes-iae-root-proxy",
+    "version": "1.0.0",
+    "description": "Proxy to deploy inventory-service on Railway without changing Root Directory settings",
+    "scripts": {
+        "postinstall": "cd inventory-service && npm install",
+        "start": "cd inventory-service && npm start"
+    },
+    "engines": {
+        "node": "18.x"
+    }
+}
