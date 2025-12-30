@@ -1,0 +1,6 @@
+[build]
+builder = "NIXPACKS"
+buildCommand = "cd inventory-service && npm install"
+
+[deploy]
+startCommand = "cd inventory-service && npm start"
