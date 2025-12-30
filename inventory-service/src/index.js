@@ -58,8 +58,11 @@ async function startServer() {
         CREATE TABLE IF NOT EXISTS suppliers (
           id INT AUTO_INCREMENT PRIMARY KEY,
           name VARCHAR(255) NOT NULL,
-          contact_info VARCHAR(255),
+          contact_person VARCHAR(255),
+          email VARCHAR(255),
+          phone VARCHAR(50),
           address TEXT,
+          status VARCHAR(50) DEFAULT 'active',
           created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
       `);
@@ -69,11 +72,15 @@ async function startServer() {
           id INT AUTO_INCREMENT PRIMARY KEY,
           name VARCHAR(255) NOT NULL,
           unit VARCHAR(50) NOT NULL,
-          stock FLOAT DEFAULT 0,
-          min_stock FLOAT DEFAULT 0,
+          category VARCHAR(100),
+          min_stock_level FLOAT DEFAULT 0,
+          current_stock FLOAT DEFAULT 0,
+          cost_per_unit DECIMAL(10, 2) DEFAULT 0,
           supplier_id INT,
+          status VARCHAR(50) DEFAULT 'active',
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
           updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-          FOREIGN KEY (supplier_id) REFERENCES suppliers(id)
+          FOREIGN KEY (supplier_id) REFERENCES suppliers(id) ON DELETE SET NULL
         )
       `);
 
@@ -81,11 +88,13 @@ async function startServer() {
         CREATE TABLE IF NOT EXISTS stock_movements (
           id INT AUTO_INCREMENT PRIMARY KEY,
           ingredient_id INT NOT NULL,
-          type ENUM('IN', 'OUT', 'ADJUSTMENT') NOT NULL,
+          movement_type VARCHAR(20) NOT NULL,
           quantity FLOAT NOT NULL,
-          description TEXT,
+          reason TEXT,
+          reference_id VARCHAR(100),
+          reference_type VARCHAR(50),
           created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-          FOREIGN KEY (ingredient_id) REFERENCES ingredients(id)
+          FOREIGN KEY (ingredient_id) REFERENCES ingredients(id) ON DELETE CASCADE
         )
       `);
 
@@ -93,10 +102,15 @@ async function startServer() {
         CREATE TABLE IF NOT EXISTS purchase_orders (
           id INT AUTO_INCREMENT PRIMARY KEY,
           supplier_id INT NOT NULL,
-          status ENUM('PENDING', 'APPROVED', 'REJECTED', 'COMPLETED') DEFAULT 'PENDING',
+          order_number VARCHAR(100),
+          order_date DATE,
+          expected_delivery_date DATE,
+          received_date DATE,
+          status VARCHAR(50) DEFAULT 'pending',
           total_amount DECIMAL(10, 2) DEFAULT 0,
-          order_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-          FOREIGN KEY (supplier_id) REFERENCES suppliers(id)
+          notes TEXT,
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          FOREIGN KEY (supplier_id) REFERENCES suppliers(id) ON DELETE CASCADE
         )
       `);
 
@@ -106,24 +120,68 @@ async function startServer() {
           purchase_order_id INT NOT NULL,
           ingredient_id INT NOT NULL,
           quantity FLOAT NOT NULL,
-          price_per_unit DECIMAL(10, 2) NOT NULL,
-          FOREIGN KEY (purchase_order_id) REFERENCES purchase_orders(id),
-          FOREIGN KEY (ingredient_id) REFERENCES ingredients(id)
+          unit_price DECIMAL(10, 2) DEFAULT 0,
+          total_price DECIMAL(10, 2) DEFAULT 0,
+          received_quantity FLOAT DEFAULT 0,
+          FOREIGN KEY (purchase_order_id) REFERENCES purchase_orders(id) ON DELETE CASCADE,
+          FOREIGN KEY (ingredient_id) REFERENCES ingredients(id) ON DELETE CASCADE
         )
       `);
+
+      // Add missing columns to existing tables (safe migration)
+      const alterStatements = [
+        // suppliers
+        "ALTER TABLE suppliers ADD COLUMN IF NOT EXISTS status VARCHAR(50) DEFAULT 'active'",
+        "ALTER TABLE suppliers ADD COLUMN IF NOT EXISTS contact_person VARCHAR(255)",
+        "ALTER TABLE suppliers ADD COLUMN IF NOT EXISTS email VARCHAR(255)",
+        "ALTER TABLE suppliers ADD COLUMN IF NOT EXISTS phone VARCHAR(50)",
+        // ingredients  
+        "ALTER TABLE ingredients ADD COLUMN IF NOT EXISTS category VARCHAR(100)",
+        "ALTER TABLE ingredients ADD COLUMN IF NOT EXISTS min_stock_level FLOAT DEFAULT 0",
+        "ALTER TABLE ingredients ADD COLUMN IF NOT EXISTS current_stock FLOAT DEFAULT 0",
+        "ALTER TABLE ingredients ADD COLUMN IF NOT EXISTS cost_per_unit DECIMAL(10,2) DEFAULT 0",
+        "ALTER TABLE ingredients ADD COLUMN IF NOT EXISTS status VARCHAR(50) DEFAULT 'active'",
+        // stock_movements
+        "ALTER TABLE stock_movements ADD COLUMN IF NOT EXISTS movement_type VARCHAR(20)",
+        "ALTER TABLE stock_movements ADD COLUMN IF NOT EXISTS reason TEXT",
+        "ALTER TABLE stock_movements ADD COLUMN IF NOT EXISTS reference_id VARCHAR(100)",
+        "ALTER TABLE stock_movements ADD COLUMN IF NOT EXISTS reference_type VARCHAR(50)",
+        // purchase_orders
+        "ALTER TABLE purchase_orders ADD COLUMN IF NOT EXISTS order_number VARCHAR(100)",
+        "ALTER TABLE purchase_orders ADD COLUMN IF NOT EXISTS notes TEXT",
+        "ALTER TABLE purchase_orders ADD COLUMN IF NOT EXISTS expected_delivery_date DATE",
+        "ALTER TABLE purchase_orders ADD COLUMN IF NOT EXISTS received_date DATE",
+        // purchase_order_items
+        "ALTER TABLE purchase_order_items ADD COLUMN IF NOT EXISTS unit_price DECIMAL(10,2) DEFAULT 0",
+        "ALTER TABLE purchase_order_items ADD COLUMN IF NOT EXISTS total_price DECIMAL(10,2) DEFAULT 0",
+        "ALTER TABLE purchase_order_items ADD COLUMN IF NOT EXISTS received_quantity FLOAT DEFAULT 0"
+      ];
+
+      for (const sql of alterStatements) {
+        try {
+          await db.query(sql);
+        } catch (e) {
+          // Ignore errors (column might already exist or different MySQL version)
+        }
+      }
+
+      // Also handle status column type change for purchase_orders (from ENUM to VARCHAR)
+      try {
+        await db.query("ALTER TABLE purchase_orders MODIFY COLUMN status VARCHAR(50) DEFAULT 'pending'");
+      } catch (e) { /* ignore */ }
 
       // Seed dummy data if needed
       const [suppliers] = await db.query('SELECT COUNT(*) as count FROM suppliers');
       if (suppliers[0].count === 0) {
         console.log('🌱 Seeding initial data...');
         await db.query(`
-          INSERT INTO suppliers (name, contact_info, address) VALUES 
-          ('Supplier Sayur Segar', '08123456789', 'Jl. Kebun Sayur No. 1'),
-          ('Toko Daging Barokah', '08987654321', 'Pasar Baru Blok A')
+          INSERT INTO suppliers (name, phone, address, status) VALUES 
+          ('Supplier Sayur Segar', '08123456789', 'Jl. Kebun Sayur No. 1', 'active'),
+          ('Toko Daging Barokah', '08987654321', 'Pasar Baru Blok A', 'active')
         `);
       }
 
-      console.log('✅ Database schema verified');
+      console.log('✅ Database schema verified and migrated');
     } catch (err) {
       console.error('⚠️ Migration warning:', err.message);
     }
