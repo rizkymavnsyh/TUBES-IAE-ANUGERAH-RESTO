@@ -2,12 +2,22 @@ const express = require('express');
 const { ApolloServer } = require('apollo-server-express');
 const { ApolloServerPluginLandingPageLocalDefault } = require('apollo-server-core');
 
-// Import Schemas
+// Import Schemas (Product and Inventory first)
 const product = require('./product-service');
 const inventory = require('./inventory-service');
-const order = require('./order-service');
 
 const PORT = process.env.PORT || 8080;
+
+// IMPORTANT: Set internal URLs BEFORE importing order-service
+// Because order-service reads these at module load time
+const internalBaseUrl = `http://localhost:${PORT}`;
+process.env.PRODUCT_SERVICE_URL = `${internalBaseUrl}/graphql/product`;
+process.env.INVENTORY_SERVICE_URL = `${internalBaseUrl}/graphql/inventory`;
+console.log(`🔗 Internal Service URLs set to: ${internalBaseUrl}`);
+
+// Now import order service (it will read the correct env vars)
+const order = require('./order-service');
+
 const app = express();
 
 // Middleware for JSON (needed for some fetches)
@@ -39,13 +49,6 @@ async function start() {
     console.log('✅ Inventory Service mounted at /graphql/inventory');
 
     // Mount Order Service
-    // Important: Set Env Vars for internal communication to point to THIS server
-    // Because they are on the same app, we use localhost + PORT
-    const internalBaseUrl = `http://localhost:${PORT}`;
-    process.env.PRODUCT_SERVICE_URL = `${internalBaseUrl}/graphql/product`;
-    process.env.INVENTORY_SERVICE_URL = `${internalBaseUrl}/graphql/inventory`;
-
-    console.log(`🔗 Internal Service Links set to: ${internalBaseUrl}`);
 
     const serverOrder = new ApolloServer({
         typeDefs: order.typeDefs,
