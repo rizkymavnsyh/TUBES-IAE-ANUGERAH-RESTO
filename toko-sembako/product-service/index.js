@@ -1,6 +1,10 @@
 const { ApolloServer, gql } = require("apollo-server");
 
-const products = [];
+const products = [
+  { id: "1", name: "Beras Premium", price: 12000, unit: "kg" },
+  { id: "2", name: "Minyak Goreng", price: 15000, unit: "liter" },
+  { id: "3", name: "Telur Ayam", price: 25000, unit: "kg" }
+];
 
 const typeDefs = gql`
   type Product {
