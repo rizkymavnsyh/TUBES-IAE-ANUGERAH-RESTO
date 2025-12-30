@@ -1,184 +1,297 @@
+"""
+Toko Sembako Client - Python HTTP Client for Integration
+Connects to Toko Sembako GraphQL APIs deployed on Railway
+"""
 import os
-import httpx
+import aiohttp
 from typing import Optional, List, Dict, Any
-from dotenv import load_dotenv
 
-load_dotenv()
+# URLs from environment or defaults (Railway deployment)
+TOKO_SEMBAKO_PRODUCT_URL = os.getenv(
+    'TOKO_SEMBAKO_PRODUCT_URL', 
+    'https://tubes-iae-anugerah-resto-production-3278.up.railway.app/graphql/product'
+)
+TOKO_SEMBAKO_INVENTORY_URL = os.getenv(
+    'TOKO_SEMBAKO_INVENTORY_URL', 
+    'https://tubes-iae-anugerah-resto-production-3278.up.railway.app/graphql/inventory'
+)
+TOKO_SEMBAKO_ORDER_URL = os.getenv(
+    'TOKO_SEMBAKO_ORDER_URL', 
+    'https://tubes-iae-anugerah-resto-production-3278.up.railway.app/graphql/order'
+)
 
-# URLs untuk Toko Sembako services
-TOKO_SEMBAKO_PRODUCT_URL = os.getenv("TOKO_SEMBAKO_PRODUCT_URL", "http://localhost:4001/graphql")
-TOKO_SEMBAKO_INVENTORY_URL = os.getenv("TOKO_SEMBAKO_INVENTORY_URL", "http://localhost:4000/graphql")
-TOKO_SEMBAKO_ORDER_URL = os.getenv("TOKO_SEMBAKO_ORDER_URL", "http://localhost:4002/graphql")
+print(f"🔗 Toko Sembako Client Configuration (Python):")
+print(f"   Product Service: {TOKO_SEMBAKO_PRODUCT_URL}")
+print(f"   Inventory Service: {TOKO_SEMBAKO_INVENTORY_URL}")
+print(f"   Order Service: {TOKO_SEMBAKO_ORDER_URL}")
 
-async def call_toko_sembako_service(url: str, query: str, variables: Dict[str, Any] = None) -> Dict[str, Any]:
-    """Helper function untuk memanggil GraphQL service dari Toko Sembako"""
-    try:
-        async with httpx.AsyncClient(timeout=10.0) as client:
-            response = await client.post(
-                url,
-                json={"query": query, "variables": variables or {}},
-                headers={"Content-Type": "application/json"}
-            )
-            response.raise_for_status()
-            data = response.json()
-            
-            if "errors" in data:
-                raise Exception(data["errors"][0]["message"])
-            
-            return data.get("data", {})
-    except Exception as e:
-        print(f"Error calling Toko Sembako service at {url}: {str(e)}")
-        raise
 
-async def get_products_from_toko_sembako(category: Optional[str] = None) -> List[Dict[str, Any]]:
-    """Get products (sayur) dari Toko Sembako Product Service"""
-    try:
-        query = """
-            query GetProducts($category: String) {
-                products(category: $category) {
-                    id
-                    name
-                    category
-                    price
-                    unit
-                    available
-                    description
-                }
-            }
-        """ if category else """
-            query GetProducts {
-                products {
-                    id
-                    name
-                    category
-                    price
-                    unit
-                    available
-                    description
-                }
-            }
-        """
+async def graphql_request(url: str, query: str, variables: Dict = None) -> Dict:
+    """Execute a GraphQL request"""
+    async with aiohttp.ClientSession() as session:
+        payload = {"query": query}
+        if variables:
+            payload["variables"] = variables
         
-        variables = {"category": category} if category else {}
-        data = await call_toko_sembako_service(TOKO_SEMBAKO_PRODUCT_URL, query, variables)
-        return data.get("products", [])
+        async with session.post(
+            url,
+            json=payload,
+            headers={"Content-Type": "application/json"}
+        ) as response:
+            result = await response.json()
+            
+            if "errors" in result:
+                error_messages = [e.get("message", "Unknown error") for e in result["errors"]]
+                raise Exception(f"GraphQL errors: {', '.join(error_messages)}")
+            
+            return result.get("data", {})
+
+
+async def get_products_from_toko_sembako(category: Optional[str] = None) -> List[Dict]:
+    """Fetch all products from Toko Sembako Product Service"""
+    query = """
+        query GetProducts {
+            getProducts {
+                id
+                name
+                price
+                unit
+            }
+        }
+    """
+    
+    try:
+        data = await graphql_request(TOKO_SEMBAKO_PRODUCT_URL, query)
+        products = data.get("getProducts", [])
+        
+        # Transform to match our schema
+        return [
+            {
+                "id": str(p.get("id", "")),
+                "name": p.get("name", ""),
+                "category": category,  # Toko Sembako doesn't have category
+                "price": float(p.get("price", 0)),
+                "unit": p.get("unit", ""),
+                "available": True,
+                "description": None
+            }
+            for p in products
+        ]
     except Exception as e:
-        print(f"Error fetching products from Toko Sembako: {str(e)}")
+        print(f"❌ Error fetching products from Toko Sembako: {e}")
         return []
 
-async def get_product_by_id_from_toko_sembako(product_id: str) -> Optional[Dict[str, Any]]:
-    """Get product by ID dari Toko Sembako"""
-    try:
-        query = """
-            query GetProduct($id: ID!) {
-                product(id: $id) {
-                    id
-                    name
-                    category
-                    price
-                    unit
-                    available
-                    description
-                }
+
+async def get_product_by_id_from_toko_sembako(product_id: str) -> Optional[Dict]:
+    """Fetch single product by ID from Toko Sembako"""
+    query = """
+        query GetProduct($id: ID!) {
+            getProductById(id: $id) {
+                id
+                name
+                price
+                unit
             }
-        """
+        }
+    """
+    
+    try:
+        data = await graphql_request(
+            TOKO_SEMBAKO_PRODUCT_URL, 
+            query, 
+            {"id": product_id}
+        )
+        product = data.get("getProductById")
         
-        data = await call_toko_sembako_service(TOKO_SEMBAKO_PRODUCT_URL, query, {"id": product_id})
-        return data.get("product")
+        if not product:
+            return None
+        
+        return {
+            "id": str(product.get("id", "")),
+            "name": product.get("name", ""),
+            "category": None,
+            "price": float(product.get("price", 0)),
+            "unit": product.get("unit", ""),
+            "available": True,
+            "description": None
+        }
     except Exception as e:
-        print(f"Error fetching product from Toko Sembako: {str(e)}")
+        print(f"❌ Error fetching product {product_id}: {e}")
         return None
 
-async def check_stock_from_toko_sembako(product_id: str, quantity: float) -> Dict[str, Any]:
-    """Check stock dari Toko Sembako Inventory Service"""
-    try:
-        query = """
-            query CheckStock($productId: ID!, $quantity: Float!) {
-                checkStock(productId: $productId, quantity: $quantity) {
-                    available
-                    currentStock
-                    requestedQuantity
-                    message
-                }
+
+async def check_stock_from_toko_sembako(product_id: str, quantity: float) -> Dict:
+    """Check stock availability at Toko Sembako Inventory Service"""
+    query = """
+        query CheckInventory($productId: ID!) {
+            getInventory(productId: $productId) {
+                productId
+                stock
             }
-        """
-        
-        data = await call_toko_sembako_service(
+        }
+    """
+    
+    try:
+        data = await graphql_request(
             TOKO_SEMBAKO_INVENTORY_URL, 
             query, 
-            {"productId": product_id, "quantity": quantity}
+            {"productId": product_id}
         )
+        inventory = data.get("getInventory")
         
-        return data.get("checkStock", {
-            "available": False,
-            "currentStock": 0,
-            "requestedQuantity": quantity,
-            "message": f"Error checking stock"
-        })
+        if not inventory:
+            return {
+                "available": False,
+                "current_stock": 0,
+                "message": "Product not found in inventory"
+            }
+        
+        stock = float(inventory.get("stock", 0))
+        available = stock >= quantity
+        
+        return {
+            "available": available,
+            "current_stock": stock,
+            "message": f"Stock {'tersedia' if available else 'tidak cukup'}: {stock} unit"
+        }
     except Exception as e:
-        print(f"Error checking stock from Toko Sembako: {str(e)}")
+        print(f"❌ Error checking stock: {e}")
         return {
             "available": False,
-            "currentStock": 0,
-            "requestedQuantity": quantity,
-            "message": f"Error checking stock: {str(e)}"
+            "current_stock": 0,
+            "message": f"Error: {str(e)}"
         }
 
-async def create_order_at_toko_sembako(order_input: Dict[str, Any]) -> Dict[str, Any]:
-    """Create order di Toko Sembako Order Service"""
-    try:
-        query = """
-            mutation CreateOrder($input: CreateOrderInput!) {
-                createOrder(input: $input) {
-                    id
-                    orderId
-                    status
-                    total
-                    items {
-                        productId
-                        name
-                        quantity
-                        price
-                    }
-                    createdAt
-                }
-            }
-        """
-        
-        data = await call_toko_sembako_service(TOKO_SEMBAKO_ORDER_URL, query, {"input": order_input})
-        return data.get("createOrder")
-    except Exception as e:
-        print(f"Error creating order at Toko Sembako: {str(e)}")
-        raise
 
-async def get_order_status_from_toko_sembako(order_id: str) -> Optional[Dict[str, Any]]:
-    """Get order status dari Toko Sembako"""
+async def create_order_at_toko_sembako(
+    order_number: str,
+    items: List[Dict],
+    notes: Optional[str] = None
+) -> Dict:
+    """Create order at Toko Sembako Order Service"""
+    
+    # First, we need to ensure products exist and have stock
+    # Then create the order
+    mutation = """
+        mutation CreateOrder($restaurantId: String!, $items: [OrderItemInput!]!) {
+            createOrder(restaurantId: $restaurantId, items: $items) {
+                id
+                restaurantId
+                items {
+                    productId
+                    qty
+                    price
+                    subtotal
+                }
+                total
+                status
+            }
+        }
+    """
+    
     try:
-        query = """
-            query GetOrder($orderId: String!) {
-                orderByOrderId(orderId: $orderId) {
-                    id
-                    orderId
-                    status
-                    items {
-                        productId
-                        name
-                        quantity
-                    }
+        # Transform items to match Toko Sembako schema
+        order_items = [
+            {"productId": str(item["productId"]), "qty": int(item["quantity"])}
+            for item in items
+        ]
+        
+        data = await graphql_request(
+            TOKO_SEMBAKO_ORDER_URL,
+            mutation,
+            {
+                "restaurantId": f"anugerah-resto-{order_number}",
+                "items": order_items
+            }
+        )
+        
+        order = data.get("createOrder")
+        
+        if order:
+            return {
+                "success": True,
+                "message": "Order created successfully",
+                "order": {
+                    "id": str(order.get("id", "")),
+                    "orderId": str(order.get("id", "")),
+                    "status": order.get("status", "CONFIRMED"),
+                    "total": float(order.get("total", 0)),
+                    "items": [
+                        {
+                            "productId": str(item.get("productId", "")),
+                            "name": f"Product {item.get('productId', '')}",
+                            "quantity": float(item.get("qty", 0)),
+                            "price": float(item.get("price", 0))
+                        }
+                        for item in order.get("items", [])
+                    ],
+                    "createdAt": None
                 }
             }
-        """
         
-        data = await call_toko_sembako_service(TOKO_SEMBAKO_ORDER_URL, query, {"orderId": order_id})
-        return data.get("orderByOrderId")
+        return {
+            "success": False,
+            "message": "Failed to create order",
+            "order": None
+        }
+        
     except Exception as e:
-        print(f"Error fetching order from Toko Sembako: {str(e)}")
+        print(f"❌ Error creating order at Toko Sembako: {e}")
+        return {
+            "success": False,
+            "message": f"Error: {str(e)}",
+            "order": None
+        }
+
+
+async def get_order_status_from_toko_sembako(order_id: str) -> Optional[Dict]:
+    """Get order status from Toko Sembako"""
+    query = """
+        query GetOrder($orderId: ID!) {
+            getOrderById(orderId: $orderId) {
+                id
+                restaurantId
+                items {
+                    productId
+                    qty
+                    price
+                    subtotal
+                }
+                total
+                status
+            }
+        }
+    """
+    
+    try:
+        data = await graphql_request(
+            TOKO_SEMBAKO_ORDER_URL,
+            query,
+            {"orderId": order_id}
+        )
+        
+        order = data.get("getOrderById")
+        
+        if not order:
+            return None
+        
+        return {
+            "id": str(order.get("id", "")),
+            "orderId": str(order.get("id", "")),
+            "status": order.get("status", ""),
+            "total": float(order.get("total", 0)),
+            "items": [
+                {
+                    "productId": str(item.get("productId", "")),
+                    "name": f"Product {item.get('productId', '')}",
+                    "quantity": float(item.get("qty", 0)),
+                    "price": float(item.get("price", 0))
+                }
+                for item in order.get("items", [])
+            ],
+            "createdAt": None
+        }
+        
+    except Exception as e:
+        print(f"❌ Error fetching order status: {e}")
         return None
-
-
-
-
-
-
-
-
