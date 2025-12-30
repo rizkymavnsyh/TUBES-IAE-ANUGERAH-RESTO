@@ -1,10 +1,15 @@
 type Query {
   menus(category: String, available: Boolean): [Menu!]!
   menu(id: String!): Menu
+  menuByMenuId(menuId: String!): Menu
   menuCategories: [String!]!
-  cart(userId: String!): Cart
-  orders(customerId: String, status: String): [Order!]!
+  cart(cartId: String!): Cart
+  cartsByCustomer(customerId: String!): [Cart!]!
+  activeCarts: [Cart!]!
+  orders(status: String, paymentStatus: String, customerId: String, tableNumber: String): [Order!]!
   order(id: String!): Order
+  orderByOrderId(orderId: String!): Order
+  ordersByDate(startDate: String!, endDate: String!): [Order!]!
   checkMenuStock(menuId: String!, quantity: Int!): [StockCheckResult!]!
 }
 
@@ -12,13 +17,20 @@ type Mutation {
   createMenu(input: CreateMenuInput!): Menu!
   updateMenu(id: String!, input: UpdateMenuInput!): Menu!
   deleteMenu(id: String!): Boolean!
-  addToCart(userId: String!, menuId: String!, quantity: Int!, specialInstructions: String): Cart!
-  updateCartItem(userId: String!, menuId: String!, quantity: Int!): Cart!
-  removeFromCart(userId: String!, menuId: String!): Cart!
-  clearCart(userId: String!): Cart!
-  createOrder(input: CreateOrderInput!): Order!
-  updateOrderStatus(id: String!, status: String!): Order!
-  cancelOrder(id: String!): Order!
+  toggleMenuAvailability(id: String!): Menu!
+  createCart(input: CreateCartInput!): Cart!
+  addItemToCart(cartId: String!, item: CartItemInput!): Cart!
+  updateCartItem(cartId: String!, menuId: String!, quantity: Int!): Cart!
+  removeItemFromCart(cartId: String!, menuId: String!): Cart!
+  clearCart(cartId: String!): Cart!
+  applyDiscount(cartId: String!, discount: Float!): Cart!
+  createOrderFromCart(cartId: String!, input: CreateOrderInput!): OrderCreationResult!
+  createOrder(input: CreateOrderInput!): OrderCreationResult!
+  updateOrder(orderId: String!, input: UpdateOrderInput!): Order!
+  updateOrderStatus(orderId: String!, status: String!): Order!
+  updatePaymentStatus(orderId: String!, paymentStatus: String!): Order!
+  cancelOrder(orderId: String!): Order!
+  sendToKitchen(orderId: String!): Order!
 }
 
 type IngredientInfo {
@@ -44,7 +56,7 @@ type Menu {
   updatedAt: String!
 }
 
-type OrderItem {
+type CartItem {
   menuId: String!
   name: String!
   quantity: Int!
@@ -54,12 +66,26 @@ type OrderItem {
 
 type Cart {
   id: String!
-  userId: String!
-  items: [OrderItem!]!
+  cartId: String!
+  customerId: String
+  tableNumber: String
+  items: [CartItem!]!
   subtotal: Float!
-  itemCount: Int!
+  tax: Float!
+  serviceCharge: Float!
+  discount: Float!
+  total: Float!
+  status: String!
   createdAt: String!
   updatedAt: String!
+}
+
+type OrderItem {
+  menuId: String!
+  name: String!
+  quantity: Int!
+  price: Float!
+  specialInstructions: String
 }
 
 type Order {
@@ -83,6 +109,7 @@ type Order {
   notes: String
   createdAt: String!
   updatedAt: String!
+  completedAt: String
 }
 
 type StockCheckResult {
@@ -92,6 +119,14 @@ type StockCheckResult {
   ingredientName: String!
   required: Float!
   availableQuantity: Float!
+}
+
+type OrderCreationResult {
+  order: Order!
+  kitchenOrderCreated: Boolean!
+  stockUpdated: Boolean!
+  loyaltyPointsEarned: Float!
+  message: String!
 }
 
 input IngredientInfoInput {
@@ -108,10 +143,10 @@ input CreateMenuInput {
   category: String!
   price: Float!
   image: String
-  ingredients: [IngredientInfoInput!]!
-  available: Boolean
+  ingredients: [IngredientInfoInput!]
   preparationTime: Int
   tags: [String!]
+  available: Boolean
 }
 
 input UpdateMenuInput {
@@ -126,11 +161,26 @@ input UpdateMenuInput {
   tags: [String!]
 }
 
+input CreateCartInput {
+  cartId: String!
+  customerId: String
+  tableNumber: String
+}
+
+input CartItemInput {
+  menuId: String!
+  name: String!
+  quantity: Int!
+  price: Float!
+  specialInstructions: String
+}
+
 input CreateOrderInput {
+  orderId: String!
   customerId: String
   tableNumber: String
   items: [OrderItemInput!]!
-  paymentMethod: String!
+  paymentMethod: String
   loyaltyPointsUsed: Float
   notes: String
 }
@@ -143,8 +193,9 @@ input OrderItemInput {
   specialInstructions: String
 }
 
-
-
-
-
-
+input UpdateOrderInput {
+  tableNumber: String
+  items: [OrderItemInput!]
+  paymentMethod: String
+  notes: String
+}

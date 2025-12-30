@@ -2,6 +2,8 @@ type Query {
   kitchenOrders(status: String): [KitchenOrder!]!
   kitchenOrder(id: String!): KitchenOrder
   kitchenOrderByOrderId(orderId: String!): KitchenOrder
+  pendingOrders: [KitchenOrder!]!
+  preparingOrders: [KitchenOrder!]!
   chefs: [Chef!]!
   chef(id: String!): Chef
   ordersByChef(chefId: String!): [KitchenOrder!]!
@@ -9,9 +11,12 @@ type Query {
 
 type Mutation {
   createKitchenOrder(input: CreateKitchenOrderInput!): KitchenOrder!
+  updateKitchenOrder(id: String!, input: UpdateKitchenOrderInput!): KitchenOrder!
   updateOrderStatus(id: String!, status: String!): KitchenOrder!
   assignChef(orderId: String!, chefId: String!): KitchenOrder!
+  updateEstimatedTime(orderId: String!, estimatedTime: Int!): KitchenOrder!
   completeOrder(orderId: String!): KitchenOrder!
+  cancelOrder(orderId: String!): KitchenOrder!
 }
 
 enum OrderStatus {
@@ -73,7 +78,13 @@ input CreateKitchenOrderInput {
   notes: String
 }
 
-
+input UpdateKitchenOrderInput {
+  tableNumber: String
+  items: [OrderItemInput!]
+  priority: Int
+  notes: String
+  estimatedTime: Int
+}
 
 
 

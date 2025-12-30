@@ -1,4 +1,5 @@
 const tokoSembakoClient = require('../services/tokoSembakoClient');
+const { requireAuth, requireMinRole } = require('../auth');
 
 const resolvers = {
   Query: {

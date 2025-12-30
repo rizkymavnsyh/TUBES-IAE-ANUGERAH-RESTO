@@ -4,19 +4,24 @@ const { ApolloServerPluginLandingPageLocalDefault } = require('apollo-server-cor
 const typeDefs = require('./graphql/typeDefs');
 const resolvers = require('./graphql/resolvers');
 const db = require('./database/connection');
+const { getAuthContext } = require('./auth');
 require('dotenv').config();
 
 const app = express();
 const PORT = process.env.PORT || 4001;
 
-// Initialize Apollo Server with embedded Sandbox
+// Initialize Apollo Server with embedded Sandbox and auth context
 const server = new ApolloServer({
   typeDefs,
   resolvers,
-  context: ({ req }) => ({
-    db,
-    req
-  }),
+  context: ({ req }) => {
+    const authContext = getAuthContext(req);
+    return {
+      db,
+      req,
+      ...authContext
+    };
+  },
   introspection: true,
   plugins: [
     ApolloServerPluginLandingPageLocalDefault({ embed: true })

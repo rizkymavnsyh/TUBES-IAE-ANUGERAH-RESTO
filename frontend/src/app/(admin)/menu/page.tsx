@@ -99,7 +99,7 @@ export default function MenuPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     // Filter out empty ingredients
     const validIngredients = formData.ingredients.filter(
       ing => ing.ingredientId && ing.ingredientName && ing.quantity > 0
@@ -127,7 +127,7 @@ export default function MenuPage() {
           alert('Minimal satu bahan harus diisi untuk membuat menu baru');
           return;
         }
-        
+
         await createMenu({
           variables: {
             input: {
@@ -174,13 +174,13 @@ export default function MenuPage() {
       category: menu.category,
       image: menu.image || '',
       preparationTime: (menu.preparationTime || 15).toString(),
-      ingredients: menu.ingredients?.length > 0 
+      ingredients: menu.ingredients?.length > 0
         ? menu.ingredients.map((ing: Ingredient) => ({
-            ingredientId: ing.ingredientId,
-            ingredientName: ing.ingredientName,
-            quantity: ing.quantity,
-            unit: ing.unit,
-          }))
+          ingredientId: ing.ingredientId,
+          ingredientName: ing.ingredientName,
+          quantity: ing.quantity,
+          unit: ing.unit,
+        }))
         : [{ ingredientId: '', ingredientName: '', quantity: 0, unit: 'gram' }],
     });
     setShowModal(true);
@@ -283,16 +283,15 @@ export default function MenuPage() {
               <div className="p-4">
                 <div className="flex items-start justify-between">
                   <h3 className="font-semibold text-slate-800">{menu.name}</h3>
-                  <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${
-                    menu.available ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
-                  }`}>
+                  <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${menu.available ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                    }`}>
                     {menu.available ? 'Available' : 'Unavailable'}
                   </span>
                 </div>
                 <p className="text-sm text-slate-500 mt-1">{menu.category}</p>
                 <p className="text-xs text-slate-400 mt-1">ID: {menu.menuId}</p>
                 <p className="text-sm text-slate-500 mt-1 line-clamp-2">{menu.description}</p>
-                <p className="font-bold text-blue-600 mt-2">Rp {menu.price.toLocaleString()}</p>
+                <p className="font-bold text-blue-600 mt-2">Rp {menu.price.toLocaleString('de-DE')}</p>
                 <div className="flex gap-2 mt-3">
                   <button
                     onClick={() => openEditModal(menu)}

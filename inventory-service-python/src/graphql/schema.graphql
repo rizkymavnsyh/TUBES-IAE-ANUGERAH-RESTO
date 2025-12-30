@@ -1,31 +1,33 @@
 type Query {
+  suppliers(status: String): [Supplier!]!
+  supplier(id: String!): Supplier
   ingredients(category: String, status: String): [Ingredient!]!
   ingredient(id: String!): Ingredient
+  lowStockIngredients: [Ingredient!]!
+  outOfStockIngredients: [Ingredient!]!
+  stockMovements(ingredientId: String, movementType: String): [StockMovement!]!
+  purchaseOrders(status: String): [PurchaseOrder!]!
+  purchaseOrder(id: String!): PurchaseOrder
   checkStock(ingredientId: String!, quantity: Float!): StockCheckResult!
   tokoSembakoProducts(category: String): [TokoSembakoProduct!]!
+  tokoSembakoProduct(id: String!): TokoSembakoProduct
   checkTokoSembakoStock(productId: String!, quantity: Float!): TokoSembakoStockCheck!
+  tokoSembakoOrderStatus(orderId: String!): TokoSembakoOrder
 }
 
 type Mutation {
+  createSupplier(input: CreateSupplierInput!): Supplier!
+  updateSupplier(id: String!, input: UpdateSupplierInput!): Supplier!
+  createIngredient(input: CreateIngredientInput!): Ingredient!
+  updateIngredient(id: String!, input: UpdateIngredientInput!): Ingredient!
+  addStock(ingredientId: String!, quantity: Float!, reason: String): StockMovement!
   reduceStock(ingredientId: String!, quantity: Float!, reason: String, referenceId: String, referenceType: String): StockMovement!
+  adjustStock(ingredientId: String!, newQuantity: Float!, reason: String): StockMovement!
+  createPurchaseOrder(input: CreatePurchaseOrderInput!): PurchaseOrder!
+  updatePurchaseOrderStatus(id: String!, status: String!): PurchaseOrder!
+  receivePurchaseOrder(id: String!): PurchaseOrder!
   purchaseFromTokoSembako(input: PurchaseFromTokoSembakoInput!): PurchaseFromTokoSembakoResult!
-}
-
-enum SupplierStatus {
-  ACTIVE
-  INACTIVE
-}
-
-enum IngredientStatus {
-  ACTIVE
-  INACTIVE
-  OUT_OF_STOCK
-}
-
-enum MovementType {
-  IN
-  OUT
-  ADJUSTMENT
+  syncStockFromTokoSembako(productId: String!, quantity: Float!): StockMovement!
 }
 
 type Supplier {
@@ -36,6 +38,8 @@ type Supplier {
   phone: String
   address: String
   status: String!
+  createdAt: String!
+  updatedAt: String!
 }
 
 type Ingredient {
@@ -48,17 +52,44 @@ type Ingredient {
   supplier: Supplier
   costPerUnit: Float!
   status: String!
+  createdAt: String!
+  updatedAt: String!
 }
 
 type StockMovement {
   id: String!
-  ingredient: Ingredient!
+  ingredient: Ingredient
   movementType: String!
   quantity: Float!
   reason: String
   referenceId: String
   referenceType: String
+  createdBy: Int
   createdAt: String!
+}
+
+type PurchaseOrder {
+  id: String!
+  supplier: Supplier
+  orderNumber: String!
+  status: String!
+  totalAmount: Float!
+  orderDate: String
+  expectedDeliveryDate: String
+  receivedDate: String
+  notes: String
+  items: [PurchaseOrderItem!]!
+  createdAt: String!
+  updatedAt: String!
+}
+
+type PurchaseOrderItem {
+  id: String!
+  ingredient: Ingredient
+  quantity: Float!
+  unitPrice: Float!
+  totalPrice: Float!
+  receivedQuantity: Float!
 }
 
 type StockCheckResult {
@@ -104,8 +135,61 @@ type TokoSembakoOrder {
 type PurchaseFromTokoSembakoResult {
   success: Boolean!
   message: String!
+  purchaseOrder: PurchaseOrder
   tokoSembakoOrder: TokoSembakoOrder
   stockAdded: Boolean!
+}
+
+input CreateSupplierInput {
+  name: String!
+  contactPerson: String
+  email: String
+  phone: String
+  address: String
+}
+
+input UpdateSupplierInput {
+  name: String
+  contactPerson: String
+  email: String
+  phone: String
+  address: String
+  status: String
+}
+
+input CreateIngredientInput {
+  name: String!
+  unit: String!
+  category: String
+  minStockLevel: Float!
+  currentStock: Float!
+  supplierId: String
+  costPerUnit: Float!
+}
+
+input UpdateIngredientInput {
+  name: String
+  unit: String
+  category: String
+  minStockLevel: Float
+  supplierId: String
+  costPerUnit: Float
+  status: String
+}
+
+input CreatePurchaseOrderInput {
+  supplierId: String!
+  orderNumber: String!
+  orderDate: String
+  expectedDeliveryDate: String
+  notes: String
+  items: [PurchaseOrderItemInput!]!
+}
+
+input PurchaseOrderItemInput {
+  ingredientId: String!
+  quantity: Float!
+  unitPrice: Float!
 }
 
 input TokoSembakoOrderItemInput {
@@ -118,9 +202,3 @@ input PurchaseFromTokoSembakoInput {
   items: [TokoSembakoOrderItemInput!]!
   notes: String
 }
-
-
-
-
-
-

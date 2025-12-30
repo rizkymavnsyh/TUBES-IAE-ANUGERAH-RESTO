@@ -1,7 +1,14 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const crypto = require('crypto');
+const { requireAuth, requireMinRole } = require('../auth');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
+const REFRESH_TOKEN_SECRET = process.env.REFRESH_TOKEN_SECRET || 'refresh-secret-key-change-in-production';
+
+// Token expiry times
+const ACCESS_TOKEN_EXPIRY = '7h';  // Access token expires in 7 hours
+const REFRESH_TOKEN_EXPIRY_MS = 7 * 24 * 60 * 60 * 1000; // Refresh token expires in 7 days (milliseconds)
 
 const resolvers = {
   Query: {
@@ -74,9 +81,14 @@ const resolvers = {
 
         const [customers] = await db.execute(query, params);
         return customers.map(c => ({
-          ...c,
           id: c.id.toString(),
-          customerId: c.customer_id || `CUST${c.id.toString().padStart(3, '0')}`
+          customerId: c.customer_id || `CUST${c.id.toString().padStart(3, '0')}`,
+          name: c.name,
+          email: c.email,
+          phone: c.phone,
+          address: c.address,
+          registrationDate: c.registration_date ? c.registration_date.toISOString() : new Date().toISOString(),
+          status: c.status || 'active'
         }));
       } catch (error) {
         throw new Error(`Error fetching customers: ${error.message}`);
@@ -223,19 +235,77 @@ const resolvers = {
         return {
           id: s.id.toString(),
           employeeId: s.employee_id,
+          username: s.username,
           name: s.name,
           email: s.email,
           phone: s.phone,
-          role: s.role || 'waiter',
+          role: s.role,
           department: s.department,
-          status: s.status || 'active',
+          status: s.status,
           hireDate: s.hire_date ? s.hire_date.toISOString().split('T')[0] : null,
-          salary: s.salary ? parseFloat(s.salary) : null,
+          salary: s.salary,
           createdAt: s.created_at ? s.created_at.toISOString() : new Date().toISOString(),
           updatedAt: s.updated_at ? s.updated_at.toISOString() : new Date().toISOString()
         };
       } catch (error) {
         throw new Error(`Error creating staff: ${error.message}`);
+      }
+    },
+
+    updateStaff: async (parent, { id, input }, { db }) => {
+      try {
+        const { name, email, phone, role, department, status, salary } = input;
+
+        const updates = [];
+        const params = [];
+
+        if (name !== undefined) { updates.push('name = ?'); params.push(name); }
+        if (email !== undefined) { updates.push('email = ?'); params.push(email); }
+        if (phone !== undefined) { updates.push('phone = ?'); params.push(phone); }
+        if (role !== undefined) { updates.push('role = ?'); params.push(role); }
+        if (department !== undefined) { updates.push('department = ?'); params.push(department); }
+        if (status !== undefined) { updates.push('status = ?'); params.push(status); }
+        if (salary !== undefined) { updates.push('salary = ?'); params.push(salary); }
+
+        if (updates.length > 0) {
+          params.push(id);
+          await db.execute(
+            `UPDATE staff SET ${updates.join(', ')} WHERE id = ?`,
+            params
+          );
+        }
+
+        const [rows] = await db.execute('SELECT * FROM staff WHERE id = ?', [id]);
+        if (rows.length === 0) {
+          throw new Error('Staff not found');
+        }
+        const s = rows[0];
+        return {
+          id: s.id.toString(),
+          employeeId: s.employee_id,
+          username: s.username,
+          name: s.name,
+          email: s.email,
+          phone: s.phone,
+          role: s.role,
+          department: s.department,
+          status: s.status,
+          hireDate: s.hire_date ? s.hire_date.toISOString().split('T')[0] : null,
+          salary: s.salary,
+          createdAt: s.created_at ? s.created_at.toISOString() : new Date().toISOString(),
+          updatedAt: s.updated_at ? s.updated_at.toISOString() : new Date().toISOString()
+        };
+      } catch (error) {
+        throw new Error(`Error updating staff: ${error.message}`);
+      }
+    },
+
+    deleteStaff: async (parent, { id }, { db }) => {
+      try {
+        const [result] = await db.execute('DELETE FROM staff WHERE id = ?', [id]);
+        return result.affectedRows > 0;
+      } catch (error) {
+        throw new Error(`Error deleting staff: ${error.message}`);
       }
     },
 
@@ -250,12 +320,69 @@ const resolvers = {
         );
 
         const [customers] = await db.execute('SELECT * FROM customers WHERE id = ?', [result.insertId]);
+        const c = customers[0];
         return {
-          ...customers[0],
-          id: customers[0].id.toString()
+          id: c.id.toString(),
+          customerId: c.customer_id,
+          name: c.name,
+          email: c.email,
+          phone: c.phone,
+          address: c.address,
+          registrationDate: c.registration_date ? c.registration_date.toISOString() : new Date().toISOString(),
+          status: c.status || 'active'
         };
       } catch (error) {
         throw new Error(`Error creating customer: ${error.message}`);
+      }
+    },
+
+    updateCustomer: async (parent, { id, input }, { db }) => {
+      try {
+        const { name, email, phone, address, status } = input;
+
+        const updates = [];
+        const params = [];
+
+        if (name !== undefined) { updates.push('name = ?'); params.push(name); }
+        if (email !== undefined) { updates.push('email = ?'); params.push(email); }
+        if (phone !== undefined) { updates.push('phone = ?'); params.push(phone); }
+        if (address !== undefined) { updates.push('address = ?'); params.push(address); }
+        if (status !== undefined) { updates.push('status = ?'); params.push(status); }
+
+        if (updates.length > 0) {
+          params.push(id);
+          await db.execute(
+            `UPDATE customers SET ${updates.join(', ')} WHERE id = ?`,
+            params
+          );
+        }
+
+        const [rows] = await db.execute('SELECT * FROM customers WHERE id = ?', [id]);
+        if (rows.length === 0) {
+          throw new Error('Customer not found');
+        }
+        const c = rows[0];
+        return {
+          id: c.id.toString(),
+          customerId: c.customer_id,
+          name: c.name,
+          email: c.email,
+          phone: c.phone,
+          address: c.address,
+          registrationDate: c.registration_date ? c.registration_date.toISOString() : new Date().toISOString(),
+          status: c.status || 'active'
+        };
+      } catch (error) {
+        throw new Error(`Error updating customer: ${error.message}`);
+      }
+    },
+
+    deleteCustomer: async (parent, { id }, { db }) => {
+      try {
+        const [result] = await db.execute('DELETE FROM customers WHERE id = ?', [id]);
+        return result.affectedRows > 0;
+      } catch (error) {
+        throw new Error(`Error deleting customer: ${error.message}`);
       }
     },
 
@@ -400,14 +527,20 @@ const resolvers = {
       }
     },
 
-    loginStaff: async (parent, { employeeId, password }, { db }) => {
+    loginStaff: async (parent, { username, password }, { db }) => {
       try {
-        const [staff] = await db.execute('SELECT * FROM staff WHERE employee_id = ?', [employeeId]);
+        // Try to find by employee_id OR username
+        const [staff] = await db.execute(
+          'SELECT * FROM staff WHERE employee_id = ? OR username = ?',
+          [username, username]
+        );
         if (staff.length === 0) {
           return {
             token: null,
+            refreshToken: null,
+            expiresAt: null,
             staff: null,
-            message: 'Invalid employee ID or password'
+            message: 'Invalid username or password'
           };
         }
 
@@ -416,6 +549,8 @@ const resolvers = {
         if (staffMember.status !== 'active') {
           return {
             token: null,
+            refreshToken: null,
+            expiresAt: null,
             staff: null,
             message: 'Staff account is not active'
           };
@@ -424,6 +559,8 @@ const resolvers = {
         if (!staffMember.password_hash) {
           return {
             token: null,
+            refreshToken: null,
+            expiresAt: null,
             staff: null,
             message: 'Password not set for this account'
           };
@@ -433,22 +570,43 @@ const resolvers = {
         if (!isValid) {
           return {
             token: null,
+            refreshToken: null,
+            expiresAt: null,
             staff: null,
             message: 'Invalid employee ID or password'
           };
         }
 
-        const token = jwt.sign(
-          { employeeId: staffMember.employee_id, role: staffMember.role, id: staffMember.id },
-          JWT_SECRET,
-          { expiresIn: '24h' }
+        // Generate access token (7 hours)
+        const accessTokenPayload = {
+          employeeId: staffMember.employee_id,
+          role: staffMember.role,
+          id: staffMember.id
+        };
+        const token = jwt.sign(accessTokenPayload, JWT_SECRET, { expiresIn: ACCESS_TOKEN_EXPIRY });
+
+        // Calculate expiry time for access token
+        const expiresAt = new Date(Date.now() + 7 * 60 * 60 * 1000).toISOString(); // 7 hours from now
+
+        // Generate refresh token (7 days)
+        const refreshTokenValue = crypto.randomBytes(64).toString('hex');
+        const refreshTokenHash = crypto.createHash('sha256').update(refreshTokenValue).digest('hex');
+        const refreshTokenExpiry = new Date(Date.now() + REFRESH_TOKEN_EXPIRY_MS);
+
+        // Store refresh token in database
+        await db.execute(
+          'INSERT INTO refresh_tokens (staff_id, token_hash, expires_at) VALUES (?, ?, ?)',
+          [staffMember.id, refreshTokenHash, refreshTokenExpiry]
         );
 
         return {
           token,
+          refreshToken: refreshTokenValue,
+          expiresAt,
           staff: {
             id: staffMember.id.toString(),
             employeeId: staffMember.employee_id,
+            username: staffMember.username,
             name: staffMember.name,
             email: staffMember.email,
             phone: staffMember.phone,
@@ -464,6 +622,87 @@ const resolvers = {
         };
       } catch (error) {
         throw new Error(`Error during login: ${error.message}`);
+      }
+    },
+
+    refreshToken: async (parent, { refreshToken: refreshTokenValue }, { db }) => {
+      try {
+        // Hash the provided refresh token
+        const refreshTokenHash = crypto.createHash('sha256').update(refreshTokenValue).digest('hex');
+
+        // Find the refresh token in database
+        const [tokens] = await db.execute(
+          `SELECT rt.*, s.employee_id, s.role, s.status as staff_status 
+           FROM refresh_tokens rt 
+           JOIN staff s ON rt.staff_id = s.id 
+           WHERE rt.token_hash = ? AND rt.revoked = FALSE AND rt.expires_at > NOW()`,
+          [refreshTokenHash]
+        );
+
+        if (tokens.length === 0) {
+          return {
+            token: null,
+            expiresAt: null,
+            message: 'Invalid or expired refresh token'
+          };
+        }
+
+        const tokenRecord = tokens[0];
+
+        // Check if staff is still active
+        if (tokenRecord.staff_status !== 'active') {
+          // Revoke the token
+          await db.execute('UPDATE refresh_tokens SET revoked = TRUE WHERE id = ?', [tokenRecord.id]);
+          return {
+            token: null,
+            expiresAt: null,
+            message: 'Staff account is no longer active'
+          };
+        }
+
+        // Generate new access token
+        const accessTokenPayload = {
+          employeeId: tokenRecord.employee_id,
+          role: tokenRecord.role,
+          id: tokenRecord.staff_id
+        };
+        const newToken = jwt.sign(accessTokenPayload, JWT_SECRET, { expiresIn: ACCESS_TOKEN_EXPIRY });
+        const expiresAt = new Date(Date.now() + 7 * 60 * 60 * 1000).toISOString(); // 7 hours from now
+
+        return {
+          token: newToken,
+          expiresAt,
+          message: 'Token refreshed successfully'
+        };
+      } catch (error) {
+        throw new Error(`Error refreshing token: ${error.message}`);
+      }
+    },
+
+    logout: async (parent, { refreshToken: refreshTokenValue }, { db }) => {
+      try {
+        // Hash the provided refresh token
+        const refreshTokenHash = crypto.createHash('sha256').update(refreshTokenValue).digest('hex');
+
+        // Revoke the refresh token
+        const [result] = await db.execute(
+          'UPDATE refresh_tokens SET revoked = TRUE WHERE token_hash = ?',
+          [refreshTokenHash]
+        );
+
+        if (result.affectedRows === 0) {
+          return {
+            success: false,
+            message: 'Refresh token not found'
+          };
+        }
+
+        return {
+          success: true,
+          message: 'Logged out successfully'
+        };
+      } catch (error) {
+        throw new Error(`Error during logout: ${error.message}`);
       }
     }
   },

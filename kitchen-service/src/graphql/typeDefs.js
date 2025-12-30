@@ -17,10 +17,12 @@ const typeDefs = gql`
   }
 
   type OrderItem {
+    id: ID
     menuId: String!
     name: String!
     quantity: Int!
     specialInstructions: String
+    notes: String
   }
 
   type Chef {
@@ -49,6 +51,12 @@ const typeDefs = gql`
     # Get all kitchen orders
     kitchenOrders(status: OrderStatus): [KitchenOrder!]!
     
+    # Get pending orders (for kitchen display)
+    pendingOrders: [KitchenOrder!]!
+    
+    # Get orders being prepared
+    preparingOrders: [KitchenOrder!]!
+    
     # Get order by ID
     kitchenOrder(id: ID!): KitchenOrder
     
@@ -68,6 +76,9 @@ const typeDefs = gql`
   type Mutation {
     # Create new kitchen order
     createKitchenOrder(input: CreateKitchenOrderInput!): KitchenOrder!
+    
+    # Update kitchen order
+    updateKitchenOrder(id: ID!, input: UpdateKitchenOrderInput!): KitchenOrder!
     
     # Update order status
     updateOrderStatus(id: ID!, status: OrderStatus!): KitchenOrder!
@@ -98,6 +109,14 @@ const typeDefs = gql`
     name: String!
     quantity: Int!
     specialInstructions: String
+  }
+
+  input UpdateKitchenOrderInput {
+    tableNumber: String
+    items: [OrderItemInput!]
+    priority: Int
+    notes: String
+    estimatedTime: Int
   }
 `;
 

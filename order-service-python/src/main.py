@@ -7,6 +7,7 @@ from ariadne.asgi import GraphQL
 from dotenv import load_dotenv
 from src.database.connection import init_db
 from src.graphql.resolvers import resolvers
+from src.auth import get_auth_context
 
 load_dotenv()
 
@@ -27,6 +28,15 @@ type_defs = load_schema_from_path(schema_path)
 
 # Create executable schema
 schema = make_executable_schema(type_defs, resolvers)
+
+# Context value function for GraphQL
+def get_context_value(request: Request) -> dict:
+    """Build context with authentication info for each request"""
+    auth_context = get_auth_context(request)
+    return {
+        "request": request,
+        **auth_context
+    }
 
 @app.on_event("startup")
 async def startup_event():
@@ -117,12 +127,16 @@ async def graphql_playground():
     """Ariadne GraphQL Explorer"""
     return GRAPHQL_EXPLORER_HTML
 
-# Mount the GraphQL ASGI app for POST requests
-graphql_app = GraphQL(schema, debug=os.getenv("DEBUG", "False").lower() == "true")
+# Mount the GraphQL ASGI app for POST requests with context
+graphql_app = GraphQL(
+    schema, 
+    debug=os.getenv("DEBUG", "False").lower() == "true",
+    context_value=get_context_value
+)
 
 @app.post("/graphql")
 async def graphql_server(request: Request):
-    """GraphQL endpoint - handles async resolvers"""
+    """GraphQL endpoint - handles async resolvers with auth context"""
     return await graphql_app.handle_request(request)
 
 if __name__ == "__main__":

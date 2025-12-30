@@ -53,6 +53,18 @@ const UPDATE_ORDER_STATUS = gql`
   }
 `;
 
+const UPDATE_ORDER = gql`
+  mutation UpdateOrder($orderId: String!, $input: UpdateOrderInput!) {
+    updateOrder(orderId: $orderId, input: $input) {
+      id
+      orderId
+      tableNumber
+      notes
+      total
+    }
+  }
+`;
+
 const GET_MENUS = gql`
   query GetMenus {
     menus(available: true) {
@@ -75,6 +87,7 @@ interface OrderItem {
 export default function OrdersPage() {
   const [statusFilter, setStatusFilter] = useState<string>('');
   const [showModal, setShowModal] = useState(false);
+  const [editingOrder, setEditingOrder] = useState<any>(null);
   const [formData, setFormData] = useState({
     customerId: '',
     tableNumber: '',
@@ -103,6 +116,7 @@ export default function OrdersPage() {
       }
     },
   });
+  const [updateOrder] = useMutation(UPDATE_ORDER, { client: apolloClient });
 
   const isBackendConnected = !error || error.message !== 'Failed to fetch';
 
@@ -118,27 +132,47 @@ export default function OrdersPage() {
     }
 
     try {
-      // Generate unique order ID
-      const orderId = `ORD-${Date.now()}`;
-
-      await createOrder({
-        variables: {
-          input: {
-            orderId: orderId,
-            customerId: formData.customerId || null,
-            tableNumber: formData.tableNumber || null,
-            paymentMethod: formData.paymentMethod,
-            notes: formData.notes || null,
-            items: validItems.map(item => ({
-              menuId: item.menuId,
-              name: item.name,
-              quantity: item.quantity,
-              price: item.price,
-              specialInstructions: item.specialInstructions || null,
-            })),
+      if (editingOrder) {
+        // Update existing order
+        await updateOrder({
+          variables: {
+            orderId: editingOrder.orderId,
+            input: {
+              tableNumber: formData.tableNumber || null,
+              paymentMethod: formData.paymentMethod,
+              notes: formData.notes || null,
+              items: validItems.map(item => ({
+                menuId: item.menuId,
+                name: item.name,
+                quantity: item.quantity,
+                price: item.price,
+                specialInstructions: item.specialInstructions || null,
+              })),
+            },
           },
-        },
-      });
+        });
+      } else {
+        // Create new order
+        const orderId = `ORD-${Date.now()}`;
+        await createOrder({
+          variables: {
+            input: {
+              orderId: orderId,
+              customerId: formData.customerId || null,
+              tableNumber: formData.tableNumber || null,
+              paymentMethod: formData.paymentMethod,
+              notes: formData.notes || null,
+              items: validItems.map(item => ({
+                menuId: item.menuId,
+                name: item.name,
+                quantity: item.quantity,
+                price: item.price,
+                specialInstructions: item.specialInstructions || null,
+              })),
+            },
+          },
+        });
+      }
       refetch();
       closeModal();
     } catch (err: any) {
@@ -162,6 +196,7 @@ export default function OrdersPage() {
 
   const closeModal = () => {
     setShowModal(false);
+    setEditingOrder(null);
     setFormData({
       customerId: '',
       tableNumber: '',
@@ -169,6 +204,24 @@ export default function OrdersPage() {
       notes: '',
       items: [{ menuId: '', name: '', quantity: 1, price: 0, specialInstructions: '' }],
     });
+  };
+
+  const handleEdit = (order: any) => {
+    setEditingOrder(order);
+    setFormData({
+      customerId: order.customerId || '',
+      tableNumber: order.tableNumber || '',
+      paymentMethod: order.paymentMethod || 'cash',
+      notes: order.notes || '',
+      items: order.items.length > 0 ? order.items.map((item: any) => ({
+        menuId: item.menuId,
+        name: item.name,
+        quantity: item.quantity,
+        price: item.price,
+        specialInstructions: item.specialInstructions || '',
+      })) : [{ menuId: '', name: '', quantity: 1, price: 0, specialInstructions: '' }],
+    });
+    setShowModal(true);
   };
 
   const addItem = () => {
@@ -278,14 +331,14 @@ export default function OrdersPage() {
                 {order.items.map((item: any, idx: number) => (
                   <div key={idx} className="flex justify-between text-sm">
                     <span className="text-slate-600">{item.quantity}x {item.name}</span>
-                    <span className="text-slate-700">Rp {(item.price * item.quantity).toLocaleString()}</span>
+                    <span className="text-slate-700">Rp {(item.price * item.quantity).toLocaleString('de-DE')}</span>
                   </div>
                 ))}
               </div>
 
               <div className="flex items-center justify-between pt-3 border-t border-slate-100">
                 <div>
-                  <span className="font-bold text-slate-800">Rp {order.total.toLocaleString()}</span>
+                  <span className="font-bold text-slate-800">Rp {order.total.toLocaleString('de-DE')}</span>
                   <span className={`ml-2 px-2 py-0.5 text-xs rounded-full ${order.paymentStatus === 'paid' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'
                     }`}>
                     {order.paymentStatus}
@@ -391,6 +444,25 @@ export default function OrdersPage() {
                       );
                     }
 
+                    // Add Edit button for pending/confirmed orders
+                    if (['pending', 'confirmed'].includes(status)) {
+                      buttons.push(
+                        <button
+                          key="edit"
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            e.preventDefault();
+                            handleEdit(order);
+                          }}
+                          className="px-3 py-1 text-sm bg-slate-100 text-slate-700 rounded-lg hover:bg-slate-200 transition-colors cursor-pointer active:scale-95"
+                          style={{ position: 'relative', zIndex: 50, pointerEvents: 'auto' }}
+                        >
+                          Edit
+                        </button>
+                      );
+                    }
+
                     return buttons;
                   })()}
                 </div>
@@ -405,12 +477,14 @@ export default function OrdersPage() {
         </div>
       )}
 
-      {/* Create Order Modal */}
+      {/* Create/Edit Order Modal */}
       {showModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
             <div className="p-6">
-              <h2 className="text-xl font-bold text-slate-800 mb-4">Buat Pesanan Baru</h2>
+              <h2 className="text-xl font-bold text-slate-800 mb-4">
+                {editingOrder ? `Edit Pesanan #${editingOrder.orderId}` : 'Buat Pesanan Baru'}
+              </h2>
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
@@ -463,7 +537,7 @@ export default function OrdersPage() {
                           <option value="">Pilih Menu</option>
                           {menusData?.menus?.map((m: any) => (
                             <option key={m.menuId} value={m.menuId}>
-                              {m.name} - Rp {m.price.toLocaleString()}
+                              {m.name} - Rp {m.price.toLocaleString('de-DE')}
                             </option>
                           ))}
                         </select>
@@ -526,7 +600,7 @@ export default function OrdersPage() {
                 <div className="bg-slate-50 p-3 rounded-lg">
                   <div className="flex justify-between font-semibold">
                     <span>Subtotal:</span>
-                    <span>Rp {calculateTotal().toLocaleString()}</span>
+                    <span>Rp {calculateTotal().toLocaleString('de-DE')}</span>
                   </div>
                 </div>
 
@@ -542,7 +616,7 @@ export default function OrdersPage() {
                     type="submit"
                     className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
                   >
-                    Buat Pesanan
+                    {editingOrder ? 'Simpan Perubahan' : 'Buat Pesanan'}
                   </button>
                 </div>
               </form>

@@ -166,6 +166,7 @@ const typeDefs = gql`
     # Order operations
     createOrderFromCart(cartId: String!, input: CreateOrderInput!): OrderCreationResult!
     createOrder(input: CreateOrderInput!): OrderCreationResult!
+    updateOrder(orderId: String!, input: UpdateOrderInput!): Order!
     updateOrderStatus(orderId: String!, status: OrderStatus!): Order!
     updatePaymentStatus(orderId: String!, paymentStatus: PaymentStatus!): Order!
     cancelOrder(orderId: String!): Order!
@@ -236,6 +237,13 @@ const typeDefs = gql`
     quantity: Int!
     price: Float!
     specialInstructions: String
+  }
+
+  input UpdateOrderInput {
+    tableNumber: String
+    items: [OrderItemInput!]
+    paymentMethod: PaymentMethod
+    notes: String
   }
 `;
 

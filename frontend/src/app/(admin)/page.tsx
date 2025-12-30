@@ -63,7 +63,7 @@ export default function DashboardPage() {
     { label: 'Total Orders', value: totalOrders, color: 'bg-purple-500', icon: '📦' },
     { label: 'Pending Orders', value: pendingOrders, color: 'bg-orange-500', icon: '⏳' },
     { label: 'Low Stock Items', value: lowStockItems, color: 'bg-red-500', icon: '⚠️' },
-    { label: 'Revenue', value: `Rp ${totalRevenue.toLocaleString()}`, color: 'bg-emerald-500', icon: '💰' },
+    { label: 'Revenue', value: `Rp ${totalRevenue.toLocaleString('de-DE')}`, color: 'bg-emerald-500', icon: '💰' },
   ];
 
   return (
@@ -119,12 +119,11 @@ export default function DashboardPage() {
                     </p>
                   </div>
                   <div className="text-right">
-                    <span className={`px-2 py-1 text-xs font-medium rounded-full ${
-                      order.orderStatus === 'completed' ? 'bg-green-100 text-green-700' :
-                      order.orderStatus === 'pending' ? 'bg-yellow-100 text-yellow-700' :
-                      order.orderStatus === 'preparing' ? 'bg-blue-100 text-blue-700' :
-                      'bg-gray-100 text-gray-700'
-                    }`}>
+                    <span className={`px-2 py-1 text-xs font-medium rounded-full ${order.orderStatus === 'completed' ? 'bg-green-100 text-green-700' :
+                        order.orderStatus === 'pending' ? 'bg-yellow-100 text-yellow-700' :
+                          order.orderStatus === 'preparing' ? 'bg-blue-100 text-blue-700' :
+                            'bg-gray-100 text-gray-700'
+                      }`}>
                       {order.orderStatus}
                     </span>
                   </div>
@@ -150,10 +149,9 @@ export default function DashboardPage() {
                     <p className="text-sm text-slate-500">{menu.category}</p>
                   </div>
                   <div className="text-right">
-                    <p className="font-medium text-slate-700">Rp {menu.price.toLocaleString()}</p>
-                    <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${
-                      menu.available ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
-                    }`}>
+                    <p className="font-medium text-slate-700">Rp {menu.price.toLocaleString('de-DE')}</p>
+                    <span className={`px-2 py-0.5 text-xs font-medium rounded-full ${menu.available ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                      }`}>
                       {menu.available ? 'Available' : 'Unavailable'}
                     </span>
                   </div>

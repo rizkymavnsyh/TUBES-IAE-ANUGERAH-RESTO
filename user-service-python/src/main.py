@@ -6,6 +6,7 @@ from ariadne import make_executable_schema, load_schema_from_path, graphql_sync
 from dotenv import load_dotenv
 from src.database.connection import get_db_connection
 from src.graphql.resolvers import resolvers
+from src.auth import get_auth_context
 
 load_dotenv()
 
@@ -126,12 +127,13 @@ async def graphql_playground():
 
 @app.post("/graphql")
 async def graphql_server(request: Request):
-    """GraphQL endpoint"""
+    """GraphQL endpoint with auth context"""
     data = await request.json()
+    auth_context = get_auth_context(request)
     success, result = graphql_sync(
         schema,
         data,
-        context_value={"request": request},
+        context_value={"request": request, **auth_context},
         debug=os.getenv("DEBUG", "False").lower() == "true"
     )
     status_code = 200 if success else 400

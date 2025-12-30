@@ -4,6 +4,7 @@ const typeDefs = gql`
   type Staff {
     id: ID!
     employeeId: String!
+    username: String
     name: String!
     email: String
     phone: String
@@ -70,7 +71,20 @@ const typeDefs = gql`
 
   type AuthResponse {
     token: String
+    refreshToken: String
+    expiresAt: String
     staff: Staff
+    message: String!
+  }
+
+  type RefreshTokenResponse {
+    token: String
+    expiresAt: String
+    message: String!
+  }
+
+  type LogoutResponse {
+    success: Boolean!
     message: String!
   }
 
@@ -152,7 +166,9 @@ const typeDefs = gql`
     updateLoyaltyTier(customerId: ID!, tier: String!): CustomerLoyalty!
     
     # Authentication
-    loginStaff(employeeId: String!, password: String!): AuthResponse!
+    loginStaff(username: String!, password: String!): AuthResponse!
+    refreshToken(refreshToken: String!): RefreshTokenResponse!
+    logout(refreshToken: String!): LogoutResponse!
   }
 
   input CreateStaffInput {

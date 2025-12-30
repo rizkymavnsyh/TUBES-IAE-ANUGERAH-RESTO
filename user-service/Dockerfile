@@ -14,5 +14,5 @@ COPY . .
 # Expose port
 EXPOSE 4003
 
-# Start service
+# Start the application
 CMD ["npm", "start"]

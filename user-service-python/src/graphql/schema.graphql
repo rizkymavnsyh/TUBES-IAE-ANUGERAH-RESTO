@@ -15,6 +15,8 @@ type Mutation {
   updateStaff(id: String!, input: CreateStaffInput!): Staff!
   deleteStaff(id: String!): Boolean!
   loginStaff(username: String!, password: String!): AuthResponse!
+  refreshToken(refreshToken: String!): RefreshTokenResponse!
+  logout(refreshToken: String!): LogoutResponse!
   addLoyaltyPoints(customerId: String!, points: Float!, orderId: String, description: String): LoyaltyTransaction!
   redeemLoyaltyPoints(customerId: String!, points: Float!, orderId: String, description: String): LoyaltyTransaction!
 }
@@ -75,7 +77,20 @@ type LoyaltyTransaction {
 
 type AuthResponse {
   token: String
+  refreshToken: String
+  expiresAt: String
   staff: Staff
+  message: String!
+}
+
+type RefreshTokenResponse {
+  token: String
+  expiresAt: String
+  message: String!
+}
+
+type LogoutResponse {
+  success: Boolean!
   message: String!
 }
 

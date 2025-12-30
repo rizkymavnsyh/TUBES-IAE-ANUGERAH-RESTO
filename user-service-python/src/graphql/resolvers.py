@@ -1,11 +1,17 @@
 from typing import Optional, Dict, Any
 import bcrypt
 import jwt
-from datetime import datetime
+import hashlib
+import secrets
+from datetime import datetime, timedelta
 from ariadne import QueryType, MutationType, ObjectType
 from src.database.connection import get_db_connection
+from src.auth import require_auth, require_min_role
 
 JWT_SECRET = "your-secret-key-change-in-production"
+REFRESH_TOKEN_SECRET = "refresh-secret-key-change-in-production"
+ACCESS_TOKEN_EXPIRY_HOURS = 7  # 7 hours like Apollo JS
+REFRESH_TOKEN_EXPIRY_DAYS = 7  # 7 days like Apollo JS
 
 query = QueryType()
 mutation = MutationType()
@@ -14,6 +20,8 @@ customer = ObjectType("Customer")
 customer_loyalty = ObjectType("CustomerLoyalty")
 loyalty_transaction = ObjectType("LoyaltyTransaction")
 auth_response = ObjectType("AuthResponse")
+refresh_token_response = ObjectType("RefreshTokenResponse")
+logout_response = ObjectType("LogoutResponse")
 
 # Query resolvers
 @query.field("customers")
@@ -328,7 +336,8 @@ def resolve_update_customer(_, info, id: str, input: Dict[str, Any]):
 
 @mutation.field("createStaff")
 def resolve_create_staff(_, info, input: Dict[str, Any]):
-    """Create staff"""
+    """Create staff - requires admin role"""
+    require_min_role(info.context, 'admin')
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
     
@@ -461,7 +470,8 @@ def resolve_update_staff(_, info, id: str, input: Dict[str, Any]):
 
 @mutation.field("deleteStaff")
 def resolve_delete_staff(_, info, id: str):
-    """Delete staff by id"""
+    """Delete staff by id - requires admin role"""
+    require_min_role(info.context, 'admin')
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
     
@@ -514,63 +524,201 @@ def resolve_delete_customer(_, info, id: str):
 
 @mutation.field("loginStaff")
 def resolve_login(_, info, username: str, password: str):
-    """Login staff using username"""
+    """Login staff using username or employeeId - with refresh token support"""
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
     
     try:
-        cursor.execute("SELECT * FROM staff WHERE username = %s AND status = 'active'", (username,))
-        staff = cursor.fetchone()
+        # Search by employee_id OR username
+        cursor.execute(
+            "SELECT * FROM staff WHERE (employee_id = %s OR username = %s)",
+            (username, username)
+        )
+        staff_member = cursor.fetchone()
         
-        if not staff:
+        if not staff_member:
             return {
                 'token': None,
+                'refreshToken': None,
+                'expiresAt': None,
                 'staff': None,
-                'message': 'Username atau password salah'
+                'message': 'Invalid username or password'
             }
         
-        if not staff.get('password_hash'):
+        if staff_member['status'] != 'active':
             return {
                 'token': None,
+                'refreshToken': None,
+                'expiresAt': None,
                 'staff': None,
-                'message': 'Password belum diatur'
+                'message': 'Staff account is not active'
             }
         
-        if not bcrypt.checkpw(password.encode('utf-8'), staff['password_hash'].encode('utf-8')):
+        if not staff_member.get('password_hash'):
             return {
                 'token': None,
+                'refreshToken': None,
+                'expiresAt': None,
                 'staff': None,
-                'message': 'Username atau password salah'
+                'message': 'Password not set for this account'
             }
         
-        token = jwt.encode(
-            {'username': staff['username'], 'role': staff['role'], 'exp': datetime.utcnow().timestamp() + 3600},
+        if not bcrypt.checkpw(password.encode('utf-8'), staff_member['password_hash'].encode('utf-8')):
+            return {
+                'token': None,
+                'refreshToken': None,
+                'expiresAt': None,
+                'staff': None,
+                'message': 'Invalid username or password'
+            }
+        
+        # Generate access token (7h expiry)
+        expires_at = datetime.utcnow() + timedelta(hours=ACCESS_TOKEN_EXPIRY_HOURS)
+        access_token = jwt.encode(
+            {
+                'employeeId': staff_member['employee_id'],
+                'role': staff_member['role'],
+                'id': staff_member['id'],
+                'exp': expires_at.timestamp()
+            },
+            JWT_SECRET,
+            algorithm='HS256'
+        )
+        
+        # Generate refresh token (random 64 bytes hex)
+        refresh_token = secrets.token_hex(64)
+        
+        # Hash refresh token for storage
+        token_hash = hashlib.sha256(refresh_token.encode()).hexdigest()
+        
+        # Calculate refresh token expiry (7 days)
+        refresh_expires_at = datetime.utcnow() + timedelta(days=REFRESH_TOKEN_EXPIRY_DAYS)
+        
+        # Store refresh token in database
+        cursor.execute("""
+            INSERT INTO refresh_tokens (staff_id, token_hash, expires_at, revoked)
+            VALUES (%s, %s, %s, FALSE)
+        """, (staff_member['id'], token_hash, refresh_expires_at))
+        conn.commit()
+        
+        return {
+            'token': access_token,
+            'refreshToken': refresh_token,
+            'expiresAt': expires_at.isoformat() + 'Z',
+            'staff': {
+                'id': str(staff_member['id']),
+                'employeeId': staff_member['employee_id'],
+                'username': staff_member.get('username', ''),
+                'name': staff_member['name'],
+                'email': staff_member.get('email'),
+                'phone': staff_member.get('phone'),
+                'role': staff_member['role'],
+                'department': staff_member.get('department'),
+                'status': staff_member['status'],
+                'hireDate': staff_member['hire_date'].isoformat() if staff_member.get('hire_date') else None,
+                'salary': float(staff_member['salary']) if staff_member.get('salary') else None
+            },
+            'message': 'Login successful'
+        }
+    except Exception as e:
+        conn.rollback()
+        raise Exception(f"Error during login: {str(e)}")
+    finally:
+        cursor.close()
+        conn.close()
+
+
+@mutation.field("refreshToken")
+def resolve_refresh_token(_, info, refreshToken: str):
+    """Refresh access token using refresh token"""
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    
+    try:
+        # Hash the provided refresh token
+        token_hash = hashlib.sha256(refreshToken.encode()).hexdigest()
+        
+        # Find the refresh token in database
+        cursor.execute("""
+            SELECT rt.*, s.* FROM refresh_tokens rt
+            JOIN staff s ON rt.staff_id = s.id
+            WHERE rt.token_hash = %s AND rt.revoked = FALSE AND rt.expires_at > NOW()
+        """, (token_hash,))
+        result = cursor.fetchone()
+        
+        if not result:
+            return {
+                'token': None,
+                'expiresAt': None,
+                'message': 'Invalid or expired refresh token'
+            }
+        
+        # Check if staff is still active
+        if result['status'] != 'active':
+            return {
+                'token': None,
+                'expiresAt': None,
+                'message': 'Staff account is not active'
+            }
+        
+        # Generate new access token (7h expiry)
+        expires_at = datetime.utcnow() + timedelta(hours=ACCESS_TOKEN_EXPIRY_HOURS)
+        new_access_token = jwt.encode(
+            {
+                'employeeId': result['employee_id'],
+                'role': result['role'],
+                'id': result['staff_id'],
+                'exp': expires_at.timestamp()
+            },
             JWT_SECRET,
             algorithm='HS256'
         )
         
         return {
-            'token': token,
-            'staff': {
-                'id': str(staff['id']),
-                'employeeId': staff['employee_id'],
-                'username': staff['username'],
-                'name': staff['name'],
-                'email': staff.get('email'),
-                'phone': staff.get('phone'),
-                'role': staff['role'],
-                'department': staff.get('department'),
-                'status': staff['status'],
-                'hireDate': staff['hire_date'].isoformat() if staff.get('hire_date') else None,
-                'salary': float(staff['salary']) if staff.get('salary') else None
-            },
-            'message': 'Login berhasil'
+            'token': new_access_token,
+            'expiresAt': expires_at.isoformat() + 'Z',
+            'message': 'Token refreshed successfully'
         }
     except Exception as e:
-        raise Exception(f"Error during login: {str(e)}")
+        raise Exception(f"Error refreshing token: {str(e)}")
     finally:
         cursor.close()
         conn.close()
+
+
+@mutation.field("logout")
+def resolve_logout(_, info, refreshToken: str):
+    """Logout by revoking refresh token"""
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    
+    try:
+        # Hash the provided refresh token
+        token_hash = hashlib.sha256(refreshToken.encode()).hexdigest()
+        
+        # Revoke the refresh token
+        cursor.execute("""
+            UPDATE refresh_tokens SET revoked = TRUE WHERE token_hash = %s
+        """, (token_hash,))
+        conn.commit()
+        
+        if cursor.rowcount > 0:
+            return {
+                'success': True,
+                'message': 'Logged out successfully'
+            }
+        else:
+            return {
+                'success': False,
+                'message': 'Refresh token not found'
+            }
+    except Exception as e:
+        conn.rollback()
+        raise Exception(f"Error during logout: {str(e)}")
+    finally:
+        cursor.close()
+        conn.close()
+
 
 @mutation.field("addLoyaltyPoints")
 def resolve_add_loyalty_points(_, info, customerId: str, points: float, orderId: Optional[str] = None, description: Optional[str] = None):
@@ -678,7 +826,7 @@ def resolve_redeem_loyalty_points(_, info, customerId: str, points: float, order
         conn.close()
 
 # Export resolvers
-resolvers = [query, mutation, staff, customer, customer_loyalty, loyalty_transaction, auth_response]
+resolvers = [query, mutation, staff, customer, customer_loyalty, loyalty_transaction, auth_response, refresh_token_response, logout_response]
 
 
 

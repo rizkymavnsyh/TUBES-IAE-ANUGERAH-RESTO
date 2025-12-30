@@ -7,15 +7,44 @@
 # Database: MySQL (kitchen_db)
 # ==================================================
 
+# ==================== QUERIES ====================
+
+type Query {
+  # Kitchen order queries
+  kitchenOrders(status: String): [KitchenOrder!]!
+  kitchenOrder(id: String!): KitchenOrder
+  kitchenOrderByOrderId(orderId: String!): KitchenOrder
+  pendingOrders: [KitchenOrder!]!
+  preparingOrders: [KitchenOrder!]!
+  
+  # Chef queries
+  chefs: [Chef!]!
+  chef(id: String!): Chef
+  ordersByChef(chefId: String!): [KitchenOrder!]!
+}
+
+# ==================== MUTATIONS ====================
+
+type Mutation {
+  # Kitchen order operations
+  createKitchenOrder(input: CreateKitchenOrderInput!): KitchenOrder!
+  updateKitchenOrder(id: String!, input: UpdateKitchenOrderInput!): KitchenOrder!
+  updateOrderStatus(id: String!, status: String!): KitchenOrder!
+  assignChef(orderId: String!, chefId: String!): KitchenOrder!
+  updateEstimatedTime(orderId: String!, estimatedTime: Int!): KitchenOrder!
+  completeOrder(orderId: String!): KitchenOrder!
+  cancelOrder(orderId: String!): KitchenOrder!
+}
+
 # ==================== TYPES ====================
 
 type KitchenOrder {
-  id: ID!
+  id: String!
   orderId: String!
   tableNumber: String
-  status: OrderStatus!
-  items: [OrderItem]
-  priority: Int
+  status: String!
+  items: [OrderItem!]!
+  priority: Int!
   estimatedTime: Int
   chefId: Int
   chef: Chef
@@ -32,53 +61,27 @@ type OrderItem {
 }
 
 type Chef {
-  id: ID!
+  id: String!
   name: String!
   specialization: String
-  status: ChefStatus!
+  status: String!
   currentOrders: Int!
 }
 
 # ==================== ENUMS ====================
 
 enum OrderStatus {
-  pending
-  preparing
-  ready
-  completed
-  cancelled
+  PENDING
+  PREPARING
+  READY
+  COMPLETED
+  CANCELLED
 }
 
 enum ChefStatus {
-  available
-  busy
-  offline
-}
-
-# ==================== QUERIES ====================
-
-type Query {
-  # Kitchen order queries
-  kitchenOrders(status: OrderStatus): [KitchenOrder!]!
-  kitchenOrder(id: ID!): KitchenOrder
-  kitchenOrderByOrderId(orderId: String!): KitchenOrder
-  
-  # Chef queries
-  chefs: [Chef!]!
-  chef(id: ID!): Chef
-  ordersByChef(chefId: ID!): [KitchenOrder!]!
-}
-
-# ==================== MUTATIONS ====================
-
-type Mutation {
-  # Kitchen order operations
-  createKitchenOrder(input: CreateKitchenOrderInput!): KitchenOrder!
-  updateOrderStatus(id: ID!, status: OrderStatus!): KitchenOrder!
-  assignChef(orderId: ID!, chefId: ID!): KitchenOrder!
-  updateEstimatedTime(orderId: ID!, estimatedTime: Int!): KitchenOrder!
-  completeOrder(orderId: ID!): KitchenOrder!
-  cancelOrder(orderId: ID!): KitchenOrder!
+  AVAILABLE
+  BUSY
+  OFFLINE
 }
 
 # ==================== INPUTS ====================
@@ -89,6 +92,14 @@ input CreateKitchenOrderInput {
   items: [OrderItemInput!]!
   priority: Int
   notes: String
+}
+
+input UpdateKitchenOrderInput {
+  tableNumber: String
+  items: [OrderItemInput!]
+  priority: Int
+  notes: String
+  estimatedTime: Int
 }
 
 input OrderItemInput {

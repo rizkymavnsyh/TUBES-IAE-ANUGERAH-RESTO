@@ -1,4 +1,5 @@
 const axios = require('axios');
+const { requireAuth, requireMinRole } = require('../auth');
 
 // Helper function to safely parse JSON
 function safeParseJSON(field, defaultValue = []) {
@@ -33,6 +34,54 @@ const resolvers = {
         }));
       } catch (error) {
         throw new Error(`Error fetching kitchen orders: ${error.message}`);
+      }
+    },
+
+    pendingOrders: async (parent, args, { db }) => {
+      try {
+        const [orders] = await db.execute(
+          'SELECT * FROM kitchen_orders WHERE status = ? ORDER BY priority DESC, created_at ASC',
+          ['pending']
+        );
+        return orders.map(order => ({
+          id: order.id.toString(),
+          orderId: order.order_id || `ORD-${order.id}`,
+          tableNumber: order.table_number,
+          status: order.status,
+          items: safeParseJSON(order.items, []),
+          priority: order.priority || 0,
+          estimatedTime: order.estimated_time,
+          chefId: order.chef_id,
+          notes: order.notes,
+          createdAt: order.created_at ? order.created_at.toISOString() : new Date().toISOString(),
+          updatedAt: order.updated_at ? order.updated_at.toISOString() : new Date().toISOString()
+        }));
+      } catch (error) {
+        throw new Error(`Error fetching pending orders: ${error.message}`);
+      }
+    },
+
+    preparingOrders: async (parent, args, { db }) => {
+      try {
+        const [orders] = await db.execute(
+          'SELECT * FROM kitchen_orders WHERE status = ? ORDER BY priority DESC, created_at ASC',
+          ['preparing']
+        );
+        return orders.map(order => ({
+          id: order.id.toString(),
+          orderId: order.order_id || `ORD-${order.id}`,
+          tableNumber: order.table_number,
+          status: order.status,
+          items: safeParseJSON(order.items, []),
+          priority: order.priority || 0,
+          estimatedTime: order.estimated_time,
+          chefId: order.chef_id,
+          notes: order.notes,
+          createdAt: order.created_at ? order.created_at.toISOString() : new Date().toISOString(),
+          updatedAt: order.updated_at ? order.updated_at.toISOString() : new Date().toISOString()
+        }));
+      } catch (error) {
+        throw new Error(`Error fetching preparing orders: ${error.message}`);
       }
     },
 
@@ -122,7 +171,10 @@ const resolvers = {
   },
 
   Mutation: {
-    createKitchenOrder: async (parent, { input }, { db }) => {
+    createKitchenOrder: async (parent, { input }, context) => {
+      // Require authentication
+      requireAuth(context);
+      const { db } = context;
       try {
         const { orderId, tableNumber, items, priority = 0, notes } = input;
 
@@ -169,7 +221,72 @@ const resolvers = {
       }
     },
 
-    updateOrderStatus: async (parent, { id, status }, { db }) => {
+    updateKitchenOrder: async (parent, { id, input }, context) => {
+      // Require authentication
+      requireAuth(context);
+      const { db } = context;
+      try {
+        const [orderRows] = await db.execute('SELECT * FROM kitchen_orders WHERE id = ?', [id]);
+        if (orderRows.length === 0) {
+          throw new Error('Kitchen order not found');
+        }
+
+        const updates = [];
+        const params = [];
+
+        if (input.tableNumber !== undefined) {
+          updates.push('table_number = ?');
+          params.push(input.tableNumber);
+        }
+        if (input.items !== undefined) {
+          updates.push('items = ?');
+          params.push(JSON.stringify(input.items));
+        }
+        if (input.priority !== undefined) {
+          updates.push('priority = ?');
+          params.push(input.priority);
+        }
+        if (input.notes !== undefined) {
+          updates.push('notes = ?');
+          params.push(input.notes);
+        }
+        if (input.estimatedTime !== undefined) {
+          updates.push('estimated_time = ?');
+          params.push(input.estimatedTime);
+        }
+
+        if (updates.length > 0) {
+          params.push(id);
+          await db.execute(
+            `UPDATE kitchen_orders SET ${updates.join(', ')} WHERE id = ?`,
+            params
+          );
+        }
+
+        const [updatedRows] = await db.execute('SELECT * FROM kitchen_orders WHERE id = ?', [id]);
+        const o = updatedRows[0];
+        return {
+          id: o.id.toString(),
+          orderId: o.order_id || `ORD-${o.id}`,
+          tableNumber: o.table_number,
+          status: o.status || 'pending',
+          items: safeParseJSON(o.items, []),
+          priority: o.priority || 0,
+          estimatedTime: o.estimated_time,
+          chefId: o.chef_id,
+          notes: o.notes,
+          createdAt: o.created_at ? o.created_at.toISOString() : new Date().toISOString(),
+          updatedAt: o.updated_at ? o.updated_at.toISOString() : new Date().toISOString()
+        };
+      } catch (error) {
+        throw new Error(`Error updating kitchen order: ${error.message}`);
+      }
+    },
+
+    updateOrderStatus: async (parent, { id, status }, context) => {
+      // Require authentication
+      requireAuth(context);
+      const { db } = context;
       try {
         await db.execute(
           'UPDATE kitchen_orders SET status = ? WHERE id = ?',
@@ -194,9 +311,17 @@ const resolvers = {
         }
 
         return {
-          ...orders[0],
-          items: JSON.parse(orders[0].items || '[]'),
-          id: orders[0].id.toString()
+          id: orders[0].id.toString(),
+          orderId: orders[0].order_id || `ORD-${orders[0].id}`,
+          tableNumber: orders[0].table_number,
+          status: orders[0].status,
+          items: safeParseJSON(orders[0].items, []),
+          priority: orders[0].priority || 0,
+          estimatedTime: orders[0].estimated_time,
+          chefId: orders[0].chef_id,
+          notes: orders[0].notes,
+          createdAt: orders[0].created_at ? orders[0].created_at.toISOString() : new Date().toISOString(),
+          updatedAt: orders[0].updated_at ? orders[0].updated_at.toISOString() : new Date().toISOString()
         };
       } catch (error) {
         throw new Error(`Error updating order status: ${error.message}`);
@@ -229,9 +354,17 @@ const resolvers = {
         );
 
         return {
-          ...orders[0],
-          items: JSON.parse(orders[0].items || '[]'),
-          id: orders[0].id.toString()
+          id: orders[0].id.toString(),
+          orderId: orders[0].order_id || `ORD-${orders[0].id}`,
+          tableNumber: orders[0].table_number,
+          status: orders[0].status,
+          items: safeParseJSON(orders[0].items, []),
+          priority: orders[0].priority || 0,
+          estimatedTime: orders[0].estimated_time,
+          chefId: orders[0].chef_id,
+          notes: orders[0].notes,
+          createdAt: orders[0].created_at ? orders[0].created_at.toISOString() : new Date().toISOString(),
+          updatedAt: orders[0].updated_at ? orders[0].updated_at.toISOString() : new Date().toISOString()
         };
       } catch (error) {
         throw new Error(`Error assigning chef: ${error.message}`);
@@ -255,9 +388,17 @@ const resolvers = {
         }
 
         return {
-          ...orders[0],
-          items: JSON.parse(orders[0].items || '[]'),
-          id: orders[0].id.toString()
+          id: orders[0].id.toString(),
+          orderId: orders[0].order_id || `ORD-${orders[0].id}`,
+          tableNumber: orders[0].table_number,
+          status: orders[0].status,
+          items: safeParseJSON(orders[0].items, []),
+          priority: orders[0].priority || 0,
+          estimatedTime: orders[0].estimated_time,
+          chefId: orders[0].chef_id,
+          notes: orders[0].notes,
+          createdAt: orders[0].created_at ? orders[0].created_at.toISOString() : new Date().toISOString(),
+          updatedAt: orders[0].updated_at ? orders[0].updated_at.toISOString() : new Date().toISOString()
         };
       } catch (error) {
         throw new Error(`Error updating estimated time: ${error.message}`);
@@ -266,13 +407,17 @@ const resolvers = {
 
     completeOrder: async (parent, { orderId }, { db }) => {
       try {
+        // Determine if orderId is numeric (db id) or string (order_id like ORD-xxx)
+        const isNumeric = !isNaN(orderId) && !String(orderId).startsWith('ORD');
+        const whereClause = isNumeric ? 'id = ?' : 'order_id = ?';
+
         await db.execute(
-          'UPDATE kitchen_orders SET status = "completed" WHERE id = ?',
+          `UPDATE kitchen_orders SET status = "ready" WHERE ${whereClause}`,
           [orderId]
         );
 
         const [orders] = await db.execute(
-          'SELECT * FROM kitchen_orders WHERE id = ?',
+          `SELECT * FROM kitchen_orders WHERE ${whereClause}`,
           [orderId]
         );
 
@@ -289,9 +434,17 @@ const resolvers = {
         }
 
         return {
-          ...orders[0],
-          items: JSON.parse(orders[0].items || '[]'),
-          id: orders[0].id.toString()
+          id: orders[0].id.toString(),
+          orderId: orders[0].order_id || `ORD-${orders[0].id}`,
+          tableNumber: orders[0].table_number,
+          status: orders[0].status,
+          items: safeParseJSON(orders[0].items, []),
+          priority: orders[0].priority || 0,
+          estimatedTime: orders[0].estimated_time,
+          chefId: orders[0].chef_id,
+          notes: orders[0].notes,
+          createdAt: orders[0].created_at ? orders[0].created_at.toISOString() : new Date().toISOString(),
+          updatedAt: orders[0].updated_at ? orders[0].updated_at.toISOString() : new Date().toISOString()
         };
       } catch (error) {
         throw new Error(`Error completing order: ${error.message}`);
@@ -323,9 +476,17 @@ const resolvers = {
         }
 
         return {
-          ...orders[0],
-          items: JSON.parse(orders[0].items || '[]'),
-          id: orders[0].id.toString()
+          id: orders[0].id.toString(),
+          orderId: orders[0].order_id || `ORD-${orders[0].id}`,
+          tableNumber: orders[0].table_number,
+          status: orders[0].status,
+          items: safeParseJSON(orders[0].items, []),
+          priority: orders[0].priority || 0,
+          estimatedTime: orders[0].estimated_time,
+          chefId: orders[0].chef_id,
+          notes: orders[0].notes,
+          createdAt: orders[0].created_at ? orders[0].created_at.toISOString() : new Date().toISOString(),
+          updatedAt: orders[0].updated_at ? orders[0].updated_at.toISOString() : new Date().toISOString()
         };
       } catch (error) {
         throw new Error(`Error cancelling order: ${error.message}`);

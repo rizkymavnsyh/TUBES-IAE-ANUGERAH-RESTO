@@ -1,6 +1,7 @@
 from typing import Optional, Dict, Any
 from ariadne import QueryType, MutationType, ObjectType
 from src.database.connection import get_db_connection
+from src.auth import require_auth, require_min_role
 from src.services.toko_sembako_client import (
     get_products_from_toko_sembako,
     get_product_by_id_from_toko_sembako,
@@ -190,7 +191,8 @@ async def resolve_check_toko_sembako_stock(_, info, productId: str, quantity: fl
 # Mutation resolvers
 @mutation.field("reduceStock")
 def resolve_reduce_stock(_, info, ingredientId: str, quantity: float, reason: Optional[str] = None, referenceId: Optional[str] = None, referenceType: Optional[str] = None):
-    """Reduce stock"""
+    """Reduce stock - requires authentication"""
+    require_auth(info.context)
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
     
@@ -268,7 +270,8 @@ def resolve_reduce_stock(_, info, ingredientId: str, quantity: float, reason: Op
 
 @mutation.field("purchaseFromTokoSembako")
 async def resolve_purchase_from_toko_sembako(_, info, input: Dict[str, Any]):
-    """Purchase from Toko Sembako"""
+    """Purchase from Toko Sembako - requires manager role"""
+    require_min_role(info.context, 'manager')
     try:
         # Create order at Toko Sembako
         order_result = await create_order_at_toko_sembako(

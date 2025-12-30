@@ -1,10 +1,30 @@
 const axios = require('axios');
 require('dotenv').config();
 
-// URLs untuk Toko Sembako services
-const TOKO_SEMBAKO_PRODUCT_URL = process.env.TOKO_SEMBAKO_PRODUCT_URL || 'http://localhost:4001/graphql';
-const TOKO_SEMBAKO_INVENTORY_URL = process.env.TOKO_SEMBAKO_INVENTORY_URL || 'http://localhost:4000/graphql';
-const TOKO_SEMBAKO_ORDER_URL = process.env.TOKO_SEMBAKO_ORDER_URL || 'http://localhost:4002/graphql';
+/**
+ * Toko Sembako Integration Client
+ * 
+ * URL Configuration:
+ * - For local development: Uses localhost URLs to Toko Sembako services
+ *   - Product Service: http://localhost:5001/graphql
+ *   - Inventory Service: http://localhost:5000/graphql
+ *   - Order Service: http://localhost:5002/graphql
+ * - For cross-team integration: Set individual URLs via environment variables
+ */
+
+// Base URL untuk Toko Sembako (ngrok URL dari kelompok mereka jika remote)
+const TOKO_SEMBAKO_BASE_URL = process.env.TOKO_SEMBAKO_URL || 'http://localhost';
+
+// Individual service URLs - default to local Toko Sembako services
+const TOKO_SEMBAKO_PRODUCT_URL = process.env.TOKO_SEMBAKO_PRODUCT_URL || `${TOKO_SEMBAKO_BASE_URL}:5001/graphql`;
+const TOKO_SEMBAKO_INVENTORY_URL = process.env.TOKO_SEMBAKO_INVENTORY_URL || `${TOKO_SEMBAKO_BASE_URL}:5000/graphql`;
+const TOKO_SEMBAKO_ORDER_URL = process.env.TOKO_SEMBAKO_ORDER_URL || `${TOKO_SEMBAKO_BASE_URL}:5002/graphql`;
+
+// Log configuration on startup
+console.log('🔗 Toko Sembako Client Configuration:');
+console.log(`   Product Service: ${TOKO_SEMBAKO_PRODUCT_URL}`);
+console.log(`   Inventory Service: ${TOKO_SEMBAKO_INVENTORY_URL}`);
+console.log(`   Order Service: ${TOKO_SEMBAKO_ORDER_URL}`);
 
 /**
  * Helper function untuk memanggil GraphQL service dari Toko Sembako
@@ -53,20 +73,17 @@ async function getProductsFromTokoSembako(category = null) {
       `
       : `
         query GetProducts {
-          products {
+          getProducts {
             id
             name
-            category
             price
             unit
-            available
-            description
           }
         }
       `;
 
     const data = await callTokoSembakoService(TOKO_SEMBAKO_PRODUCT_URL, query, { category });
-    return data.products || [];
+    return data.getProducts || [];
   } catch (error) {
     console.error('Error fetching products from Toko Sembako:', error.message);
     return [];
@@ -80,20 +97,17 @@ async function getProductByIdFromTokoSembako(productId) {
   try {
     const query = `
       query GetProduct($id: ID!) {
-        product(id: $id) {
+        getProductById(id: $id) {
           id
           name
-          category
           price
           unit
-          available
-          description
         }
       }
     `;
 
     const data = await callTokoSembakoService(TOKO_SEMBAKO_PRODUCT_URL, query, { id: productId });
-    return data.product;
+    return data.getProductById;
   } catch (error) {
     console.error('Error fetching product from Toko Sembako:', error.message);
     return null;

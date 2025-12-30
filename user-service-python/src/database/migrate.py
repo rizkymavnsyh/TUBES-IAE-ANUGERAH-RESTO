@@ -128,6 +128,22 @@ def migrate():
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
         """)
 
+        # Create refresh_tokens table for JWT refresh token support
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS refresh_tokens (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                staff_id INT NOT NULL,
+                token_hash VARCHAR(255) NOT NULL,
+                expires_at TIMESTAMP NOT NULL,
+                revoked BOOLEAN DEFAULT FALSE,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (staff_id) REFERENCES staff(id) ON DELETE CASCADE,
+                INDEX idx_staff_id (staff_id),
+                INDEX idx_token_hash (token_hash),
+                INDEX idx_expires_at (expires_at)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+        """)
+
         # Insert default loyalty program
         cursor.execute("""
             INSERT IGNORE INTO loyalty_programs (id, name, description, points_per_rupiah, min_points_to_redeem) VALUES

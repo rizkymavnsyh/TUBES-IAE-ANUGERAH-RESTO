@@ -5,7 +5,7 @@ import { useQuery, useMutation, gql } from '@apollo/client';
 import { userApolloClient } from '@/lib/apollo-client';
 
 const GET_STAFF = gql`
-  query GetStaff($status: String, $role: String) {
+  query GetStaff($status: StaffStatus, $role: StaffRole) {
     staff(status: $status, role: $role) {
       id
       employeeId
@@ -23,7 +23,7 @@ const GET_STAFF = gql`
 `;
 
 const GET_CUSTOMERS = gql`
-  query GetCustomers($status: String) {
+  query GetCustomers($status: CustomerStatus) {
     customers(status: $status) {
       id
       customerId
@@ -48,7 +48,7 @@ const CREATE_STAFF = gql`
 `;
 
 const UPDATE_STAFF = gql`
-  mutation UpdateStaff($id: String!, $input: CreateStaffInput!) {
+  mutation UpdateStaff($id: ID!, $input: UpdateStaffInput!) {
     updateStaff(id: $id, input: $input) {
       id
       name
@@ -67,7 +67,7 @@ const CREATE_CUSTOMER = gql`
 `;
 
 const UPDATE_CUSTOMER = gql`
-  mutation UpdateCustomer($id: String!, $input: CreateCustomerInput!) {
+  mutation UpdateCustomer($id: ID!, $input: UpdateCustomerInput!) {
     updateCustomer(id: $id, input: $input) {
       id
       name
@@ -76,13 +76,13 @@ const UPDATE_CUSTOMER = gql`
 `;
 
 const DELETE_STAFF = gql`
-  mutation DeleteStaff($id: String!) {
+  mutation DeleteStaff($id: ID!) {
     deleteStaff(id: $id)
   }
 `;
 
 const DELETE_CUSTOMER = gql`
-  mutation DeleteCustomer($id: String!) {
+  mutation DeleteCustomer($id: ID!) {
     deleteCustomer(id: $id)
   }
 `;
@@ -210,38 +210,51 @@ export default function UsersPage() {
     e.preventDefault();
     try {
       if (activeTab === 'staff') {
-        const input = {
-          employeeId: staffFormData.employeeId,
-          username: staffFormData.username,
-          name: staffFormData.name,
-          email: staffFormData.email || null,
-          phone: staffFormData.phone || null,
-          role: staffFormData.role,
-          department: staffFormData.department || null,
-          password: staffFormData.password || null,
-          salary: staffFormData.salary ? parseFloat(staffFormData.salary) : null,
-        };
-
         if (modalMode === 'create') {
-          await createStaff({ variables: { input } });
+          const createInput = {
+            employeeId: staffFormData.employeeId,
+            name: staffFormData.name,
+            email: staffFormData.email || null,
+            phone: staffFormData.phone || null,
+            role: staffFormData.role,
+            department: staffFormData.department || null,
+            password: staffFormData.password || null,
+            salary: staffFormData.salary ? parseFloat(staffFormData.salary) : null,
+          };
+          await createStaff({ variables: { input: createInput } });
         } else {
-          await updateStaff({ variables: { id: selectedId, input } });
+          // UpdateStaffInput only accepts: name, email, phone, role, department, status, salary
+          const updateInput = {
+            name: staffFormData.name,
+            email: staffFormData.email || null,
+            phone: staffFormData.phone || null,
+            role: staffFormData.role,
+            department: staffFormData.department || null,
+            salary: staffFormData.salary ? parseFloat(staffFormData.salary) : null,
+          };
+          await updateStaff({ variables: { id: selectedId, input: updateInput } });
         }
         refetchStaff();
       } else {
-        const input = {
-          customerId: customerFormData.customerId,
-          name: customerFormData.name,
-          email: customerFormData.email || null,
-          phone: customerFormData.phone || null,
-          address: customerFormData.address || null,
-          dateOfBirth: customerFormData.dateOfBirth || null,
-        };
-
         if (modalMode === 'create') {
-          await createCustomer({ variables: { input } });
+          const createInput = {
+            customerId: customerFormData.customerId,
+            name: customerFormData.name,
+            email: customerFormData.email || null,
+            phone: customerFormData.phone || null,
+            address: customerFormData.address || null,
+            dateOfBirth: customerFormData.dateOfBirth || null,
+          };
+          await createCustomer({ variables: { input: createInput } });
         } else {
-          await updateCustomer({ variables: { id: selectedId, input } });
+          // UpdateCustomerInput only accepts: name, email, phone, address, status
+          const updateInput = {
+            name: customerFormData.name,
+            email: customerFormData.email || null,
+            phone: customerFormData.phone || null,
+            address: customerFormData.address || null,
+          };
+          await updateCustomer({ variables: { id: selectedId, input: updateInput } });
         }
         refetchCustomers();
       }
@@ -528,14 +541,15 @@ export default function UsersPage() {
                             />
                           </div>
                           <div>
-                            <label className="block text-sm font-medium text-slate-700 mb-1">Username *</label>
+                            <label className="block text-sm font-medium text-slate-700 mb-1">Username {modalMode === 'create' && '*'}</label>
                             <input
                               type="text"
                               value={staffFormData.username}
                               onChange={(e) => setStaffFormData({ ...staffFormData, username: e.target.value })}
                               className="w-full px-3 py-2 border border-slate-300 rounded-lg"
-                              required
+                              required={modalMode === 'create'}
                               placeholder="johndoe"
+                              disabled={modalMode === 'edit'}
                             />
                           </div>
                         </div>

@@ -245,15 +245,34 @@ query GetTopCustomers {
 
 # ==================== AUTHENTICATION ====================
 
-# LOGIN
+# LOGIN - Returns access token (7h) and refresh token (7d)
 mutation LoginStaff {
-  loginStaff(employeeId: "EMP001", password: "password123") {
+  loginStaff(username: "admin", password: "admin123") {
     token
+    refreshToken
+    expiresAt
     staff {
       id
       name
       role
     }
+    message
+  }
+}
+
+# REFRESH TOKEN - Get new access token using refresh token
+mutation RefreshToken {
+  refreshToken(refreshToken: "<REFRESH_TOKEN_FROM_LOGIN>") {
+    token
+    expiresAt
+    message
+  }
+}
+
+# LOGOUT - Revoke refresh token
+mutation Logout {
+  logout(refreshToken: "<REFRESH_TOKEN_FROM_LOGIN>") {
+    success
     message
   }
 }

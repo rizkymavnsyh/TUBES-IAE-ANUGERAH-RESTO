@@ -1,37 +1,31 @@
 {
-  "name": "inventory-service",
-  "version": "1.0.0",
-  "description": "Inventory Service for Anugerah Resto - Manages stock and suppliers",
-  "main": "src/index.js",
-  "scripts": {
-    "start": "node src/index.js",
-    "dev": "nodemon src/index.js",
-    "migrate": "node src/database/migrate.js"
-  },
-  "keywords": [
-    "inventory",
-    "microservice",
-    "graphql"
-  ],
-  "author": "",
-  "license": "ISC",
-  "dependencies": {
-    "apollo-server-express": "^3.12.1",
-    "express": "^4.18.2",
-    "graphql": "^16.8.1",
-    "mysql2": "^3.6.5",
-    "dotenv": "^16.3.1",
-    "axios": "^1.6.2"
-  },
-  "devDependencies": {
-    "nodemon": "^3.0.2"
-  }
+    "name": "inventory-service",
+    "version": "1.0.0",
+    "description": "Inventory Service for Anugerah Resto - Manages stock and suppliers",
+    "main": "src/index.js",
+    "scripts": {
+        "start": "node src/index.js",
+        "dev": "nodemon src/index.js",
+        "migrate": "node src/database/migrate.js"
+    },
+    "keywords": [
+        "inventory",
+        "microservice",
+        "graphql"
+    ],
+    "author": "",
+    "license": "ISC",
+    "dependencies": {
+        "apollo-server-express": "^3.12.1",
+        "axios": "^1.6.2",
+        "cors": "^2.8.5",
+        "dotenv": "^16.3.1",
+        "express": "^4.18.2",
+        "graphql": "^16.8.1",
+        "jsonwebtoken": "^9.0.2",
+        "mysql2": "^3.6.5"
+    },
+    "devDependencies": {
+        "nodemon": "^3.0.2"
+    }
 }
-
-
-
-
-
-
-
-

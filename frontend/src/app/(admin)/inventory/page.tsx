@@ -60,23 +60,23 @@ export default function InventoryPage() {
   const [purchaseItems, setPurchaseItems] = useState([{ productId: '', quantity: 1 }]);
   const [orderNumber, setOrderNumber] = useState('');
 
-  const { data, loading, error, refetch } = useQuery(GET_INGREDIENTS, { 
-    client: inventoryApolloClient 
+  const { data, loading, error, refetch } = useQuery(GET_INGREDIENTS, {
+    client: inventoryApolloClient
   });
 
-  const { data: productsData } = useQuery(GET_TOKO_SEMBAKO_PRODUCTS, { 
-    client: inventoryApolloClient 
+  const { data: productsData } = useQuery(GET_TOKO_SEMBAKO_PRODUCTS, {
+    client: inventoryApolloClient
   });
 
-  const [purchaseFromTokoSembako] = useMutation(PURCHASE_FROM_TOKO_SEMBAKO, { 
-    client: inventoryApolloClient 
+  const [purchaseFromTokoSembako] = useMutation(PURCHASE_FROM_TOKO_SEMBAKO, {
+    client: inventoryApolloClient
   });
 
   const isBackendConnected = !error || error.message !== 'Failed to fetch';
 
   const handlePurchase = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     const validItems = purchaseItems.filter(item => item.productId && item.quantity > 0);
     if (validItems.length === 0) {
       alert('Pilih minimal satu produk');
@@ -201,9 +201,8 @@ export default function InventoryPage() {
                       {item.category || '-'}
                     </td>
                     <td className="px-4 py-3">
-                      <span className={`font-medium ${
-                        item.currentStock <= item.minStockLevel ? 'text-red-600' : 'text-slate-700'
-                      }`}>
+                      <span className={`font-medium ${item.currentStock <= item.minStockLevel ? 'text-red-600' : 'text-slate-700'
+                        }`}>
                         {item.currentStock} {item.unit}
                       </span>
                     </td>
@@ -211,7 +210,7 @@ export default function InventoryPage() {
                       {item.minStockLevel} {item.unit}
                     </td>
                     <td className="px-4 py-3 text-slate-600">
-                      Rp {item.costPerUnit?.toLocaleString() || 0}
+                      Rp {item.costPerUnit?.toLocaleString('de-DE') || 0}
                     </td>
                     <td className="px-4 py-3 text-slate-600">
                       {item.supplier?.name || '-'}
@@ -268,7 +267,7 @@ export default function InventoryPage() {
                         <option value="">Pilih Produk</option>
                         {productsData?.tokoSembakoProducts?.filter((p: any) => p.available).map((product: any) => (
                           <option key={product.id} value={product.id}>
-                            {product.name} - Rp {product.price.toLocaleString()}/{product.unit}
+                            {product.name} - Rp {product.price.toLocaleString('de-DE')}/{product.unit}
                           </option>
                         ))}
                       </select>
