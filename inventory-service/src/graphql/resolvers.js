@@ -589,9 +589,7 @@ const resolvers = {
             orderId: orderNumber,
             items: productDetails.map(item => ({
               productId: item.productId,
-              name: item.name,
-              quantity: item.quantity,
-              price: item.price
+              qty: item.quantity
             })),
             notes: notes || `Purchase order from Anugerah Resto: ${orderNumber}`
           });
