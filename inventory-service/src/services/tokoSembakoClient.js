@@ -83,12 +83,24 @@ async function getProductsFromTokoSembako(category = null) {
       `;
 
     const data = await callTokoSembakoService(TOKO_SEMBAKO_PRODUCT_URL, query, { category });
-    return data.getProducts || [];
+    const products = data.getProducts || data.products || [];
+
+    // Ensure all products have required fields with defaults
+    return products.map(product => ({
+      id: product.id,
+      name: product.name,
+      category: product.category || 'Umum',
+      price: product.price,
+      unit: product.unit,
+      available: product.available !== undefined ? product.available : true, // Default to true if not provided
+      description: product.description || null
+    }));
   } catch (error) {
     console.error('Error fetching products from Toko Sembako:', error.message);
     return [];
   }
 }
+
 
 /**
  * Get product by ID dari Toko Sembako
