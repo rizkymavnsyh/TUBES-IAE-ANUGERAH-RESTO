@@ -761,7 +761,523 @@ docker exec kitchen-service-python python src/database/migrate.py
 
 ---
 
-## 📝 Notes
+## � Database Schema Details
+
+### Kitchen Service - Tables
+
+#### `kitchen_orders`
+| Column | Type | Description |
+|--------|------|-------------|
+| id | INT (PK) | Auto-increment ID |
+| order_id | VARCHAR(50) | Unique order identifier |
+| table_number | VARCHAR(20) | Table number |
+| items | JSON | Array of order items |
+| status | ENUM | 'pending', 'preparing', 'ready', 'completed' |
+| priority | INT | Priority level (higher = more urgent) |
+| chef_id | INT (FK) | Assigned chef |
+| estimated_time | INT | Estimated prep time (minutes) |
+| notes | TEXT | Special instructions |
+| created_at | TIMESTAMP | Order creation time |
+| updated_at | TIMESTAMP | Last update time |
+
+#### `chefs`
+| Column | Type | Description |
+|--------|------|-------------|
+| id | INT (PK) | Chef ID |
+| name | VARCHAR(100) | Chef name |
+| specialization | VARCHAR(100) | Specialty cuisine |
+| status | ENUM | 'available', 'busy', 'off_duty' |
+| current_orders | INT | Number of active orders |
+
+### Inventory Service - Tables
+
+#### `ingredients`
+| Column | Type | Description |
+|--------|------|-------------|
+| id | INT (PK) | Ingredient ID |
+| name | VARCHAR(100) | Ingredient name |
+| unit | VARCHAR(20) | Unit of measure (kg, liter, pcs) |
+| category | VARCHAR(50) | Category (protein, vegetables, spices) |
+| min_stock_level | DECIMAL | Minimum stock threshold |
+| current_stock | DECIMAL | Current available stock |
+| supplier_id | INT (FK) | Primary supplier |
+| cost_per_unit | DECIMAL | Cost per unit |
+| status | ENUM | 'active', 'inactive', 'out_of_stock' |
+
+#### `suppliers`
+| Column | Type | Description |
+|--------|------|-------------|
+| id | INT (PK) | Supplier ID |
+| name | VARCHAR(100) | Company name |
+| contact_person | VARCHAR(100) | Contact person |
+| email | VARCHAR(100) | Email address |
+| phone | VARCHAR(20) | Phone number |
+| address | TEXT | Full address |
+| status | ENUM | 'active', 'inactive' |
+
+#### `stock_movements`
+| Column | Type | Description |
+|--------|------|-------------|
+| id | INT (PK) | Movement ID |
+| ingredient_id | INT (FK) | Related ingredient |
+| movement_type | ENUM | 'in', 'out', 'adjustment' |
+| quantity | DECIMAL | Quantity moved |
+| reason | TEXT | Reason for movement |
+| reference_id | VARCHAR(50) | Related order/PO |
+| reference_type | VARCHAR(50) | 'order', 'purchase_order' |
+| created_at | TIMESTAMP | Movement timestamp |
+
+#### `purchase_orders`
+| Column | Type | Description |
+|--------|------|-------------|
+| id | INT (PK) | PO ID |
+| order_number | VARCHAR(50) | PO number |
+| supplier_id | INT (FK) | Supplier |
+| order_date | DATE | Order date |
+| expected_delivery_date | DATE | Expected delivery |
+| status | ENUM | 'pending', 'ordered', 'delivered', 'cancelled' |
+| total_amount | DECIMAL | Total order amount |
+| notes | TEXT | Notes |
+
+### User Service - Tables
+
+#### `staff`
+| Column | Type | Description |
+|--------|------|-------------|
+| id | INT (PK) | Staff ID |
+| employee_id | VARCHAR(50) | Employee code |
+| username | VARCHAR(50) | Login username |
+| password_hash | VARCHAR(255) | Bcrypt hashed password |
+| name | VARCHAR(100) | Full name |
+| email | VARCHAR(100) | Email |
+| phone | VARCHAR(20) | Phone |
+| role | ENUM | 'admin', 'manager', 'chef', 'waiter', 'cashier' |
+| department | VARCHAR(50) | Department |
+| status | ENUM | 'active', 'inactive' |
+| hire_date | DATE | Hire date |
+| salary | DECIMAL | Monthly salary |
+
+#### `customers`
+| Column | Type | Description |
+|--------|------|-------------|
+| id | INT (PK) | Customer ID |
+| customer_id | VARCHAR(50) | Customer code |
+| name | VARCHAR(100) | Full name |
+| email | VARCHAR(100) | Email |
+| phone | VARCHAR(20) | Phone |
+| address | TEXT | Address |
+| date_of_birth | DATE | Birthday |
+| registration_date | TIMESTAMP | Join date |
+| status | ENUM | 'active', 'inactive' |
+
+#### `customer_loyalty`
+| Column | Type | Description |
+|--------|------|-------------|
+| id | INT (PK) | Loyalty ID |
+| customer_id | VARCHAR(50) | Customer reference |
+| total_points | DECIMAL | Total earned points |
+| redeemed_points | DECIMAL | Points used |
+| tier | ENUM | 'bronze', 'silver', 'gold', 'platinum' |
+| join_date | DATE | Program join date |
+| last_activity_date | DATE | Last activity |
+| status | ENUM | 'active', 'inactive' |
+
+#### `refresh_tokens`
+| Column | Type | Description |
+|--------|------|-------------|
+| id | INT (PK) | Token ID |
+| staff_id | INT (FK) | Staff reference |
+| token_hash | VARCHAR(255) | SHA256 hashed token |
+| expires_at | TIMESTAMP | Token expiry |
+| revoked | BOOLEAN | Revoked status |
+| created_at | TIMESTAMP | Creation time |
+
+### Order Service - Tables
+
+#### `menus`
+| Column | Type | Description |
+|--------|------|-------------|
+| id | INT (PK) | Menu ID |
+| menu_id | VARCHAR(50) | Menu code |
+| name | VARCHAR(100) | Item name |
+| description | TEXT | Description |
+| category | VARCHAR(50) | Category |
+| price | DECIMAL | Selling price |
+| image | VARCHAR(255) | Image URL |
+| ingredients | JSON | Required ingredients |
+| available | BOOLEAN | Availability status |
+| preparation_time | INT | Prep time (minutes) |
+| tags | JSON | Tags array |
+
+#### `orders`
+| Column | Type | Description |
+|--------|------|-------------|
+| id | INT (PK) | Order ID |
+| order_id | VARCHAR(50) | Order code |
+| customer_id | VARCHAR(50) | Customer reference |
+| table_number | VARCHAR(20) | Table |
+| items | JSON | Order items |
+| subtotal | DECIMAL | Items subtotal |
+| tax | DECIMAL | Tax (10%) |
+| service_charge | DECIMAL | Service charge (5%) |
+| discount | DECIMAL | Discount amount |
+| loyalty_points_used | DECIMAL | Points used |
+| loyalty_points_earned | DECIMAL | Points earned |
+| total | DECIMAL | Final total |
+| payment_method | ENUM | 'cash', 'card', 'qris' |
+| payment_status | ENUM | 'pending', 'paid', 'refunded' |
+| order_status | ENUM | 'pending', 'confirmed', 'preparing', 'ready', 'completed', 'cancelled' |
+| staff_id | VARCHAR(50) | Cashier |
+| notes | TEXT | Order notes |
+
+---
+
+## 🔄 Business Logic & Workflows
+
+### 1. Order Creation Flow
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                    ORDER CREATION FLOW                          │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│  1. Customer creates order via Frontend                         │
+│           │                                                     │
+│           ▼                                                     │
+│  2. Order Service validates menu items                          │
+│           │                                                     │
+│           ▼                                                     │
+│  3. Check stock availability ──────► Inventory Service          │
+│           │                         (checkStock query)          │
+│           ▼                                                     │
+│  4. Calculate totals (subtotal + tax + service - discount)      │
+│           │                                                     │
+│           ▼                                                     │
+│  5. Create kitchen order ──────────► Kitchen Service            │
+│           │                         (createKitchenOrder)        │
+│           ▼                                                     │
+│  6. Reduce ingredient stock ───────► Inventory Service          │
+│           │                         (reduceStock mutation)      │
+│           ▼                                                     │
+│  7. Add loyalty points ────────────► User Service               │
+│           │                         (addLoyaltyPoints)          │
+│           ▼                                                     │
+│  8. Return complete order response                              │
+│                                                                 │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### 2. Kitchen Order Status Flow
+
+```
+PENDING ──► PREPARING ──► READY ──► COMPLETED
+   │            │            │
+   │            │            └── Served to customer
+   │            │
+   │            └── Chef is cooking
+   │
+   └── Waiting for chef assignment
+```
+
+### 3. Stock Management Flow
+
+```
+STOCK IN                          STOCK OUT
+────────                          ─────────
+• Purchase from supplier          • Order creation (auto)
+• Return from kitchen             • Manual adjustment
+• Toko Sembako delivery           • Spoilage/waste
+• Manual adjustment               • Transfer
+         │                               │
+         └───────► CURRENT STOCK ◄───────┘
+                        │
+                        ▼
+              ┌─────────────────┐
+              │ LOW STOCK ALERT │  (current < min_stock_level)
+              └─────────────────┘
+```
+
+### 4. Loyalty Points Calculation
+
+```
+Points Earned = floor(order_total / 10000)
+
+Tier Thresholds:
+- Bronze:   0 - 999 points
+- Silver:   1000 - 4999 points
+- Gold:     5000 - 9999 points
+- Platinum: 10000+ points
+
+Points Redemption:
+- 100 points = Rp 10,000 discount
+```
+
+### 5. Authentication Flow
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                    JWT AUTHENTICATION FLOW                       │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│  1. Staff login (username + password)                           │
+│           │                                                     │
+│           ▼                                                     │
+│  2. Verify password against bcrypt hash                         │
+│           │                                                     │
+│           ▼                                                     │
+│  3. Generate Access Token (7 hours expiry)                      │
+│           │                                                     │
+│           ▼                                                     │
+│  4. Generate Refresh Token (7 days expiry)                      │
+│     Store hash in database                                      │
+│           │                                                     │
+│           ▼                                                     │
+│  5. Return both tokens to client                                │
+│           │                                                     │
+│           ▼                                                     │
+│  6. Client stores tokens (localStorage/httpOnly cookie)         │
+│           │                                                     │
+│           ▼                                                     │
+│  7. Include Access Token in Authorization header                │
+│     Authorization: Bearer <access_token>                        │
+│           │                                                     │
+│           ▼                                                     │
+│  8. When Access Token expires:                                  │
+│     Call refreshToken mutation with Refresh Token               │
+│     Get new Access Token                                        │
+│                                                                 │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## 🔐 Security Features
+
+### Authentication & Authorization
+
+| Feature | Implementation |
+|---------|----------------|
+| Password Hashing | bcrypt with salt |
+| Access Token | JWT (7 hours expiry) |
+| Refresh Token | Random 64-byte hex (7 days expiry) |
+| Token Storage | Refresh token hash stored in DB |
+| Role-Based Access | admin, manager, chef, waiter, cashier |
+
+### Role Permissions
+
+| Action | Admin | Manager | Chef | Waiter | Cashier |
+|--------|-------|---------|------|--------|---------|
+| Create Staff | ✅ | ❌ | ❌ | ❌ | ❌ |
+| Delete Staff | ✅ | ❌ | ❌ | ❌ | ❌ |
+| Create Menu | ✅ | ✅ | ❌ | ❌ | ❌ |
+| Update Menu | ✅ | ✅ | ❌ | ❌ | ❌ |
+| Delete Menu | ✅ | ❌ | ❌ | ❌ | ❌ |
+| View Orders | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Create Orders | ✅ | ✅ | ❌ | ✅ | ✅ |
+| Update Kitchen | ✅ | ✅ | ✅ | ❌ | ❌ |
+| Manage Inventory | ✅ | ✅ | ❌ | ❌ | ❌ |
+| View Reports | ✅ | ✅ | ❌ | ❌ | ❌ |
+
+### Security Best Practices
+
+1. **Environment Variables**: All sensitive data stored in env vars
+2. **CORS Configuration**: Proper origin restrictions
+3. **Input Validation**: GraphQL type validation
+4. **SQL Injection**: Parameterized queries
+5. **Rate Limiting**: Consider for production
+
+---
+
+## 📊 API Use Cases
+
+### Use Case 1: Restaurant Opens for the Day
+
+```graphql
+# 1. Staff login
+mutation {
+  loginStaff(username: "manager1", password: "password123") {
+    token
+    staff { name role }
+  }
+}
+
+# 2. Check low stock items
+query {
+  lowStockIngredients { id name currentStock minStockLevel }
+}
+
+# 3. View available menu
+query {
+  menus(available: true) { id name price category }
+}
+
+# 4. Check chef availability
+query {
+  chefs { id name status currentOrders }
+}
+```
+
+### Use Case 2: Customer Places Order
+
+```graphql
+# 1. Add items to cart
+mutation {
+  addToCart(userId: "CUST001", input: {
+    menuId: "MENU001", quantity: 2
+  }) { items { name quantity } total }
+}
+
+# 2. Create order from cart
+mutation {
+  createOrderFromCart(input: {
+    cartId: "CART001"
+    tableNumber: "T05"
+    customerId: "CUST001"
+    paymentMethod: "qris"
+  }) {
+    order { orderId total orderStatus }
+    kitchenOrderCreated
+    stockUpdated
+  }
+}
+```
+
+### Use Case 3: Kitchen Prepares Order
+
+```graphql
+# 1. View pending orders
+query {
+  pendingOrders { id orderId tableNumber items { name quantity } priority }
+}
+
+# 2. Assign chef
+mutation {
+  assignChef(orderId: "1", chefId: "2") {
+    id status chef { name }
+  }
+}
+
+# 3. Update to preparing
+mutation {
+  updateOrderStatus(id: "1", status: "preparing") { id status }
+}
+
+# 4. Mark as ready
+mutation {
+  updateOrderStatus(id: "1", status: "ready") { id status }
+}
+
+# 5. Complete order
+mutation {
+  completeOrder(orderId: "1") { id status }
+}
+```
+
+### Use Case 4: Inventory Restock from Toko Sembako
+
+```graphql
+# 1. Check what products are available
+query {
+  tokoSembakoProducts { id name price unit available }
+}
+
+# 2. Check stock availability
+query {
+  checkTokoSembakoStock(productId: "1", quantity: 50) {
+    available currentStock message
+  }
+}
+
+# 3. Create purchase order
+mutation {
+  purchaseFromTokoSembako(input: {
+    orderNumber: "PO-20260104-001"
+    items: [
+      { productId: "1", quantity: 50 }
+      { productId: "3", quantity: 30 }
+    ]
+    notes: "Weekly restock"
+  }) {
+    success
+    message
+    order { id status total }
+  }
+}
+
+# 4. When delivery arrives, update stock
+mutation {
+  addStock(ingredientId: "5", quantity: 50, reason: "Delivery from Toko Sembako PO-20260104-001") {
+    id quantity reason
+  }
+}
+```
+
+---
+
+## 📈 Performance & Optimization
+
+### Database Indexes
+
+```sql
+-- Kitchen Orders
+CREATE INDEX idx_kitchen_orders_status ON kitchen_orders(status);
+CREATE INDEX idx_kitchen_orders_created ON kitchen_orders(created_at);
+
+-- Inventory
+CREATE INDEX idx_ingredients_status ON ingredients(status);
+CREATE INDEX idx_ingredients_category ON ingredients(category);
+CREATE INDEX idx_stock_movements_ingredient ON stock_movements(ingredient_id);
+
+-- Orders
+CREATE INDEX idx_orders_status ON orders(order_status);
+CREATE INDEX idx_orders_customer ON orders(customer_id);
+CREATE INDEX idx_orders_date ON orders(created_at);
+```
+
+### Caching Recommendations
+
+| Data | Cache Duration | Strategy |
+|------|----------------|----------|
+| Menu list | 5 minutes | Apollo cache |
+| Categories | 1 hour | Local storage |
+| Static data | 24 hours | Service worker |
+| Real-time data | No cache | Polling/WebSocket |
+
+### API Performance Targets
+
+| Metric | Target |
+|--------|--------|
+| Query response | < 200ms |
+| Mutation response | < 500ms |
+| External API (Toko Sembako) | < 2s (with retry) |
+| Dashboard load | < 3s |
+
+---
+
+## 🌍 Deployment Options
+
+### Local Development
+```bash
+docker-compose -f docker-compose-python.yml up -d
+```
+
+### Railway (Recommended for Demo)
+Each service can be deployed as separate Railway service with MySQL database.
+
+### Docker Swarm / Kubernetes
+Use provided Dockerfiles with container orchestration.
+
+### Environment-Specific Configs
+
+| Environment | Database | API URL |
+|-------------|----------|---------|
+| Development | localhost:3307-3312 | localhost:4001-4004 |
+| Staging | Railway MySQL | railway.app URLs |
+| Production | Managed MySQL | Custom domain |
+
+---
+
+## �📝 Notes
 
 - **Dual Implementation**: Project memiliki implementasi Node.js dan Python. Pilih salah satu atau gunakan keduanya.
 - **Database**: Semua services menggunakan MySQL 8.0.
@@ -791,3 +1307,4 @@ MIT License - Lihat file LICENSE untuk detail.
 ---
 
 **Happy Coding! 🚀**
+
