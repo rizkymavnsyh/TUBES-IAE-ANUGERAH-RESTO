@@ -322,6 +322,46 @@ const resolvers = {
       }
     },
 
+    updateIngredient: async (parent, { id, input }, { db }) => {
+      try {
+        const { name, unit, category, minStockLevel, supplierId, costPerUnit, status } = input;
+
+        let query = 'UPDATE ingredients SET ';
+        const params = [];
+        const updates = [];
+
+        if (name !== undefined) { updates.push('name = ?'); params.push(name); }
+        if (unit !== undefined) { updates.push('unit = ?'); params.push(unit); }
+        if (category !== undefined) { updates.push('category = ?'); params.push(category); }
+        if (minStockLevel !== undefined) { updates.push('min_stock_level = ?'); params.push(minStockLevel); }
+        if (supplierId !== undefined) { updates.push('supplier_id = ?'); params.push(supplierId); }
+        if (costPerUnit !== undefined) { updates.push('cost_per_unit = ?'); params.push(costPerUnit); }
+        if (status !== undefined) { updates.push('status = ?'); params.push(status); }
+
+        if (updates.length > 0) {
+          query += updates.join(', ');
+          query += ' WHERE id = ?';
+          params.push(id);
+
+          await db.execute(query, params);
+        }
+
+        const [ingredients] = await db.execute('SELECT * FROM ingredients WHERE id = ?', [id]);
+        if (ingredients.length === 0) throw new Error('Ingredient not found');
+
+        const ingredient = ingredients[0];
+        return {
+          ...ingredient,
+          id: ingredient.id.toString(),
+          minStockLevel: parseFloat(ingredient.min_stock_level),
+          currentStock: parseFloat(ingredient.current_stock),
+          costPerUnit: parseFloat(ingredient.cost_per_unit)
+        };
+      } catch (error) {
+        throw new Error(`Error updating ingredient: ${error.message}`);
+      }
+    },
+
     addStock: async (parent, { ingredientId, quantity, reason }, { db }) => {
       try {
         // Start transaction

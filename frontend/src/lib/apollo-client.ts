@@ -1,10 +1,32 @@
-import { ApolloClient, InMemoryCache, createHttpLink } from '@apollo/client';
+import { ApolloClient, InMemoryCache, createHttpLink, from } from '@apollo/client';
+import { setContext } from '@apollo/client/link/context';
 
-// Service URLs - adjust these based on your environment
+// Service URLs Configuration
+// INVENTORY SERVICE → Local (Port 4002) - Switched from Railway for CRUD support
+// OTHER SERVICES → Localhost
+
+const RAILWAY_INVENTORY_URL = 'https://tubes-iae-anugerah-resto-production.up.railway.app/graphql';
+
 const ORDER_SERVICE_URL = process.env.NEXT_PUBLIC_ORDER_SERVICE_URL || 'http://localhost:4004/graphql';
 const KITCHEN_SERVICE_URL = process.env.NEXT_PUBLIC_KITCHEN_SERVICE_URL || 'http://localhost:4001/graphql';
 const INVENTORY_SERVICE_URL = process.env.NEXT_PUBLIC_INVENTORY_SERVICE_URL || 'http://localhost:4002/graphql';
 const USER_SERVICE_URL = process.env.NEXT_PUBLIC_USER_SERVICE_URL || 'http://localhost:4003/graphql';
+
+// Auth middleware to add JWT token to requests
+const authLink = setContext((_, { headers }) => {
+  // Get token from localStorage (client-side only)
+  let token = '';
+  if (typeof window !== 'undefined') {
+    token = localStorage.getItem('token') || '';
+  }
+
+  return {
+    headers: {
+      ...headers,
+      authorization: token ? `${token}` : '',
+    }
+  };
+});
 
 // Create HTTP links for each service
 const orderServiceLink = createHttpLink({
@@ -25,7 +47,7 @@ const userServiceLink = createHttpLink({
 
 // Apollo Client for Order Service (default)
 export const apolloClient = new ApolloClient({
-  link: orderServiceLink,
+  link: from([authLink, orderServiceLink]),
   cache: new InMemoryCache(),
   defaultOptions: {
     watchQuery: {
@@ -36,19 +58,19 @@ export const apolloClient = new ApolloClient({
 
 // Apollo Client for Kitchen Service
 export const kitchenApolloClient = new ApolloClient({
-  link: kitchenServiceLink,
+  link: from([authLink, kitchenServiceLink]),
   cache: new InMemoryCache(),
 });
 
 // Apollo Client for Inventory Service
 export const inventoryApolloClient = new ApolloClient({
-  link: inventoryServiceLink,
+  link: from([authLink, inventoryServiceLink]),
   cache: new InMemoryCache(),
 });
 
 // Apollo Client for User Service
 export const userApolloClient = new ApolloClient({
-  link: userServiceLink,
+  link: from([authLink, userServiceLink]),
   cache: new InMemoryCache(),
 });
 
@@ -65,10 +87,3 @@ export function getApolloClient(service: 'order' | 'kitchen' | 'inventory' | 'us
       return apolloClient;
   }
 }
-
-
-
-
-
-
-

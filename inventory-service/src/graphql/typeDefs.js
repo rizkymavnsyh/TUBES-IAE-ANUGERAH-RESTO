@@ -224,7 +224,7 @@ const typeDefs = gql`
     minStockLevel: Float
     supplierId: ID
     costPerUnit: Float
-    status: IngredientStatus
+    status: String
   }
 
   input CreatePurchaseOrderInput {
