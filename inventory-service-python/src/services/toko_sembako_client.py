@@ -25,26 +25,46 @@ print(f"   Product Service: {TOKO_SEMBAKO_PRODUCT_URL}")
 print(f"   Inventory Service: {TOKO_SEMBAKO_INVENTORY_URL}")
 print(f"   Order Service: {TOKO_SEMBAKO_ORDER_URL}")
 
+import asyncio
 
-async def graphql_request(url: str, query: str, variables: Dict = None) -> Dict:
-    """Execute a GraphQL request"""
-    async with aiohttp.ClientSession() as session:
-        payload = {"query": query}
-        if variables:
-            payload["variables"] = variables
-        
-        async with session.post(
-            url,
-            json=payload,
-            headers={"Content-Type": "application/json"}
-        ) as response:
-            result = await response.json()
-            
-            if "errors" in result:
-                error_messages = [e.get("message", "Unknown error") for e in result["errors"]]
-                raise Exception(f"GraphQL errors: {', '.join(error_messages)}")
-            
-            return result.get("data", {})
+# Retry configuration
+MAX_RETRIES = 3
+RETRY_DELAY = 1  # seconds (will use exponential backoff: 1s, 2s, 4s)
+
+async def graphql_request(url: str, query: str, variables: Dict = None, retries: int = MAX_RETRIES) -> Dict:
+    """Execute a GraphQL request with automatic retry on failure"""
+    last_error = None
+    
+    for attempt in range(retries):
+        try:
+            async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=10)) as session:
+                payload = {"query": query}
+                if variables:
+                    payload["variables"] = variables
+                
+                async with session.post(
+                    url,
+                    json=payload,
+                    headers={"Content-Type": "application/json"}
+                ) as response:
+                    result = await response.json()
+                    
+                    if "errors" in result:
+                        error_messages = [e.get("message", "Unknown error") for e in result["errors"]]
+                        raise Exception(f"GraphQL errors: {', '.join(error_messages)}")
+                    
+                    return result.get("data", {})
+                    
+        except Exception as e:
+            last_error = e
+            if attempt < retries - 1:
+                delay = RETRY_DELAY * (2 ** attempt)  # Exponential backoff: 1, 2, 4...
+                print(f"⚠️ Request failed (attempt {attempt + 1}/{retries}), retrying in {delay}s: {e}")
+                await asyncio.sleep(delay)
+            else:
+                print(f"❌ Request failed after {retries} attempts: {e}")
+    
+    raise last_error
 
 
 async def get_products_from_toko_sembako(category: Optional[str] = None) -> List[Dict]:

@@ -1,4 +1,5 @@
 type Query {
+  health: Health!
   suppliers(status: String): [Supplier!]!
   supplier(id: String!): Supplier
   ingredients(category: String, status: String): [Ingredient!]!
@@ -201,4 +202,12 @@ input PurchaseFromTokoSembakoInput {
   orderNumber: String!
   items: [TokoSembakoOrderItemInput!]!
   notes: String
+}
+
+type Health {
+  status: String!
+  service: String!
+  version: String!
+  uptime: Float!
+  timestamp: String!
 }

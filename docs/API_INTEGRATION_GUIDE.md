@@ -163,3 +163,43 @@ Invoke-RestMethod -Uri "http://localhost:4002/graphql" -Method POST `
   -ContentType "application/json" `
   -Body '{"query":"{ lowStockIngredients { id name currentStock } }"}'
 ```
+
+---
+
+## 6. Health Check Endpoint
+
+Setiap service memiliki health check endpoint untuk monitoring:
+
+```graphql
+query {
+  health {
+    status
+    service
+    version
+    uptime
+    timestamp
+  }
+}
+```
+
+**Response:**
+```json
+{
+  "status": "healthy",
+  "service": "inventory-service-python",
+  "version": "1.0.0",
+  "uptime": 123.45,
+  "timestamp": "2026-01-04T01:00:00Z"
+}
+```
+
+---
+
+## 7. Retry Mechanism
+
+API calls ke Toko Sembako dilengkapi dengan **automatic retry**:
+- Max retries: 3
+- Exponential backoff: 1s → 2s → 4s
+- Timeout: 10 seconds per request
+
+Ini memastikan koneksi tetap stabil meski ada network issue sementara.

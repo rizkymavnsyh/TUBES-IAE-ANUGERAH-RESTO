@@ -1,4 +1,6 @@
 from typing import Optional, Dict, Any
+from datetime import datetime
+import time
 from ariadne import QueryType, MutationType, ObjectType
 from src.database.connection import get_db_connection
 from src.auth import require_auth, require_min_role
@@ -10,6 +12,10 @@ from src.services.toko_sembako_client import (
     get_order_status_from_toko_sembako
 )
 
+# Service startup time for uptime calculation
+SERVICE_START_TIME = time.time()
+SERVICE_VERSION = "1.0.0"
+
 query = QueryType()
 mutation = MutationType()
 ingredient = ObjectType("Ingredient")
@@ -20,6 +26,17 @@ toko_sembako_product = ObjectType("TokoSembakoProduct")
 toko_sembako_stock_check = ObjectType("TokoSembakoStockCheck")
 purchase_order = ObjectType("PurchaseOrder")
 purchase_order_item = ObjectType("PurchaseOrderItem")
+
+@query.field("health")
+def resolve_health(_, info):
+    """Health check endpoint"""
+    return {
+        'status': 'healthy',
+        'service': 'inventory-service-python',
+        'version': SERVICE_VERSION,
+        'uptime': time.time() - SERVICE_START_TIME,
+        'timestamp': datetime.utcnow().isoformat() + 'Z'
+    }
 
 # Query resolvers
 @query.field("ingredients")
