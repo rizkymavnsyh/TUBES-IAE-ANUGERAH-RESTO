@@ -689,20 +689,55 @@ const resolvers = {
         // Create purchase order items dan sync ke ingredients
         let stockAdded = false;
         for (const item of productDetails) {
-          // Find or create ingredient
-          let [ingredients] = await db.execute('SELECT * FROM ingredients WHERE name = ?', [item.name]);
+          // Find active ingredient by name (exclude deleted/inactive ones)
+          let [activeIngredients] = await db.execute(
+            'SELECT * FROM ingredients WHERE name = ? AND status = ?',
+            [item.name, 'active']
+          );
           let ingredientId;
 
-          if (ingredients.length === 0) {
-            // Create new ingredient
+          // Smart category mapping based on product name
+          const categoryMap = {
+            'bawang': 'Bumbu',
+            'cabai': 'Bumbu',
+            'tomat': 'Sayuran',
+            'wortel': 'Sayuran',
+            'kentang': 'Sayuran',
+            'kangkung': 'Sayuran',
+            'bayam': 'Sayuran',
+            'beras': 'Bahan Pokok',
+            'gula': 'Bahan Pokok',
+            'minyak': 'Bahan Pokok',
+            'tepung': 'Bahan Pokok',
+            'garam': 'Bumbu',
+            'ayam': 'Daging',
+            'sapi': 'Daging',
+            'ikan': 'Seafood',
+            'udang': 'Seafood',
+            'telur': 'Telur & Dairy',
+            'susu': 'Telur & Dairy'
+          };
+
+          // Get category from product name
+          const productNameLower = item.name.toLowerCase();
+          let category = 'Bahan Lainnya'; // Default
+          for (const [keyword, cat] of Object.entries(categoryMap)) {
+            if (productNameLower.includes(keyword)) {
+              category = cat;
+              break;
+            }
+          }
+
+          if (activeIngredients.length === 0) {
+            // Create new ingredient with proper category
             const [ingResult] = await db.execute(
               `INSERT INTO ingredients (name, unit, category, min_stock_level, current_stock, supplier_id, cost_per_unit, status)
-               VALUES (?, ?, 'Vegetable', 10, 0, ?, ?, 'active')`,
-              [item.name, item.unit, supplierId, item.price]
+               VALUES (?, ?, ?, 10, 0, ?, ?, 'active')`,
+              [item.name, item.unit, category, supplierId, item.price]
             );
             ingredientId = ingResult.insertId;
           } else {
-            ingredientId = ingredients[0].id;
+            ingredientId = activeIngredients[0].id;
           }
 
           // Create purchase order item
@@ -784,11 +819,14 @@ const resolvers = {
           throw new Error(`Stock tidak tersedia: ${stockCheck.message}`);
         }
 
-        // Find or create ingredient
-        let [ingredients] = await db.execute('SELECT * FROM ingredients WHERE name = ?', [product.name]);
+        // Find active ingredient by name (exclude deleted/inactive ones)
+        let [activeIngredients] = await db.execute(
+          'SELECT * FROM ingredients WHERE name = ? AND status = ?',
+          [product.name, 'active']
+        );
         let ingredientId;
 
-        if (ingredients.length === 0) {
+        if (activeIngredients.length === 0) {
           // Find Toko Sembako supplier
           let [suppliers] = await db.execute('SELECT * FROM suppliers WHERE name = ?', ['Toko Sembako']);
           let supplierId;
@@ -803,15 +841,46 @@ const resolvers = {
             supplierId = suppliers[0].id;
           }
 
-          // Create new ingredient
+          // Smart category mapping based on product name
+          const categoryMap = {
+            'bawang': 'Bumbu',
+            'cabai': 'Bumbu',
+            'tomat': 'Sayuran',
+            'wortel': 'Sayuran',
+            'kentang': 'Sayuran',
+            'kangkung': 'Sayuran',
+            'bayam': 'Sayuran',
+            'beras': 'Bahan Pokok',
+            'gula': 'Bahan Pokok',
+            'minyak': 'Bahan Pokok',
+            'tepung': 'Bahan Pokok',
+            'garam': 'Bumbu',
+            'ayam': 'Daging',
+            'sapi': 'Daging',
+            'ikan': 'Seafood',
+            'udang': 'Seafood',
+            'telur': 'Telur & Dairy',
+            'susu': 'Telur & Dairy'
+          };
+
+          const productNameLower = product.name.toLowerCase();
+          let category = 'Bahan Lainnya';
+          for (const [keyword, cat] of Object.entries(categoryMap)) {
+            if (productNameLower.includes(keyword)) {
+              category = cat;
+              break;
+            }
+          }
+
+          // Create new ingredient with proper category
           const [ingResult] = await db.execute(
             `INSERT INTO ingredients (name, unit, category, min_stock_level, current_stock, supplier_id, cost_per_unit, status)
-             VALUES (?, ?, 'Vegetable', 10, 0, ?, ?, 'active')`,
-            [product.name, product.unit, supplierId, product.price]
+             VALUES (?, ?, ?, 10, 0, ?, ?, 'active')`,
+            [product.name, product.unit, category, supplierId, product.price]
           );
           ingredientId = ingResult.insertId;
         } else {
-          ingredientId = ingredients[0].id;
+          ingredientId = activeIngredients[0].id;
         }
 
         // Start transaction
