@@ -496,9 +496,9 @@ const resolvers = {
         // Create purchase order items
         for (const item of items) {
           await db.execute(
-            `INSERT INTO purchase_order_items (purchase_order_id, ingredient_id, quantity, unit_price, total_price)
-             VALUES (?, ?, ?, ?, ?)`,
-            [orderResult.insertId, item.ingredientId, item.quantity, item.unitPrice, item.quantity * item.unitPrice]
+            `INSERT INTO purchase_order_items (purchase_order_id, ingredient_id, quantity, unit_price, price_per_unit, total_price)
+             VALUES (?, ?, ?, ?, ?, ?)`,
+            [orderResult.insertId, item.ingredientId, item.quantity, item.unitPrice, item.unitPrice, item.quantity * item.unitPrice]
           );
         }
 
@@ -708,9 +708,9 @@ const resolvers = {
           // Create purchase order item
           const totalPrice = item.quantity * item.price;
           await db.execute(
-            `INSERT INTO purchase_order_items (purchase_order_id, ingredient_id, quantity, unit_price, total_price)
-             VALUES (?, ?, ?, ?, ?)`,
-            [orderResult.insertId, ingredientId, item.quantity, item.price, totalPrice]
+            `INSERT INTO purchase_order_items (purchase_order_id, ingredient_id, quantity, unit_price, price_per_unit, total_price)
+             VALUES (?, ?, ?, ?, ?, ?)`,
+            [orderResult.insertId, ingredientId, item.quantity, item.price, item.price, totalPrice]
           );
 
           // Add stock immediately (karena order sudah dibuat di Toko Sembako)
