@@ -3,12 +3,14 @@ type Product {
   name: String!
   price: Int!
   unit: String!
+  category: String
 }
 
 type Query {
   getProducts: [Product]
+  getProductById(id: ID!): Product
 }
 
 type Mutation {
-  createProduct(name: String!, price: Int!, unit: String!): Product
+  createProduct(name: String!, price: Int!, unit: String!, category: String): Product
 }
