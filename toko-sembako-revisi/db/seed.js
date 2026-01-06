@@ -52,8 +52,13 @@ async function seedDatabase(isStandalone = false) {
                 );
                 console.log(`  ✅ Added product: ${product.name}`);
             } else {
-                // Optional: Update price if needed, but for now just skip
-                // console.log(`  ⏭️ Product exists: ${product.name}`);
+                // Update existing product to ensure category/description is set
+                const description = `Stok segar untuk ${product.name} kategori ${product.category}`;
+                await queryInsert(
+                    'UPDATE products SET category = ?, description = ? WHERE name = ?',
+                    [product.category, description, product.name]
+                );
+                console.log(`  🔄 Updated product: ${product.name}`);
             }
         } catch (err) {
             console.error(`  ❌ Error adding ${product.name}:`, err.message);
