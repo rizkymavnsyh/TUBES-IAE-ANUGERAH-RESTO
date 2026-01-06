@@ -41,6 +41,10 @@ app.use((req, res, next) => {
 async function start() {
     console.log('🚀 Starting Toko Sembako Monolith...');
 
+    // Debug: Log available env vars (keys only) to check for Railway variables
+    console.log('🔍 Environment Variables Keys:', Object.keys(process.env).filter(key => !key.startsWith('npm_')).join(', '));
+
+
     // Initialize database first
     try {
         await initDatabase();
