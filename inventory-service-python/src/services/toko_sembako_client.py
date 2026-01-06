@@ -141,8 +141,43 @@ async def get_product_by_id_from_toko_sembako(product_id: str) -> Optional[Dict]
 
 
 async def check_stock_from_toko_sembako(product_id: str, quantity: float) -> Dict:
-    """Check stock availability at Toko Sembako Inventory Service"""
-    query = """
+    """Check stock availability at Toko Sembako Inventory Service
+    
+    Uses checkStock query if available (toko-sembako-revisi), 
+    fallback to getInventory for compatibility
+    """
+    # Try using checkStock query first (toko-sembako-revisi has this)
+    check_stock_query = """
+        query CheckStock($productId: ID!, $quantity: Int!) {
+            checkStock(productId: $productId, quantity: $quantity) {
+                available
+                currentStock
+                requestedQuantity
+                message
+            }
+        }
+    """
+    
+    try:
+        data = await graphql_request(
+            TOKO_SEMBAKO_INVENTORY_URL, 
+            check_stock_query, 
+            {"productId": product_id, "quantity": int(quantity)}
+        )
+        result = data.get("checkStock")
+        
+        if result:
+            return {
+                "available": result.get("available", False),
+                "current_stock": float(result.get("currentStock", 0)),
+                "requested_quantity": float(result.get("requestedQuantity", quantity)),
+                "message": result.get("message", "")
+            }
+    except Exception as e:
+        print(f"⚠️ checkStock query failed, falling back to getInventory: {e}")
+    
+    # Fallback: use getInventory query
+    fallback_query = """
         query CheckInventory($productId: ID!) {
             getInventory(productId: $productId) {
                 productId
@@ -154,7 +189,7 @@ async def check_stock_from_toko_sembako(product_id: str, quantity: float) -> Dic
     try:
         data = await graphql_request(
             TOKO_SEMBAKO_INVENTORY_URL, 
-            query, 
+            fallback_query, 
             {"productId": product_id}
         )
         inventory = data.get("getInventory")
@@ -163,6 +198,7 @@ async def check_stock_from_toko_sembako(product_id: str, quantity: float) -> Dic
             return {
                 "available": False,
                 "current_stock": 0,
+                "requested_quantity": quantity,
                 "message": "Product not found in inventory"
             }
         
@@ -172,6 +208,7 @@ async def check_stock_from_toko_sembako(product_id: str, quantity: float) -> Dic
         return {
             "available": available,
             "current_stock": stock,
+            "requested_quantity": quantity,
             "message": f"Stock {'tersedia' if available else 'tidak cukup'}: {stock} unit"
         }
     except Exception as e:
@@ -179,8 +216,72 @@ async def check_stock_from_toko_sembako(product_id: str, quantity: float) -> Dic
         return {
             "available": False,
             "current_stock": 0,
+            "requested_quantity": quantity,
             "message": f"Error: {str(e)}"
         }
+
+
+async def get_all_inventory_from_toko_sembako() -> List[Dict]:
+    """Get all inventory items from Toko Sembako
+    
+    Only available in toko-sembako-revisi version
+    """
+    query = """
+        query GetAllInventory {
+            getAllInventory {
+                productId
+                stock
+            }
+        }
+    """
+    
+    try:
+        data = await graphql_request(TOKO_SEMBAKO_INVENTORY_URL, query)
+        inventory_items = data.get("getAllInventory", [])
+        
+        return [
+            {
+                "product_id": str(item.get("productId", "")),
+                "stock": float(item.get("stock", 0))
+            }
+            for item in inventory_items
+        ]
+    except Exception as e:
+        print(f"❌ Error fetching all inventory from Toko Sembako: {e}")
+        return []
+
+
+async def set_stock_at_toko_sembako(product_id: str, stock: int) -> Optional[Dict]:
+    """Set stock for a product at Toko Sembako
+    
+    Only available in toko-sembako-revisi version
+    """
+    mutation = """
+        mutation SetStock($productId: ID!, $stock: Int!) {
+            setStock(productId: $productId, stock: $stock) {
+                productId
+                stock
+            }
+        }
+    """
+    
+    try:
+        data = await graphql_request(
+            TOKO_SEMBAKO_INVENTORY_URL,
+            mutation,
+            {"productId": product_id, "stock": stock}
+        )
+        result = data.get("setStock")
+        
+        if result:
+            return {
+                "product_id": str(result.get("productId", "")),
+                "stock": int(result.get("stock", 0))
+            }
+        return None
+    except Exception as e:
+        print(f"❌ Error setting stock at Toko Sembako: {e}")
+        return None
 
 
 async def create_order_at_toko_sembako(
@@ -315,3 +416,31 @@ async def get_order_status_from_toko_sembako(order_id: str) -> Optional[Dict]:
     except Exception as e:
         print(f"❌ Error fetching order status: {e}")
         return None
+
+
+async def get_products_with_stock_from_toko_sembako(category: Optional[str] = None) -> List[Dict]:
+    """Get all products from Toko Sembako with their stock information
+    
+    Combines data from product-service and inventory-service
+    """
+    try:
+        # Get products and inventory in parallel
+        products = await get_products_from_toko_sembako(category)
+        inventory_items = await get_all_inventory_from_toko_sembako()
+        
+        # Create stock lookup
+        stock_lookup = {item["product_id"]: item["stock"] for item in inventory_items}
+        
+        # Merge stock info into products
+        for product in products:
+            product_id = product.get("id", "")
+            stock = stock_lookup.get(product_id, 0)
+            product["stock"] = stock
+            product["available"] = stock > 0
+        
+        return products
+        
+    except Exception as e:
+        print(f"❌ Error fetching products with stock: {e}")
+        # Fallback: return products without stock info
+        return await get_products_from_toko_sembako(category)

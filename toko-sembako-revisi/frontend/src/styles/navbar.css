@@ -1,0 +1,97 @@
+:root {
+  --navbar-height: 64px;
+}
+
+.navbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+
+  height: var(--navbar-height);
+  background: #2563eb;
+  color: white;
+
+  display: flex;
+  align-items: center;        /* ⬅️ wajib */
+  justify-content: space-between;
+
+  padding: 0 24px;
+  box-sizing: border-box;
+  z-index: 1100;
+}
+
+.navbar-left {
+  display: flex;
+  align-items: center;
+  height: 100%;               /* ⬅️ penting */
+  gap: 12px;
+}
+
+/* 🔥 FIX HAMBURGER */
+.icon {
+  font-size: 24px;
+  cursor: pointer;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  height: 100%;               /* ⬅️ KUNCI */
+}
+
+/* ===== RIGHT ===== */
+.navbar-right {
+  position: relative;
+}
+
+/* ICON USER – DIBESARIN */
+.user-icon {
+  font-size: 32px;   /* ← ini yang bikin lebih besar */
+  cursor: pointer;
+}
+
+/* DROPDOWN */
+.user-dropdown {
+  position: absolute;
+  right: 0;
+  top: 45px;
+  background: white;
+  color: black;
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  overflow: hidden;
+  min-width: 120px;
+}
+
+.user-dropdown button {
+  width: 100%;
+  padding: 10px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  text-align: left;
+}
+
+.user-dropdown button:hover {
+  background-color: #f1f5f9;
+}
+
+.profile-menu {
+  display: flex;
+  align-items: center;   /* 🔥 ini kunci sejajar */
+  gap: 8px;
+  cursor: pointer;
+}
+
+.user-icon {
+  font-size: 32px;
+  display: block;
+}
+
+.username {
+  font-size: 15px;
+  font-weight: 500;
+  line-height: 1;        /* 🔥 penting */
+  display: block;
+}

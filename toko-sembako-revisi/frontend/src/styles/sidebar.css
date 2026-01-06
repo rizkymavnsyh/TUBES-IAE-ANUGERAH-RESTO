@@ -1,0 +1,37 @@
+.sidebar {
+  width: 170px;
+  height: calc(100vh - 64px);
+  background: #1f2937;
+  color: white;
+  padding: 16px 12px;
+  position: fixed;
+  top: 64px;
+  left: 0;
+  z-index: 1000;
+  transition: transform 0.3s ease;
+}
+
+.menu {
+  font-size: 14px;
+  display: block;
+  padding: 12px 16px;
+  color: #e5e7eb;
+  text-decoration: none;
+  border-radius: 6px;
+  margin-bottom: 8px;
+}
+
+.sidebar.closed {
+  transform: translateX(-100%);
+}
+
+
+.menu:hover {
+  background: #374151;
+}
+
+.menu.active {
+  background: #7b96cf;
+  color: rgb(12, 12, 12);
+  font-weight: 600;
+}
