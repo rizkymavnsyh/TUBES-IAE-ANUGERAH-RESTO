@@ -246,7 +246,16 @@ const resolvers = {
         if (!product) {
           throw new Error('Product not found in Toko Sembako');
         }
-        return product;
+        // Add default values for fields not in Railway schema
+        return {
+          id: product.id,
+          name: product.name,
+          price: product.price,
+          unit: product.unit,
+          category: 'Umum',      // Railway doesn't have this field
+          available: true,       // Railway doesn't have this field
+          description: null      // Railway doesn't have this field
+        };
       } catch (error) {
         throw new Error(`Error fetching product from Toko Sembako: ${error.message}`);
       }
