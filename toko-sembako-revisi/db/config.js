@@ -1,16 +1,19 @@
 const mysql = require('mysql2/promise');
 
-// Konfigurasi database - dapat diubah via environment variables
+// Konfigurasi database - support Railway env vars (MYSQL*) dan custom (DB_*)
+// Default ke localhost hanya untuk dev local tanpa docker
 const dbConfig = {
-    host: process.env.DB_HOST || 'localhost',
-    port: process.env.DB_PORT || 3308,
-    user: process.env.DB_USER || 'root',
-    password: process.env.DB_PASSWORD || '',
-    database: process.env.DB_NAME || 'toko_sembako',
+    host: process.env.MYSQLHOST || process.env.DB_HOST || 'localhost',
+    port: process.env.MYSQLPORT || process.env.DB_PORT || 3308,
+    user: process.env.MYSQLUSER || process.env.DB_USER || 'root',
+    password: process.env.MYSQLPASSWORD || process.env.DB_PASSWORD || '',
+    database: process.env.MYSQLDATABASE || process.env.DB_NAME || 'toko_sembako',
     waitForConnections: true,
     connectionLimit: 10,
     queueLimit: 0
 };
+
+console.log(`🔌 Database Config: ${dbConfig.user}@${dbConfig.host}:${dbConfig.port}/${dbConfig.database}`);
 
 // Create connection pool
 let pool = null;
