@@ -4,6 +4,7 @@ const { ApolloServerPluginLandingPageLocalDefault } = require('apollo-server-cor
 
 // Database initialization
 const { initDatabase } = require('./db/init');
+const { seedDatabase } = require('./db/seed');
 
 // Import Schemas (Product and Inventory first)
 const product = require('./product-service');
@@ -49,6 +50,9 @@ async function start() {
     try {
         await initDatabase();
         console.log('✅ Database initialized successfully');
+
+        // Auto-seed database
+        await seedDatabase();
     } catch (err) {
         console.error('❌ Database initialization failed:', err.message);
         console.log('⚠️  Make sure MySQL is running and accessible');
