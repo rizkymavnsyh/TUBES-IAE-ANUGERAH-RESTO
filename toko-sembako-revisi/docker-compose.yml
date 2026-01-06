@@ -72,6 +72,8 @@ services:
       DB_NAME: toko_sembako
       PRODUCT_SERVICE_URL: http://product-service:5001/graphql
       INVENTORY_SERVICE_URL: http://inventory-service:5000/graphql
+      # Anugerah Resto Integration URL
+      ANUGERAH_RESTO_INVENTORY_URL: http://host.docker.internal:4002/graphql
     depends_on:
       toko-sembako-db:
         condition: service_healthy

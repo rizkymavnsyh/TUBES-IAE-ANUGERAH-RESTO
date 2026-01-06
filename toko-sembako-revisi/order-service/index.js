@@ -1,6 +1,14 @@
 const { ApolloServer, gql } = require("apollo-server");
 const fetch = require("node-fetch");
 const { query, queryInsert } = require("../db/config");
+const {
+  getLowStockIngredients,
+  getOutOfStockIngredients,
+  getAllIngredients,
+  getIngredientById,
+  notifyStockDelivery,
+  checkAnugerahRestoHealth
+} = require("../services/anugerah_resto_client");
 
 const PRODUCT_URL = process.env.PRODUCT_SERVICE_URL || "http://localhost:8080/graphql/product";
 const INVENTORY_URL = process.env.INVENTORY_SERVICE_URL || "http://localhost:8080/graphql/inventory";
@@ -26,9 +34,49 @@ const typeDefs = gql`
     status: String!
   }
 
+  # Anugerah Resto Integration Types
+  type AnugerahIngredient {
+    id: ID!
+    name: String!
+    unit: String!
+    category: String
+    minStockLevel: Float!
+    currentStock: Float!
+    costPerUnit: Float
+    status: String
+  }
+
+  type StockDeliveryResult {
+    success: Boolean!
+    message: String!
+    stockMovement: StockMovement
+  }
+
+  type StockMovement {
+    id: ID
+    quantity: Float
+    movementType: String
+    reason: String
+  }
+
+  type AnugerahHealthCheck {
+    status: String!
+    service: String
+    version: String
+    uptime: Float
+    timestamp: String
+  }
+
   type Query {
     getOrders: [Order]
     getOrderById(orderId: ID!): Order
+    
+    # Anugerah Resto Integration Queries
+    anugerahLowStockIngredients: [AnugerahIngredient!]!
+    anugerahOutOfStockIngredients: [AnugerahIngredient!]!
+    anugerahIngredients(category: String): [AnugerahIngredient!]!
+    anugerahIngredient(id: ID!): AnugerahIngredient
+    anugerahHealth: AnugerahHealthCheck
   }
 
   type Mutation {
@@ -38,6 +86,13 @@ const typeDefs = gql`
     ): Order
 
     cancelOrder(orderId: ID!): Order
+    
+    # Anugerah Resto Integration Mutations
+    notifyAnugerahDelivery(
+      ingredientId: ID!
+      quantity: Float!
+      reason: String
+    ): StockDeliveryResult!
   }
 `;
 
@@ -109,6 +164,73 @@ const resolvers = {
 
     getOrderById: async (_, { orderId }) => {
       return await getOrderWithItems(orderId);
+    },
+
+    // Anugerah Resto Integration Queries
+    anugerahLowStockIngredients: async () => {
+      console.log("📦 Fetching low stock ingredients from Anugerah Resto...");
+      const ingredients = await getLowStockIngredients();
+      return ingredients.map(ing => ({
+        id: String(ing.id),
+        name: ing.name,
+        unit: ing.unit,
+        category: ing.category,
+        minStockLevel: parseFloat(ing.minStockLevel || 0),
+        currentStock: parseFloat(ing.currentStock || 0),
+        costPerUnit: parseFloat(ing.costPerUnit || 0),
+        status: ing.status
+      }));
+    },
+
+    anugerahOutOfStockIngredients: async () => {
+      console.log("📦 Fetching out of stock ingredients from Anugerah Resto...");
+      const ingredients = await getOutOfStockIngredients();
+      return ingredients.map(ing => ({
+        id: String(ing.id),
+        name: ing.name,
+        unit: ing.unit,
+        category: ing.category,
+        minStockLevel: parseFloat(ing.minStockLevel || 0),
+        currentStock: parseFloat(ing.currentStock || 0),
+        costPerUnit: parseFloat(ing.costPerUnit || 0),
+        status: ing.status
+      }));
+    },
+
+    anugerahIngredients: async (_, { category }) => {
+      console.log("📦 Fetching all ingredients from Anugerah Resto...");
+      const ingredients = await getAllIngredients(category);
+      return ingredients.map(ing => ({
+        id: String(ing.id),
+        name: ing.name,
+        unit: ing.unit,
+        category: ing.category,
+        minStockLevel: parseFloat(ing.minStockLevel || 0),
+        currentStock: parseFloat(ing.currentStock || 0),
+        costPerUnit: parseFloat(ing.costPerUnit || 0),
+        status: ing.status
+      }));
+    },
+
+    anugerahIngredient: async (_, { id }) => {
+      console.log(`📦 Fetching ingredient ${id} from Anugerah Resto...`);
+      const ing = await getIngredientById(id);
+      if (!ing) return null;
+      return {
+        id: String(ing.id),
+        name: ing.name,
+        unit: ing.unit,
+        category: ing.category,
+        minStockLevel: parseFloat(ing.minStockLevel || 0),
+        currentStock: parseFloat(ing.currentStock || 0),
+        costPerUnit: parseFloat(ing.costPerUnit || 0),
+        status: ing.status
+      };
+    },
+
+    anugerahHealth: async () => {
+      console.log("🏥 Checking Anugerah Resto health...");
+      return await checkAnugerahRestoHealth();
     }
   },
 
@@ -232,6 +354,28 @@ const resolvers = {
       );
 
       return { ...order, status: "CANCELLED" };
+    },
+
+    // Anugerah Resto Integration Mutation
+    notifyAnugerahDelivery: async (_, { ingredientId, quantity, reason }) => {
+      console.log(`📦 Notifying Anugerah Resto about delivery: ingredient ${ingredientId}, quantity ${quantity}`);
+
+      const result = await notifyStockDelivery(
+        ingredientId,
+        quantity,
+        reason || 'Delivery from Toko Sembako'
+      );
+
+      return {
+        success: result.success,
+        message: result.message,
+        stockMovement: result.stockMovement ? {
+          id: result.stockMovement.id,
+          quantity: result.stockMovement.quantity,
+          movementType: result.stockMovement.movementType,
+          reason: result.stockMovement.reason
+        } : null
+      };
     }
   }
 };
