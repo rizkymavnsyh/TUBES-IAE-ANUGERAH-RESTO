@@ -986,81 +986,86 @@ query TokoSembako_GetProducts {
   }
 }
 
-# ⚠️ CATATAN: Schema Toko Sembako TIDAK punya field 'category'
-# Kategori akan di-set otomatis oleh Anugerah berdasarkan NAMA produk:
-#   - bawang, cabai, garam → Bumbu
-#   - beras, gula, minyak → Bahan Pokok
-#   - ayam, sapi → Daging
-#   - ikan, udang → Seafood
-#   - tomat, wortel, bayam → Sayuran
+# ✅ Schema Toko Sembako PUNYA field 'category'
+# Kategori yang tersedia: Sembako, Sayuran, Daging, Ikan, Bumbu
 
-# Tambah produk BUMBU (nama mengandung 'bawang', 'cabai', atau 'garam')
+# Tambah produk kategori BUMBU
 mutation TokoSembako_CreateProduct_Bumbu {
   createProduct(
     name: "Bawang Merah"
     price: 35000
     unit: "kg"
+    category: "Bumbu"
   ) {
     id
     name
     price
     unit
+    category
   }
 }
 
-# Tambah produk SAYURAN (nama mengandung 'tomat', 'wortel', 'kangkung', dll)
+# Tambah produk kategori SAYURAN
 mutation TokoSembako_CreateProduct_Sayuran {
   createProduct(
     name: "Tomat Merah"
     price: 15000
     unit: "kg"
+    category: "Sayuran"
   ) {
     id
     name
     price
     unit
+    category
   }
 }
 
-# Tambah produk BAHAN POKOK (nama mengandung 'beras', 'gula', 'minyak')
-mutation TokoSembako_CreateProduct_BahanPokok {
+# Tambah produk kategori SEMBAKO (Bahan Pokok)
+mutation TokoSembako_CreateProduct_Sembako {
   createProduct(
     name: "Beras Premium"
     price: 14000
     unit: "kg"
+    category: "Sembako"
   ) {
     id
     name
     price
     unit
+    category
   }
 }
 
-# Tambah produk DAGING (nama mengandung 'ayam', 'sapi')
+# Tambah produk kategori DAGING
 mutation TokoSembako_CreateProduct_Daging {
   createProduct(
     name: "Ayam Kampung"
     price: 50000
     unit: "kg"
+    category: "Daging"
   ) {
     id
     name
     price
     unit
+    category
   }
 }
 
-# Tambah produk SEAFOOD (nama mengandung 'ikan', 'udang')
-mutation TokoSembako_CreateProduct_Seafood {
+# Tambah produk kategori IKAN (Seafood)
+mutation TokoSembako_CreateProduct_Ikan {
   createProduct(
     name: "Ikan Patin"
     price: 45000
     unit: "kg"
+    category: "Ikan"
   ) {
     id
     name
     price
     unit
+    category
   }
 }
 
