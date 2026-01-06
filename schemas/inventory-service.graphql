@@ -241,4 +241,5 @@ input PurchaseFromTokoSembakoInput {
 input TokoSembakoOrderItemInput {
   productId: String!
   quantity: Float!
+  minStockLevel: Float  # Optional, default 10 if not provided
 }

@@ -856,7 +856,7 @@ mutation Anugerah_PurchaseFromTokoSembako_SingleItem {
   purchaseFromTokoSembako(input: {
     orderNumber: "PO-ANUGERAH-SINGLE-001"
     items: [
-      { productId: "1", quantity: 10 }
+      { productId: "1", quantity: 10, minStockLevel: 5 }
     ]
     notes: "Pembelian beras 10kg"
   }) {
@@ -872,14 +872,14 @@ mutation Anugerah_PurchaseFromTokoSembako_SingleItem {
   }
 }
 
-# Beli dari Toko Sembako - Multiple Items
+# Beli dari Toko Sembako - Multiple Items dengan Min Stock berbeda
 mutation Anugerah_PurchaseFromTokoSembako_MultipleItems {
   purchaseFromTokoSembako(input: {
     orderNumber: "PO-ANUGERAH-MULTI-001"
     items: [
-      { productId: "1", quantity: 20 },
-      { productId: "2", quantity: 15 },
-      { productId: "3", quantity: 10 }
+      { productId: "1", quantity: 20, minStockLevel: 15 },  # Beras: min 15
+      { productId: "2", quantity: 15, minStockLevel: 10 },  # Gula: min 10
+      { productId: "3", quantity: 10, minStockLevel: 5 }    # Minyak: min 5
     ]
     notes: "Pembelian rutin mingguan"
   }) {
@@ -889,6 +889,26 @@ mutation Anugerah_PurchaseFromTokoSembako_MultipleItems {
       id
       orderNumber
       status
+      totalAmount
+    }
+    stockAdded
+  }
+}
+
+# Beli dengan minStockLevel tinggi (untuk bahan penting)
+mutation Anugerah_PurchaseFromTokoSembako_HighMinStock {
+  purchaseFromTokoSembako(input: {
+    orderNumber: "PO-ANUGERAH-IMPORTANT-001"
+    items: [
+      { productId: "1", quantity: 50, minStockLevel: 30 }  # Beras: stok minimum 30
+    ]
+    notes: "Bahan pokok penting - stok aman tinggi"
+  }) {
+    success
+    message
+    purchaseOrder {
+      id
+      orderNumber
       totalAmount
     }
     stockAdded
@@ -966,11 +986,75 @@ query TokoSembako_GetProducts {
   }
 }
 
-# Tambah produk baru
-mutation TokoSembako_CreateProduct {
+# ⚠️ CATATAN: Schema Toko Sembako TIDAK punya field 'category'
+# Kategori akan di-set otomatis oleh Anugerah berdasarkan NAMA produk:
+#   - bawang, cabai, garam → Bumbu
+#   - beras, gula, minyak → Bahan Pokok
+#   - ayam, sapi → Daging
+#   - ikan, udang → Seafood
+#   - tomat, wortel, bayam → Sayuran
+
+# Tambah produk BUMBU (nama mengandung 'bawang', 'cabai', atau 'garam')
+mutation TokoSembako_CreateProduct_Bumbu {
   createProduct(
-    name: "Produk Baru"
-    price: 10000
+    name: "Bawang Merah"
+    price: 35000
+    unit: "kg"
+  ) {
+    id
+    name
+    price
+    unit
+  }
+}
+
+# Tambah produk SAYURAN (nama mengandung 'tomat', 'wortel', 'kangkung', dll)
+mutation TokoSembako_CreateProduct_Sayuran {
+  createProduct(
+    name: "Tomat Merah"
+    price: 15000
+    unit: "kg"
+  ) {
+    id
+    name
+    price
+    unit
+  }
+}
+
+# Tambah produk BAHAN POKOK (nama mengandung 'beras', 'gula', 'minyak')
+mutation TokoSembako_CreateProduct_BahanPokok {
+  createProduct(
+    name: "Beras Premium"
+    price: 14000
+    unit: "kg"
+  ) {
+    id
+    name
+    price
+    unit
+  }
+}
+
+# Tambah produk DAGING (nama mengandung 'ayam', 'sapi')
+mutation TokoSembako_CreateProduct_Daging {
+  createProduct(
+    name: "Ayam Kampung"
+    price: 50000
+    unit: "kg"
+  ) {
+    id
+    name
+    price
+    unit
+  }
+}
+
+# Tambah produk SEAFOOD (nama mengandung 'ikan', 'udang')
+mutation TokoSembako_CreateProduct_Seafood {
+  createProduct(
+    name: "Ikan Patin"
+    price: 45000
     unit: "kg"
   ) {
     id

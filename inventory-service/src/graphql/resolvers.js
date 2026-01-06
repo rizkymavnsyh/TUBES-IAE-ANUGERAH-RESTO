@@ -729,11 +729,12 @@ const resolvers = {
           }
 
           if (activeIngredients.length === 0) {
-            // Create new ingredient with proper category
+            // Create new ingredient with proper category and configurable min stock
+            const minStock = item.minStockLevel || 10; // Default 10 if not provided
             const [ingResult] = await db.execute(
               `INSERT INTO ingredients (name, unit, category, min_stock_level, current_stock, supplier_id, cost_per_unit, status)
-               VALUES (?, ?, ?, 10, 0, ?, ?, 'active')`,
-              [item.name, item.unit, category, supplierId, item.price]
+               VALUES (?, ?, ?, ?, 0, ?, ?, 'active')`,
+              [item.name, item.unit, category, minStock, supplierId, item.price]
             );
             ingredientId = ingResult.insertId;
           } else {
