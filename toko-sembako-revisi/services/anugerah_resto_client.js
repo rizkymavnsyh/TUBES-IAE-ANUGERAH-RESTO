@@ -9,7 +9,7 @@ const fetch = require('node-fetch');
 
 // URLs from environment or defaults
 const ANUGERAH_RESTO_INVENTORY_URL = process.env.ANUGERAH_RESTO_INVENTORY_URL ||
-    'http://localhost:4002/graphql';
+    'http://127.0.0.1:4002/graphql';
 
 console.log('🔗 Anugerah Resto Client Configuration:');
 console.log(`   Inventory Service: ${ANUGERAH_RESTO_INVENTORY_URL}`);

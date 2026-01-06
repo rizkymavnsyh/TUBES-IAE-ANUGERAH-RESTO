@@ -70,6 +70,19 @@ async function initDatabase() {
         await connection.execute(sql);
     }
 
+    // Migration: Add description column to products if not exists
+    try {
+        await connection.execute(`
+            ALTER TABLE products 
+            ADD COLUMN description TEXT
+        `);
+        console.log('✅ Added "description" column to products table');
+    } catch (err) {
+        if (err.code !== 'ER_DUP_FIELDNAME') {
+            console.log('ℹ️  Column "description" likely exists or other non-critical error:', err.message);
+        }
+    }
+
     console.log('✅ All tables created/verified');
     await connection.end();
 
