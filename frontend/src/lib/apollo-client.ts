@@ -40,7 +40,7 @@ const kitchenServiceLink = createHttpLink({
 });
 
 const inventoryServiceLink = createHttpLink({
-  uri: INVENTORY_SERVICE_URL,
+  uri: RAILWAY_INVENTORY_URL, // Using Railway Cloud URL
 });
 
 const userServiceLink = createHttpLink({

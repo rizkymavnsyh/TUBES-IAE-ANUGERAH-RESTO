@@ -795,21 +795,30 @@ mutation TokoSembako_Login {
 # #          BAGIAN 3: INTEGRASI ANUGERAH <-> TOKO SEMBAKO        #
 # #                                                               #
 # #################################################################
-# 📍 Jalankan di: Anugerah Resto Inventory Service (localhost:4002)
-#    atau di Railway Anugerah: https://tubes-iae-anugerah-resto-production.up.railway.app/graphql
 #
-# ⚠️  PENTING: Ini adalah query dari SISI ANUGERAH RESTO (Consumer)
-#    yang memanggil API TOKO SEMBAKO (Producer/Supplier)
+# ⚠️  PENTING: Setiap query/mutation harus dijalankan di endpoint yang BENAR!
+#
+# ENDPOINT RAILWAY:
+# ┌────────────────────────────────────────────────────────────────────────────┐
+# │ Service                 │ URL                                              │
+# ├────────────────────────────────────────────────────────────────────────────┤
+# │ Anugerah Inventory      │ https://tubes-iae-anugerah-resto-production.up.railway.app/graphql │
+# │ Toko Sembako Product    │ https://tubes-iae-anugerah-resto-production-3278.up.railway.app/graphql/product │
+# │ Toko Sembako Inventory  │ https://tubes-iae-anugerah-resto-production-3278.up.railway.app/graphql/inventory │
+# │ Toko Sembako Order      │ https://tubes-iae-anugerah-resto-production-3278.up.railway.app/graphql/order │
+# └────────────────────────────────────────────────────────────────────────────┘
 # =================================================================
 
 
 
 # =================================================================
-# 3.1 PRODUK TOKO SEMBAKO (READ)
+# 3.1 ANUGERAH: BELI DARI TOKO SEMBAKO
+# =================================================================
+# 📍 ENDPOINT: https://tubes-iae-anugerah-resto-production.up.railway.app/graphql
 # =================================================================
 
-# Ambil SEMUA produk dari Toko Sembako
-query Integration_GetAllTokoSembakoProducts {
+# Ambil semua produk Toko Sembako (via Anugerah)
+query Anugerah_GetTokoSembakoProducts {
   tokoSembakoProducts {
     id
     name
@@ -817,23 +826,11 @@ query Integration_GetAllTokoSembakoProducts {
     unit
     available
     category
-    description
-  }
-}
-
-# Ambil produk Toko Sembako berdasarkan kategori
-query Integration_GetTokoSembakoProductsByCategory {
-  tokoSembakoProducts(category: "Sayuran") {
-    id
-    name
-    price
-    unit
-    available
   }
 }
 
 # Ambil detail produk Toko Sembako by ID
-query Integration_GetTokoSembakoProductById {
+query Anugerah_GetTokoSembakoProductById {
   tokoSembakoProduct(id: "1") {
     id
     name
@@ -841,18 +838,11 @@ query Integration_GetTokoSembakoProductById {
     unit
     available
     category
-    description
   }
 }
 
-
-
-# =================================================================
-# 3.2 CEK STOK DI TOKO SEMBAKO (READ)
-# =================================================================
-
-# Cek apakah stok tersedia untuk jumlah tertentu
-query Integration_CheckTokoSembakoStock {
+# Cek stok di Toko Sembako
+query Anugerah_CheckTokoSembakoStock {
   checkTokoSembakoStock(productId: "1", quantity: 10) {
     available
     currentStock
@@ -861,33 +851,8 @@ query Integration_CheckTokoSembakoStock {
   }
 }
 
-# Cek stok untuk beberapa produk sekaligus (jalankan satu per satu)
-query Integration_CheckTokoSembakoStock_Product2 {
-  checkTokoSembakoStock(productId: "2", quantity: 5) {
-    available
-    currentStock
-    requestedQuantity
-    message
-  }
-}
-
-query Integration_CheckTokoSembakoStock_Product3 {
-  checkTokoSembakoStock(productId: "3", quantity: 20) {
-    available
-    currentStock
-    requestedQuantity
-    message
-  }
-}
-
-
-
-# =================================================================
-# 3.3 BELI DARI TOKO SEMBAKO (CREATE - Purchase Order)
-# =================================================================
-
 # Beli barang dari Toko Sembako - Single Item
-mutation Integration_PurchaseFromTokoSembako_SingleItem {
+mutation Anugerah_PurchaseFromTokoSembako_SingleItem {
   purchaseFromTokoSembako(input: {
     orderNumber: "PO-ANUGERAH-SINGLE-001"
     items: [
@@ -903,23 +868,12 @@ mutation Integration_PurchaseFromTokoSembako_SingleItem {
       status
       totalAmount
     }
-    tokoSembakoOrder {
-      orderId
-      status
-      total
-      items {
-        productId
-        name
-        quantity
-        price
-      }
-    }
     stockAdded
   }
 }
 
-# Beli barang dari Toko Sembako - Multiple Items
-mutation Integration_PurchaseFromTokoSembako_MultipleItems {
+# Beli dari Toko Sembako - Multiple Items
+mutation Anugerah_PurchaseFromTokoSembako_MultipleItems {
   purchaseFromTokoSembako(input: {
     orderNumber: "PO-ANUGERAH-MULTI-001"
     items: [
@@ -927,34 +881,7 @@ mutation Integration_PurchaseFromTokoSembako_MultipleItems {
       { productId: "2", quantity: 15 },
       { productId: "3", quantity: 10 }
     ]
-    notes: "Pembelian rutin mingguan - beras, gula, minyak"
-  }) {
-    success
-    message
-    purchaseOrder {
-      id
-      orderNumber
-      status
-      totalAmount
-    }
-    tokoSembakoOrder {
-      orderId
-      status
-      total
-    }
-    stockAdded
-  }
-}
-
-# Beli dengan jumlah besar (bulk order)
-mutation Integration_PurchaseFromTokoSembako_BulkOrder {
-  purchaseFromTokoSembako(input: {
-    orderNumber: "PO-ANUGERAH-BULK-001"
-    items: [
-      { productId: "1", quantity: 100 },
-      { productId: "2", quantity: 50 }
-    ]
-    notes: "Pembelian besar untuk stok bulan ini"
+    notes: "Pembelian rutin mingguan"
   }) {
     success
     message
@@ -968,234 +895,223 @@ mutation Integration_PurchaseFromTokoSembako_BulkOrder {
   }
 }
 
-
-
-# =================================================================
-# 3.4 CEK STATUS ORDER DI TOKO SEMBAKO (READ)
-# =================================================================
-
-# Cek status pesanan yang sudah dibuat
-query Integration_CheckOrderStatus {
-  tokoSembakoOrderStatus(orderId: "1") {
-    id
-    orderId
-    status
-    total
-    items {
-      productId
-      name
-      quantity
-      price
-    }
-    createdAt
-  }
-}
-
-# Cek status dengan orderId dari hasil purchase
-query Integration_CheckOrderStatus_ByPurchaseId {
-  tokoSembakoOrderStatus(orderId: "PO-ANUGERAH-001") {
-    id
-    orderId
-    status
-    total
-    createdAt
-  }
-}
-
-
-
-# =================================================================
-# 3.5 SYNC STOK DARI TOKO SEMBAKO KE ANUGERAH (UPDATE)
-# =================================================================
-
-# Sync stok ke inventory Anugerah (setelah barang diterima)
-mutation Integration_SyncStockFromTokoSembako {
+# Sync stok dari Toko Sembako ke Anugerah
+mutation Anugerah_SyncStockFromTokoSembako {
   syncStockFromTokoSembako(productId: "1", quantity: 50) {
     id
     movementType
     quantity
     reason
-    referenceId
-    referenceType
-    createdAt
   }
 }
 
-# Sync stok produk berbeda
-mutation Integration_SyncStockFromTokoSembako_Product2 {
-  syncStockFromTokoSembako(productId: "2", quantity: 30) {
+# Lihat semua ingredients di Anugerah
+query Anugerah_GetIngredients {
+  ingredients {
     id
-    movementType
-    quantity
-    reason
-  }
-}
-
-
-
-# =================================================================
-# 3.6 CANCEL ORDER DI TOKO SEMBAKO (via Order Service Toko Sembako)
-# =================================================================
-# 📍 NOTE: Ini HARUS dijalankan di endpoint Toko Sembako Order Service:
-#    https://tubes-iae-anugerah-resto-production-3278.up.railway.app/graphql/order
-#    BUKAN di Anugerah Inventory Service
-# =================================================================
-
-# ⚠️ JALANKAN DI: /graphql/order (Toko Sembako)
-mutation TokoSembako_CancelOrderFromAnugerah {
-  cancelOrder(orderId: "1") {
-    id
+    name
+    currentStock
+    minStockLevel
+    unit
     status
   }
 }
 
-
-
-# =================================================================
-# 3.7 FITUR INTERNAL ANUGERAH (yang terkait integrasi)
-# =================================================================
-# 📍 Jalankan di: Anugerah Resto Inventory Service (localhost:4002)
-# =================================================================
-
-# Cek stok ingredient di Anugerah (sebelum order ke customer)
-query Integration_CheckAnugerahStock {
-  checkStock(ingredientId: "1", quantity: 10) {
-    available
-    currentStock
-    requestedQuantity
-    message
-  }
-}
-
-# Lihat ingredient yang low stock (perlu restock dari Toko Sembako)
-query Integration_GetLowStockIngredients {
+# Lihat ingredient low stock
+query Anugerah_GetLowStockIngredients {
   lowStockIngredients {
     id
     name
     currentStock
     minStockLevel
     unit
-    category
-    status
   }
 }
 
-# Lihat ingredient yang out of stock (urgent restock!)
-query Integration_GetOutOfStockIngredients {
-  outOfStockIngredients {
-    id
-    name
-    currentStock
-    minStockLevel
-    unit
-  }
-}
-
-# Lihat semua supplier (termasuk Toko Sembako sebagai supplier)
-query Integration_GetSuppliers {
+# Lihat semua supplier
+query Anugerah_GetSuppliers {
   suppliers {
     id
     name
-    contactPerson
-    email
-    phone
-    address
     status
   }
 }
 
-# Lihat semua Purchase Order yang dibuat
-query Integration_GetPurchaseOrders {
+# Lihat Purchase Orders
+query Anugerah_GetPurchaseOrders {
   purchaseOrders {
     id
     orderNumber
     status
     totalAmount
-    orderDate
-    expectedDeliveryDate
-    receivedDate
     notes
-    supplier {
-      name
-    }
-    items {
-      ingredient {
-        name
-      }
-      quantity
-      unitPrice
-      totalPrice
-    }
   }
 }
 
-# Update status Purchase Order (setelah terima barang)
-mutation Integration_ReceivePurchaseOrder {
-  receivePurchaseOrder(id: "1") {
+
+
+# =================================================================
+# 3.2 TOKO SEMBAKO PRODUCT SERVICE (LANGSUNG)
+# =================================================================
+# 📍 ENDPOINT: https://tubes-iae-anugerah-resto-production-3278.up.railway.app/graphql/product
+# =================================================================
+
+# Ambil semua produk
+query TokoSembako_GetProducts {
+  getProducts {
     id
-    orderNumber
-    status
-    receivedDate
+    name
+    price
+    unit
   }
 }
 
-# Tambah stok secara manual (jika sync gagal)
-mutation Integration_AddStockManually {
-  addStock(
-    ingredientId: "1"
-    quantity: 50
-    reason: "Manual sync dari Toko Sembako - PO-001"
+# Tambah produk baru
+mutation TokoSembako_CreateProduct {
+  createProduct(
+    name: "Produk Baru"
+    price: 10000
+    unit: "kg"
   ) {
     id
-    movementType
-    quantity
-    reason
-    createdAt
+    name
+    price
+    unit
   }
 }
 
-# Lihat riwayat pergerakan stok
-query Integration_GetStockMovements {
-  stockMovements(ingredientId: "1") {
+
+
+# =================================================================
+# 3.3 TOKO SEMBAKO INVENTORY SERVICE (LANGSUNG)
+# =================================================================
+# 📍 ENDPOINT: https://tubes-iae-anugerah-resto-production-3278.up.railway.app/graphql/inventory
+# =================================================================
+
+# Cek stok produk
+query TokoSembako_GetInventory {
+  getInventory(productId: "1") {
+    productId
+    stock
+  }
+}
+
+# Tambah stok (PENTING: Jalankan ini dulu sebelum beli!)
+mutation TokoSembako_IncreaseStock {
+  increaseStock(productId: "1", qty: 200) {
+    productId
+    stock
+  }
+}
+
+# Kurangi stok
+mutation TokoSembako_DecreaseStock {
+  decreaseStock(productId: "1", qty: 10) {
+    productId
+    stock
+  }
+}
+
+
+
+# =================================================================
+# 3.4 TOKO SEMBAKO ORDER SERVICE (LANGSUNG)
+# =================================================================
+# 📍 ENDPOINT: https://tubes-iae-anugerah-resto-production-3278.up.railway.app/graphql/order
+# =================================================================
+
+# Ambil semua orders
+query TokoSembako_GetOrders {
+  getOrders {
     id
-    movementType
-    quantity
-    reason
-    referenceId
-    referenceType
-    createdAt
-    ingredient {
-      name
-      currentStock
+    restaurantId
+    total
+    status
+    items {
+      productId
+      qty
+      price
+      subtotal
     }
   }
 }
 
+# Ambil order by ID
+query TokoSembako_GetOrderById {
+  getOrderById(orderId: "25") {
+    id
+    restaurantId
+    total
+    status
+    items {
+      productId
+      qty
+      price
+      subtotal
+    }
+  }
+}
+
+# Buat order langsung dari Anugerah
+mutation TokoSembako_CreateOrder {
+  createOrder(
+    restaurantId: "anugerah-resto"
+    items: [
+      { productId: "1", qty: 10 },
+      { productId: "2", qty: 5 }
+    ]
+  ) {
+    id
+    restaurantId
+    total
+    status
+  }
+}
+
+# Cancel order
+mutation TokoSembako_CancelOrder {
+  cancelOrder(orderId: "25") {
+    id
+    status
+  }
+}
+
 
 
 # =================================================================
-# 3.8 FLOW LENGKAP: PEMBELIAN DARI TOKO SEMBAKO
+# 3.5 FLOW PEMBELIAN LENGKAP
 # =================================================================
 # 
-# URUTAN LANGKAH:
-# 1. Cek produk yang tersedia di Toko Sembako
-#    → Jalankan: Integration_GetAllTokoSembakoProducts
+# LANGKAH 1: Tambah stok di Toko Sembako (jika kosong)
+# ────────────────────────────────────────────────────
+# 📍 Endpoint: .../graphql/inventory
+# → Jalankan: TokoSembako_IncreaseStock
 #
-# 2. Cek stok yang dibutuhkan
-#    → Jalankan: Integration_CheckTokoSembakoStock
+# LANGKAH 2: Cek produk yang tersedia
+# ────────────────────────────────────────────────────
+# 📍 Endpoint: Anugerah Railway
+# → Jalankan: Anugerah_GetTokoSembakoProducts
 #
-# 3. Buat pesanan pembelian
-#    → Jalankan: Integration_PurchaseFromTokoSembako_MultipleItems
+# LANGKAH 3: Cek stok
+# ────────────────────────────────────────────────────
+# 📍 Endpoint: Anugerah Railway
+# → Jalankan: Anugerah_CheckTokoSembakoStock
 #
-# 4. Tunggu konfirmasi & cek status
-#    → Jalankan: Integration_CheckOrderStatus
+# LANGKAH 4: Beli dari Toko Sembako
+# ────────────────────────────────────────────────────
+# 📍 Endpoint: Anugerah Railway
+# → Jalankan: Anugerah_PurchaseFromTokoSembako_MultipleItems
 #
-# 5. Setelah barang diterima, sync stok ke Anugerah
-#    → Jalankan: Integration_SyncStockFromTokoSembako
-#      ATAU: Integration_ReceivePurchaseOrder
+# LANGKAH 5: Verifikasi order di Toko Sembako
+# ────────────────────────────────────────────────────
+# 📍 Endpoint: .../graphql/order
+# → Jalankan: TokoSembako_GetOrders
 #
-# 6. Verifikasi stok sudah masuk
-#    → Jalankan: Integration_GetStockMovements
+# LANGKAH 6: Verifikasi stok masuk di Anugerah
+# ────────────────────────────────────────────────────
+# 📍 Endpoint: Anugerah Railway
+# → Jalankan: Anugerah_GetIngredients
 #
 # =================================================================
+
 
