@@ -19,7 +19,7 @@ const typeDefs = gql`
   }
 
   type Mutation {
-    createProduct(name: String!, price: Int!, unit: String!): Product
+    createProduct(name: String!, price: Int!, unit: String!, category: String): Product
     updateProduct(id: ID!, name: String, price: Int, unit: String): Product
     deleteProduct(id: ID!): Boolean
   }
@@ -66,16 +66,17 @@ const resolvers = {
     }
   },
   Mutation: {
-    createProduct: async (_, { name, price, unit }) => {
+    createProduct: async (_, { name, price, unit, category }) => {
       const result = await queryInsert(
-        "INSERT INTO products (name, price, unit) VALUES (?, ?, ?)",
-        [name, price, unit]
+        "INSERT INTO products (name, price, unit, category) VALUES (?, ?, ?, ?)",
+        [name, price, unit, category || null]
       );
       return {
         id: result.insertId,
         name,
         price,
-        unit
+        unit,
+        category: category || null
       };
     },
     updateProduct: async (_, { id, name, price, unit }) => {
