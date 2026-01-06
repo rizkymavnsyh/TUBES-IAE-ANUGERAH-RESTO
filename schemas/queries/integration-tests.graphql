@@ -1,0 +1,1201 @@
+# =================================================================
+# INTEGRATION TESTS - ANUGERAH RESTO & TOKO SEMBAKO
+# =================================================================
+# 
+# ⚠️  PENTING: Setiap service punya endpoint TERPISAH!
+#
+# ANUGERAH RESTO ENDPOINTS (pilih sesuai service yang di-deploy):
+# ┌─────────────────┬───────┬─────────────────────────────────────────┐
+# │ Service         │ Port  │ Features                                │
+# ├─────────────────┼───────┼─────────────────────────────────────────┤
+# │ User Service    │ 4003  │ Login, Staff, Customer, Loyalty         │
+# │ Order Service   │ 4004  │ Menu, Order, Cart                       │
+# │ Inventory Svc   │ 4002  │ Ingredients, Suppliers, Stock, Toko API │
+# │ Kitchen Service │ 4001  │ Kitchen Queue, Chefs, Order Status      │
+# └─────────────────┴───────┴─────────────────────────────────────────┘
+#
+# RAILWAY ENDPOINTS:
+# - Anugerah (jika monolith): https://tubes-iae-anugerah-resto-production.up.railway.app/graphql
+# - Toko Sembako Product:     https://tubes-iae-anugerah-resto-production-3278.up.railway.app/graphql/product
+# - Toko Sembako Inventory:   https://tubes-iae-anugerah-resto-production-3278.up.railway.app/graphql/inventory
+# - Toko Sembako Order:       https://tubes-iae-anugerah-resto-production-3278.up.railway.app/graphql/order
+# - Toko Sembako Auth:        https://tubes-iae-anugerah-resto-production-3278.up.railway.app/graphql/auth
+#
+# =================================================================
+
+
+
+# #################################################################
+# #                                                               #
+# #           BAGIAN 1: ANUGERAH RESTO (MAIN PROJECT)             #
+# #                                                               #
+# #################################################################
+
+
+
+# =================================================================
+# 1.1 AUTHENTICATION
+# =================================================================
+# 📍 HANYA tersedia di: USER SERVICE (localhost:4003)
+# ⚠️  Tidak akan bekerja di inventory-service atau order-service!
+# =================================================================
+
+# Login sebagai Admin/Staff
+mutation LoginStaff {
+  loginStaff(
+    username: "admin"
+    password: "admin123"
+  ) {
+    token
+    refreshToken
+    expiresAt
+    staff {
+      id
+      employeeId
+      name
+      role
+    }
+    message
+  }
+}
+
+# Refresh Token
+mutation RefreshToken {
+  refreshToken(refreshToken: "YOUR_REFRESH_TOKEN_HERE") {
+    token
+    expiresAt
+    message
+  }
+}
+
+# Logout
+mutation Logout {
+  logout(refreshToken: "YOUR_REFRESH_TOKEN_HERE") {
+    success
+    message
+  }
+}
+
+
+
+# =================================================================
+# 1.2 MENU CRUD
+# =================================================================
+
+# READ: Ambil semua menu
+query GetAllMenus {
+  menus {
+    id
+    menuId
+    name
+    description
+    category
+    price
+    image
+    available
+    preparationTime
+    tags
+    ingredients {
+      ingredientId
+      ingredientName
+      quantity
+      unit
+    }
+    createdAt
+    updatedAt
+  }
+}
+
+# READ: Ambil menu tersedia saja
+query GetAvailableMenus {
+  menus(available: true) {
+    id
+    menuId
+    name
+    category
+    price
+    available
+  }
+}
+
+# READ: Ambil menu berdasarkan kategori
+query GetMenusByCategory {
+  menus(category: "Makanan Utama") {
+    id
+    name
+    price
+  }
+}
+
+# READ: Ambil menu by ID
+query GetMenuById {
+  menu(id: "1") {
+    id
+    menuId
+    name
+    description
+    category
+    price
+    ingredients {
+      ingredientId
+      ingredientName
+      quantity
+      unit
+    }
+  }
+}
+
+# READ: Ambil kategori menu
+query GetMenuCategories {
+  menuCategories
+}
+
+# CREATE: Tambah menu baru
+mutation CreateMenu {
+  createMenu(input: {
+    menuId: "MENU-NEW-001"
+    name: "Nasi Goreng Special"
+    description: "Nasi goreng dengan telur, ayam, dan sayuran"
+    category: "Makanan Utama"
+    price: 35000
+    preparationTime: 15
+    tags: ["Pedas", "Best Seller"]
+    available: true
+    ingredients: [
+      { ingredientId: "1", ingredientName: "Beras", quantity: 200, unit: "gram" },
+      { ingredientId: "2", ingredientName: "Telur", quantity: 2, unit: "butir" }
+    ]
+  }) {
+    id
+    menuId
+    name
+    price
+    category
+  }
+}
+
+# UPDATE: Update menu
+mutation UpdateMenu {
+  updateMenu(id: "1", input: {
+    name: "Nasi Goreng Supreme"
+    price: 40000
+    description: "Nasi goreng premium dengan seafood"
+  }) {
+    id
+    name
+    price
+    description
+  }
+}
+
+# UPDATE: Toggle ketersediaan menu
+mutation ToggleMenuAvailability {
+  toggleMenuAvailability(id: "1") {
+    id
+    name
+    available
+  }
+}
+
+# DELETE: Hapus menu
+mutation DeleteMenu {
+  deleteMenu(id: "1")
+}
+
+
+
+# =================================================================
+# 1.3 ORDER CRUD
+# =================================================================
+
+# READ: Ambil semua orders
+query GetAllOrders {
+  orders {
+    id
+    orderId
+    customerId
+    tableNumber
+    items {
+      menuId
+      name
+      quantity
+      price
+      specialInstructions
+    }
+    subtotal
+    tax
+    serviceCharge
+    discount
+    total
+    paymentMethod
+    paymentStatus
+    orderStatus
+    kitchenStatus
+    notes
+    createdAt
+  }
+}
+
+# READ: Ambil orders pending
+query GetPendingOrders {
+  orders(status: "pending") {
+    id
+    orderId
+    tableNumber
+    total
+    orderStatus
+  }
+}
+
+# READ: Ambil order by ID
+query GetOrderById {
+  order(id: "1") {
+    id
+    orderId
+    items {
+      name
+      quantity
+      price
+    }
+    total
+    orderStatus
+    paymentStatus
+  }
+}
+
+# CREATE: Buat order baru (PENTING: akan mengurangi stok & kirim ke kitchen)
+mutation CreateOrder {
+  createOrder(input: {
+    orderId: "ORD-TEST-001"
+    tableNumber: "A5"
+    items: [
+      { menuId: "1", name: "Nasi Goreng", quantity: 2, price: 35000 },
+      { menuId: "2", name: "Es Teh", quantity: 2, price: 8000 }
+    ]
+    paymentMethod: "cash"
+    notes: "Tidak pedas"
+  }) {
+    order {
+      id
+      orderId
+      total
+      orderStatus
+    }
+    kitchenOrderCreated
+    stockUpdated
+    loyaltyPointsEarned
+    message
+  }
+}
+
+# UPDATE: Update status order
+mutation UpdateOrderStatus {
+  updateOrderStatus(orderId: "ORD-TEST-001", status: "preparing") {
+    id
+    orderId
+    orderStatus
+  }
+}
+
+# UPDATE: Update status pembayaran
+mutation UpdatePaymentStatus {
+  updatePaymentStatus(orderId: "ORD-TEST-001", paymentStatus: "paid") {
+    id
+    orderId
+    paymentStatus
+  }
+}
+
+# UPDATE: Kirim ke Kitchen
+mutation SendToKitchen {
+  sendToKitchen(orderId: "ORD-TEST-001") {
+    id
+    orderId
+    kitchenStatus
+  }
+}
+
+# DELETE: Batalkan order
+mutation CancelOrder {
+  cancelOrder(orderId: "ORD-TEST-001") {
+    id
+    orderId
+    orderStatus
+  }
+}
+
+# CHECK: Cek stok menu sebelum order
+query CheckMenuStock {
+  checkMenuStock(menuId: "1", quantity: 5) {
+    available
+    message
+    ingredientName
+    required
+    availableQuantity
+  }
+}
+
+
+
+# =================================================================
+# 1.4 STAFF/USER CRUD
+# =================================================================
+
+# READ: Ambil semua staff
+query GetAllStaff {
+  staff {
+    id
+    employeeId
+    username
+    name
+    email
+    phone
+    role
+    department
+    status
+    hireDate
+  }
+}
+
+# READ: Ambil staff by role
+query GetStaffByRole {
+  staff(role: "chef") {
+    id
+    name
+    role
+    status
+  }
+}
+
+# READ: Ambil staff by ID
+query GetStaffById {
+  staffById(id: "1") {
+    id
+    employeeId
+    name
+    role
+    email
+    department
+  }
+}
+
+# CREATE: Tambah staff baru
+mutation CreateStaff {
+  createStaff(input: {
+    employeeId: "EMP-NEW-001"
+    username: "chefbaru"
+    name: "Chef Baru"
+    email: "chefbaru@anugerah.com"
+    phone: "08123456789"
+    role: "chef"
+    department: "Kitchen"
+    password: "password123"
+  }) {
+    id
+    employeeId
+    name
+    role
+  }
+}
+
+# UPDATE: Update staff
+mutation UpdateStaff {
+  updateStaff(id: "1", input: {
+    employeeId: "EMP-001"
+    name: "Chef Senior"
+    role: "chef"
+    department: "Kitchen"
+    email: "chefsenior@anugerah.com"
+  }) {
+    id
+    name
+    role
+  }
+}
+
+# DELETE: Hapus staff
+mutation DeleteStaff {
+  deleteStaff(id: "1")
+}
+
+
+
+# =================================================================
+# 1.5 CUSTOMER & LOYALTY
+# =================================================================
+
+# READ: Ambil semua customer
+query GetAllCustomers {
+  customers {
+    id
+    customerId
+    name
+    email
+    phone
+    status
+    loyalty {
+      totalPoints
+      availablePoints
+      tier
+    }
+  }
+}
+
+# READ: Ambil customer by ID
+query GetCustomerById {
+  customer(id: "1") {
+    id
+    customerId
+    name
+    email
+    loyalty {
+      totalPoints
+      redeemedPoints
+      availablePoints
+      tier
+    }
+  }
+}
+
+# READ: Ambil loyalty points customer
+query GetCustomerLoyalty {
+  customerLoyalty(customerId: "CUST-001") {
+    totalPoints
+    availablePoints
+    tier
+    lastActivityDate
+  }
+}
+
+# READ: Ambil transaksi loyalty
+query GetLoyaltyTransactions {
+  loyaltyTransactions(customerId: "CUST-001") {
+    id
+    transactionType
+    points
+    orderId
+    description
+    createdAt
+  }
+}
+
+# CREATE: Tambah customer
+mutation CreateCustomer {
+  createCustomer(input: {
+    customerId: "CUST-NEW-001"
+    name: "Customer Baru"
+    email: "customer@email.com"
+    phone: "08987654321"
+    address: "Jl. Merdeka No. 123"
+  }) {
+    id
+    customerId
+    name
+  }
+}
+
+# MUTATION: Tambah loyalty points
+mutation AddLoyaltyPoints {
+  addLoyaltyPoints(
+    customerId: "CUST-001"
+    points: 100
+    orderId: "ORD-001"
+    description: "Bonus pembelian"
+  ) {
+    id
+    points
+    transactionType
+  }
+}
+
+# MUTATION: Redeem loyalty points
+mutation RedeemLoyaltyPoints {
+  redeemLoyaltyPoints(
+    customerId: "CUST-001"
+    points: 50
+    orderId: "ORD-002"
+    description: "Penukaran diskon"
+  ) {
+    id
+    points
+    transactionType
+  }
+}
+
+
+
+# =================================================================
+# 1.6 CART OPERATIONS
+# =================================================================
+
+# READ: Ambil cart by ID
+query GetCart {
+  cart(cartId: "CART-001") {
+    id
+    cartId
+    customerId
+    tableNumber
+    items {
+      menuId
+      name
+      quantity
+      price
+    }
+    subtotal
+    tax
+    total
+    status
+  }
+}
+
+# CREATE: Buat cart baru
+mutation CreateCart {
+  createCart(input: {
+    cartId: "CART-NEW-001"
+    customerId: "CUST-001"
+    tableNumber: "B3"
+  }) {
+    id
+    cartId
+    status
+  }
+}
+
+# UPDATE: Tambah item ke cart
+mutation AddItemToCart {
+  addItemToCart(
+    cartId: "CART-NEW-001"
+    item: {
+      menuId: "1"
+      name: "Nasi Goreng"
+      quantity: 2
+      price: 35000
+      specialInstructions: "Tidak pedas"
+    }
+  ) {
+    id
+    items {
+      name
+      quantity
+    }
+    total
+  }
+}
+
+# UPDATE: Apply discount
+mutation ApplyDiscount {
+  applyDiscount(cartId: "CART-NEW-001", discount: 10000) {
+    id
+    discount
+    total
+  }
+}
+
+# DELETE: Clear cart
+mutation ClearCart {
+  clearCart(cartId: "CART-NEW-001") {
+    id
+    items {
+      name
+    }
+    total
+  }
+}
+
+# CONVERT: Buat order dari cart
+mutation CreateOrderFromCart {
+  createOrderFromCart(
+    cartId: "CART-NEW-001"
+    input: {
+      paymentMethod: "cash"
+      notes: "Pesanan dari cart"
+    }
+  ) {
+    order {
+      id
+      orderId
+      total
+    }
+    message
+  }
+}
+
+
+
+# #################################################################
+# #                                                               #
+# #                 BAGIAN 2: TOKO SEMBAKO                        #
+# #                                                               #
+# #################################################################
+
+
+
+# =================================================================
+# 2.1 PRODUCT SERVICE
+# =================================================================
+# 📍 Endpoint: https://tubes-iae-anugerah-resto-production-3278.up.railway.app/graphql/product
+
+# READ: Ambil semua produk
+query TokoSembako_GetAllProducts {
+  getProducts {
+    id
+    name
+    price
+    unit
+  }
+}
+
+# CREATE: Tambah produk baru
+mutation TokoSembako_CreateProduct {
+  createProduct(
+    name: "Ikan Patin"
+    price: 45000
+    unit: "kg"
+  ) {
+    id
+    name
+    price
+    unit
+  }
+}
+
+
+
+# =================================================================
+# 2.2 INVENTORY SERVICE
+# =================================================================
+# 📍 Endpoint: https://tubes-iae-anugerah-resto-production-3278.up.railway.app/graphql/inventory
+
+# READ: Cek stok produk
+query TokoSembako_GetInventory {
+  getInventory(productId: "1") {
+    productId
+    stock
+  }
+}
+
+# UPDATE: Tambah stok
+mutation TokoSembako_IncreaseStock {
+  increaseStock(productId: "1", qty: 100) {
+    productId
+    stock
+  }
+}
+
+# UPDATE: Kurangi stok
+mutation TokoSembako_DecreaseStock {
+  decreaseStock(productId: "1", qty: 10) {
+    productId
+    stock
+  }
+}
+
+
+
+# =================================================================
+# 2.3 ORDER SERVICE
+# =================================================================
+# 📍 Endpoint: https://tubes-iae-anugerah-resto-production-3278.up.railway.app/graphql/order
+
+# READ: Ambil semua pesanan
+query TokoSembako_GetAllOrders {
+  getOrders {
+    id
+    restaurantId
+    items {
+      productId
+      qty
+      price
+      subtotal
+    }
+    total
+    status
+  }
+}
+
+# READ: Ambil pesanan by ID
+query TokoSembako_GetOrderById {
+  getOrderById(orderId: "1") {
+    id
+    restaurantId
+    total
+    status
+  }
+}
+
+# CREATE: Buat pesanan (dari Anugerah Resto)
+mutation TokoSembako_CreateOrder {
+  createOrder(
+    restaurantId: "anugerah-resto-001"
+    items: [
+      { productId: "1", qty: 10 },
+      { productId: "2", qty: 5 }
+    ]
+  ) {
+    id
+    restaurantId
+    items {
+      productId
+      qty
+      price
+      subtotal
+    }
+    total
+    status
+  }
+}
+
+# UPDATE: Batalkan pesanan
+mutation TokoSembako_CancelOrder {
+  cancelOrder(orderId: "1") {
+    id
+    status
+  }
+}
+
+
+
+# =================================================================
+# 2.4 AUTH SERVICE
+# =================================================================
+# 📍 Endpoint: https://tubes-iae-anugerah-resto-production-3278.up.railway.app/graphql/auth
+
+# REGISTER: Daftar user baru
+mutation TokoSembako_Register {
+  register(
+    email: "anugerah@resto.com"
+    password: "password123"
+  ) {
+    token
+    user {
+      id
+      email
+    }
+  }
+}
+
+# LOGIN: Login
+mutation TokoSembako_Login {
+  login(
+    email: "anugerah@resto.com"
+    password: "password123"
+  ) {
+    token
+    user {
+      id
+      email
+    }
+  }
+}
+
+
+
+# #################################################################
+# #                                                               #
+# #          BAGIAN 3: INTEGRASI ANUGERAH <-> TOKO SEMBAKO        #
+# #                                                               #
+# #################################################################
+# 📍 Jalankan di: Anugerah Resto Inventory Service (localhost:4002)
+#    atau di Railway Anugerah: https://tubes-iae-anugerah-resto-production.up.railway.app/graphql
+#
+# ⚠️  PENTING: Ini adalah query dari SISI ANUGERAH RESTO (Consumer)
+#    yang memanggil API TOKO SEMBAKO (Producer/Supplier)
+# =================================================================
+
+
+
+# =================================================================
+# 3.1 PRODUK TOKO SEMBAKO (READ)
+# =================================================================
+
+# Ambil SEMUA produk dari Toko Sembako
+query Integration_GetAllTokoSembakoProducts {
+  tokoSembakoProducts {
+    id
+    name
+    price
+    unit
+    available
+    category
+    description
+  }
+}
+
+# Ambil produk Toko Sembako berdasarkan kategori
+query Integration_GetTokoSembakoProductsByCategory {
+  tokoSembakoProducts(category: "Sayuran") {
+    id
+    name
+    price
+    unit
+    available
+  }
+}
+
+# Ambil detail produk Toko Sembako by ID
+query Integration_GetTokoSembakoProductById {
+  tokoSembakoProduct(id: "1") {
+    id
+    name
+    price
+    unit
+    available
+    category
+    description
+  }
+}
+
+
+
+# =================================================================
+# 3.2 CEK STOK DI TOKO SEMBAKO (READ)
+# =================================================================
+
+# Cek apakah stok tersedia untuk jumlah tertentu
+query Integration_CheckTokoSembakoStock {
+  checkTokoSembakoStock(productId: "1", quantity: 10) {
+    available
+    currentStock
+    requestedQuantity
+    message
+  }
+}
+
+# Cek stok untuk beberapa produk sekaligus (jalankan satu per satu)
+query Integration_CheckTokoSembakoStock_Product2 {
+  checkTokoSembakoStock(productId: "2", quantity: 5) {
+    available
+    currentStock
+    requestedQuantity
+    message
+  }
+}
+
+query Integration_CheckTokoSembakoStock_Product3 {
+  checkTokoSembakoStock(productId: "3", quantity: 20) {
+    available
+    currentStock
+    requestedQuantity
+    message
+  }
+}
+
+
+
+# =================================================================
+# 3.3 BELI DARI TOKO SEMBAKO (CREATE - Purchase Order)
+# =================================================================
+
+# Beli barang dari Toko Sembako - Single Item
+mutation Integration_PurchaseFromTokoSembako_SingleItem {
+  purchaseFromTokoSembako(input: {
+    orderNumber: "PO-ANUGERAH-SINGLE-001"
+    items: [
+      { productId: "1", quantity: 10 }
+    ]
+    notes: "Pembelian beras 10kg"
+  }) {
+    success
+    message
+    purchaseOrder {
+      id
+      orderNumber
+      status
+      totalAmount
+    }
+    tokoSembakoOrder {
+      orderId
+      status
+      total
+      items {
+        productId
+        name
+        quantity
+        price
+      }
+    }
+    stockAdded
+  }
+}
+
+# Beli barang dari Toko Sembako - Multiple Items
+mutation Integration_PurchaseFromTokoSembako_MultipleItems {
+  purchaseFromTokoSembako(input: {
+    orderNumber: "PO-ANUGERAH-MULTI-001"
+    items: [
+      { productId: "1", quantity: 20 },
+      { productId: "2", quantity: 15 },
+      { productId: "3", quantity: 10 }
+    ]
+    notes: "Pembelian rutin mingguan - beras, gula, minyak"
+  }) {
+    success
+    message
+    purchaseOrder {
+      id
+      orderNumber
+      status
+      totalAmount
+    }
+    tokoSembakoOrder {
+      orderId
+      status
+      total
+    }
+    stockAdded
+  }
+}
+
+# Beli dengan jumlah besar (bulk order)
+mutation Integration_PurchaseFromTokoSembako_BulkOrder {
+  purchaseFromTokoSembako(input: {
+    orderNumber: "PO-ANUGERAH-BULK-001"
+    items: [
+      { productId: "1", quantity: 100 },
+      { productId: "2", quantity: 50 }
+    ]
+    notes: "Pembelian besar untuk stok bulan ini"
+  }) {
+    success
+    message
+    purchaseOrder {
+      id
+      orderNumber
+      status
+      totalAmount
+    }
+    stockAdded
+  }
+}
+
+
+
+# =================================================================
+# 3.4 CEK STATUS ORDER DI TOKO SEMBAKO (READ)
+# =================================================================
+
+# Cek status pesanan yang sudah dibuat
+query Integration_CheckOrderStatus {
+  tokoSembakoOrderStatus(orderId: "1") {
+    id
+    orderId
+    status
+    total
+    items {
+      productId
+      name
+      quantity
+      price
+    }
+    createdAt
+  }
+}
+
+# Cek status dengan orderId dari hasil purchase
+query Integration_CheckOrderStatus_ByPurchaseId {
+  tokoSembakoOrderStatus(orderId: "PO-ANUGERAH-001") {
+    id
+    orderId
+    status
+    total
+    createdAt
+  }
+}
+
+
+
+# =================================================================
+# 3.5 SYNC STOK DARI TOKO SEMBAKO KE ANUGERAH (UPDATE)
+# =================================================================
+
+# Sync stok ke inventory Anugerah (setelah barang diterima)
+mutation Integration_SyncStockFromTokoSembako {
+  syncStockFromTokoSembako(productId: "1", quantity: 50) {
+    id
+    movementType
+    quantity
+    reason
+    referenceId
+    referenceType
+    createdAt
+  }
+}
+
+# Sync stok produk berbeda
+mutation Integration_SyncStockFromTokoSembako_Product2 {
+  syncStockFromTokoSembako(productId: "2", quantity: 30) {
+    id
+    movementType
+    quantity
+    reason
+  }
+}
+
+
+
+# =================================================================
+# 3.6 CANCEL ORDER DI TOKO SEMBAKO (via Order Service Toko Sembako)
+# =================================================================
+# 📍 NOTE: Ini HARUS dijalankan di endpoint Toko Sembako Order Service:
+#    https://tubes-iae-anugerah-resto-production-3278.up.railway.app/graphql/order
+#    BUKAN di Anugerah Inventory Service
+# =================================================================
+
+# ⚠️ JALANKAN DI: /graphql/order (Toko Sembako)
+mutation TokoSembako_CancelOrderFromAnugerah {
+  cancelOrder(orderId: "1") {
+    id
+    status
+  }
+}
+
+
+
+# =================================================================
+# 3.7 FITUR INTERNAL ANUGERAH (yang terkait integrasi)
+# =================================================================
+# 📍 Jalankan di: Anugerah Resto Inventory Service (localhost:4002)
+# =================================================================
+
+# Cek stok ingredient di Anugerah (sebelum order ke customer)
+query Integration_CheckAnugerahStock {
+  checkStock(ingredientId: "1", quantity: 10) {
+    available
+    currentStock
+    requestedQuantity
+    message
+  }
+}
+
+# Lihat ingredient yang low stock (perlu restock dari Toko Sembako)
+query Integration_GetLowStockIngredients {
+  lowStockIngredients {
+    id
+    name
+    currentStock
+    minStockLevel
+    unit
+    category
+    status
+  }
+}
+
+# Lihat ingredient yang out of stock (urgent restock!)
+query Integration_GetOutOfStockIngredients {
+  outOfStockIngredients {
+    id
+    name
+    currentStock
+    minStockLevel
+    unit
+  }
+}
+
+# Lihat semua supplier (termasuk Toko Sembako sebagai supplier)
+query Integration_GetSuppliers {
+  suppliers {
+    id
+    name
+    contactPerson
+    email
+    phone
+    address
+    status
+  }
+}
+
+# Lihat semua Purchase Order yang dibuat
+query Integration_GetPurchaseOrders {
+  purchaseOrders {
+    id
+    orderNumber
+    status
+    totalAmount
+    orderDate
+    expectedDeliveryDate
+    receivedDate
+    notes
+    supplier {
+      name
+    }
+    items {
+      ingredient {
+        name
+      }
+      quantity
+      unitPrice
+      totalPrice
+    }
+  }
+}
+
+# Update status Purchase Order (setelah terima barang)
+mutation Integration_ReceivePurchaseOrder {
+  receivePurchaseOrder(id: "1") {
+    id
+    orderNumber
+    status
+    receivedDate
+  }
+}
+
+# Tambah stok secara manual (jika sync gagal)
+mutation Integration_AddStockManually {
+  addStock(
+    ingredientId: "1"
+    quantity: 50
+    reason: "Manual sync dari Toko Sembako - PO-001"
+  ) {
+    id
+    movementType
+    quantity
+    reason
+    createdAt
+  }
+}
+
+# Lihat riwayat pergerakan stok
+query Integration_GetStockMovements {
+  stockMovements(ingredientId: "1") {
+    id
+    movementType
+    quantity
+    reason
+    referenceId
+    referenceType
+    createdAt
+    ingredient {
+      name
+      currentStock
+    }
+  }
+}
+
+
+
+# =================================================================
+# 3.8 FLOW LENGKAP: PEMBELIAN DARI TOKO SEMBAKO
+# =================================================================
+# 
+# URUTAN LANGKAH:
+# 1. Cek produk yang tersedia di Toko Sembako
+#    → Jalankan: Integration_GetAllTokoSembakoProducts
+#
+# 2. Cek stok yang dibutuhkan
+#    → Jalankan: Integration_CheckTokoSembakoStock
+#
+# 3. Buat pesanan pembelian
+#    → Jalankan: Integration_PurchaseFromTokoSembako_MultipleItems
+#
+# 4. Tunggu konfirmasi & cek status
+#    → Jalankan: Integration_CheckOrderStatus
+#
+# 5. Setelah barang diterima, sync stok ke Anugerah
+#    → Jalankan: Integration_SyncStockFromTokoSembako
+#      ATAU: Integration_ReceivePurchaseOrder
+#
+# 6. Verifikasi stok sudah masuk
+#    → Jalankan: Integration_GetStockMovements
+#
+# =================================================================
+

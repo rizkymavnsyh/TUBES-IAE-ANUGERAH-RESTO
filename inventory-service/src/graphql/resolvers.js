@@ -351,11 +351,16 @@ const resolvers = {
 
         const ingredient = ingredients[0];
         return {
-          ...ingredient,
           id: ingredient.id.toString(),
-          minStockLevel: parseFloat(ingredient.min_stock_level),
-          currentStock: parseFloat(ingredient.current_stock),
-          costPerUnit: parseFloat(ingredient.cost_per_unit)
+          name: ingredient.name,
+          unit: ingredient.unit,
+          category: ingredient.category,
+          minStockLevel: parseFloat(ingredient.min_stock_level) || 0,
+          currentStock: parseFloat(ingredient.current_stock) || 0,
+          costPerUnit: parseFloat(ingredient.cost_per_unit) || 0,
+          status: ingredient.status || 'active',
+          createdAt: ingredient.created_at ? ingredient.created_at.toISOString() : new Date().toISOString(),
+          updatedAt: ingredient.updated_at ? ingredient.updated_at.toISOString() : new Date().toISOString()
         };
       } catch (error) {
         throw new Error(`Error updating ingredient: ${error.message}`);
@@ -692,10 +697,11 @@ const resolvers = {
           }
 
           // Create purchase order item
+          const totalPrice = item.quantity * item.price;
           await db.execute(
-            `INSERT INTO purchase_order_items (purchase_order_id, ingredient_id, quantity, price_per_unit)
-             VALUES (?, ?, ?, ?)`,
-            [orderResult.insertId, ingredientId, item.quantity, item.price]
+            `INSERT INTO purchase_order_items (purchase_order_id, ingredient_id, quantity, unit_price, total_price)
+             VALUES (?, ?, ?, ?, ?)`,
+            [orderResult.insertId, ingredientId, item.quantity, item.price, totalPrice]
           );
 
           // Add stock immediately (karena order sudah dibuat di Toko Sembako)
@@ -729,14 +735,22 @@ const resolvers = {
 
         // Get created purchase order
         const [orders] = await db.execute('SELECT * FROM purchase_orders WHERE id = ?', [orderResult.insertId]);
+        const po = orders[0];
 
         return {
           success: true,
           message: `Order berhasil dibuat di Toko Sembako dan stock telah ditambahkan`,
           purchaseOrder: {
-            ...orders[0],
-            id: orders[0].id.toString(),
-            totalAmount: parseFloat(orders[0].total_amount)
+            id: po.id.toString(),
+            orderNumber: po.order_number,
+            status: po.status,
+            totalAmount: parseFloat(po.total_amount),
+            orderDate: po.order_date ? po.order_date.toISOString() : null,
+            expectedDeliveryDate: po.expected_delivery_date ? po.expected_delivery_date.toISOString() : null,
+            receivedDate: po.received_date ? po.received_date.toISOString() : null,
+            notes: po.notes,
+            createdAt: po.created_at ? po.created_at.toISOString() : new Date().toISOString(),
+            updatedAt: po.updated_at ? po.updated_at.toISOString() : new Date().toISOString()
           },
           tokoSembakoOrder: tokoSembakoOrder,
           stockAdded: stockAdded

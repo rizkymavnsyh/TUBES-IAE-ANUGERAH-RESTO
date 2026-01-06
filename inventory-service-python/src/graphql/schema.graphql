@@ -1,34 +1,34 @@
 type Query {
   health: Health!
   suppliers(status: String): [Supplier!]!
-  supplier(id: String!): Supplier
+  supplier(id: ID!): Supplier
   ingredients(category: String, status: String): [Ingredient!]!
-  ingredient(id: String!): Ingredient
+  ingredient(id: ID!): Ingredient
   lowStockIngredients: [Ingredient!]!
   outOfStockIngredients: [Ingredient!]!
-  stockMovements(ingredientId: String, movementType: String): [StockMovement!]!
+  stockMovements(ingredientId: ID, movementType: String): [StockMovement!]!
   purchaseOrders(status: String): [PurchaseOrder!]!
-  purchaseOrder(id: String!): PurchaseOrder
-  checkStock(ingredientId: String!, quantity: Float!): StockCheckResult!
+  purchaseOrder(id: ID!): PurchaseOrder
+  checkStock(ingredientId: ID!, quantity: Float!): StockCheckResult!
   tokoSembakoProducts(category: String): [TokoSembakoProduct!]!
-  tokoSembakoProduct(id: String!): TokoSembakoProduct
-  checkTokoSembakoStock(productId: String!, quantity: Float!): TokoSembakoStockCheck!
+  tokoSembakoProduct(id: ID!): TokoSembakoProduct
+  checkTokoSembakoStock(productId: ID!, quantity: Float!): TokoSembakoStockCheck!
   tokoSembakoOrderStatus(orderId: String!): TokoSembakoOrder
 }
 
 type Mutation {
   createSupplier(input: CreateSupplierInput!): Supplier!
-  updateSupplier(id: String!, input: UpdateSupplierInput!): Supplier!
+  updateSupplier(id: ID!, input: UpdateSupplierInput!): Supplier!
   createIngredient(input: CreateIngredientInput!): Ingredient!
-  updateIngredient(id: String!, input: UpdateIngredientInput!): Ingredient!
-  addStock(ingredientId: String!, quantity: Float!, reason: String): StockMovement!
-  reduceStock(ingredientId: String!, quantity: Float!, reason: String, referenceId: String, referenceType: String): StockMovement!
-  adjustStock(ingredientId: String!, newQuantity: Float!, reason: String): StockMovement!
+  updateIngredient(id: ID!, input: UpdateIngredientInput!): Ingredient!
+  addStock(ingredientId: ID!, quantity: Float!, reason: String): StockMovement!
+  reduceStock(ingredientId: ID!, quantity: Float!, reason: String, referenceId: String, referenceType: String): StockMovement!
+  adjustStock(ingredientId: ID!, newQuantity: Float!, reason: String): StockMovement!
   createPurchaseOrder(input: CreatePurchaseOrderInput!): PurchaseOrder!
-  updatePurchaseOrderStatus(id: String!, status: String!): PurchaseOrder!
-  receivePurchaseOrder(id: String!): PurchaseOrder!
+  updatePurchaseOrderStatus(id: ID!, status: String!): PurchaseOrder!
+  receivePurchaseOrder(id: ID!): PurchaseOrder!
   purchaseFromTokoSembako(input: PurchaseFromTokoSembakoInput!): PurchaseFromTokoSembakoResult!
-  syncStockFromTokoSembako(productId: String!, quantity: Float!): StockMovement!
+  syncStockFromTokoSembako(productId: ID!, quantity: Float!): StockMovement!
 }
 
 type Supplier {

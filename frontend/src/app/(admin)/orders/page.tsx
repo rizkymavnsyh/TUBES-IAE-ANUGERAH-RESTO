@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useQuery, useMutation, gql } from '@apollo/client';
-import { apolloClient } from '@/lib/apollo-client';
+import { apolloClient, kitchenApolloClient } from '@/lib/apollo-client';
 
 const GET_ORDERS = gql`
   query GetOrders($status: OrderStatus) {
@@ -65,6 +65,16 @@ const UPDATE_ORDER = gql`
   }
 `;
 
+const CREATE_KITCHEN_ORDER = gql`
+  mutation CreateKitchenOrder($input: CreateKitchenOrderInput!) {
+    createKitchenOrder(input: $input) {
+      id
+      orderId
+      status
+    }
+  }
+`;
+
 const GET_MENUS = gql`
   query GetMenus {
     menus(available: true) {
@@ -117,6 +127,7 @@ export default function OrdersPage() {
     },
   });
   const [updateOrder] = useMutation(UPDATE_ORDER, { client: apolloClient });
+  const [createKitchenOrder] = useMutation(CREATE_KITCHEN_ORDER, { client: kitchenApolloClient });
 
   const isBackendConnected = !error || error.message !== 'Failed to fetch';
 
@@ -154,24 +165,54 @@ export default function OrdersPage() {
       } else {
         // Create new order
         const orderId = `ORD-${Date.now()}`;
+        const newOrderInput = {
+          orderId: orderId,
+          customerId: formData.customerId || null,
+          tableNumber: formData.tableNumber || null,
+          paymentMethod: formData.paymentMethod,
+          notes: formData.notes || null,
+          items: validItems.map(item => ({
+            menuId: item.menuId,
+            name: item.name,
+            quantity: item.quantity,
+            price: item.price,
+            specialInstructions: item.specialInstructions || null,
+          })),
+        };
+
+        // 1. Create in Order Service
         await createOrder({
           variables: {
-            input: {
-              orderId: orderId,
-              customerId: formData.customerId || null,
-              tableNumber: formData.tableNumber || null,
-              paymentMethod: formData.paymentMethod,
-              notes: formData.notes || null,
-              items: validItems.map(item => ({
-                menuId: item.menuId,
-                name: item.name,
-                quantity: item.quantity,
-                price: item.price,
-                specialInstructions: item.specialInstructions || null,
-              })),
-            },
+            input: newOrderInput,
           },
         });
+
+        // 2. Create in Kitchen Service (Sync)
+        // Map items to match Kitchen schema
+        const kitchenItems = validItems.map(item => ({
+          menuId: item.menuId,
+          name: item.name,
+          quantity: item.quantity,
+          specialInstructions: item.specialInstructions || ''
+        }));
+
+        try {
+          await createKitchenOrder({
+            variables: {
+              input: {
+                orderId: orderId,
+                tableNumber: formData.tableNumber || '',
+                items: kitchenItems,
+                priority: 0, // Default normal priority
+                notes: formData.notes || ''
+              }
+            }
+          });
+          console.log('✅ Order synced to Kitchen Service');
+        } catch (kitchenErr) {
+          console.error('❌ Failed to sync to kitchen:', kitchenErr);
+          alert('Order berhasil dibuat, tapi GAGAL masuk ke dapur. Harap lapor teknisi.');
+        }
       }
       refetch();
       closeModal();
@@ -479,7 +520,7 @@ export default function OrdersPage() {
 
       {/* Create/Edit Order Modal */}
       {showModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[60] p-4">
           <div className="bg-white rounded-xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
             <div className="p-6">
               <h2 className="text-xl font-bold text-slate-800 mb-4">

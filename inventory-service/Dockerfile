@@ -8,6 +8,7 @@ RUN npm install
 
 COPY . .
 
+# Force rebuild to pick up latest code changes
 EXPOSE 4002
 
 CMD ["npm", "start"]

@@ -12,13 +12,14 @@ require('dotenv').config();
  * - For cross-team integration: Set individual URLs via environment variables
  */
 
-// Base URL untuk Toko Sembako (ngrok URL dari kelompok mereka jika remote)
-const TOKO_SEMBAKO_BASE_URL = process.env.TOKO_SEMBAKO_URL || 'http://localhost';
+// Base URL untuk Toko Sembako (Railway Cloud URL jika remote)
+// Railway uses path-based routing instead of port-based
+const TOKO_SEMBAKO_BASE_URL = process.env.TOKO_SEMBAKO_URL || 'https://tubes-iae-anugerah-resto-production-3278.up.railway.app';
 
-// Individual service URLs - default to local Toko Sembako services
-const TOKO_SEMBAKO_PRODUCT_URL = process.env.TOKO_SEMBAKO_PRODUCT_URL || `${TOKO_SEMBAKO_BASE_URL}:5001/graphql`;
-const TOKO_SEMBAKO_INVENTORY_URL = process.env.TOKO_SEMBAKO_INVENTORY_URL || `${TOKO_SEMBAKO_BASE_URL}:5000/graphql`;
-const TOKO_SEMBAKO_ORDER_URL = process.env.TOKO_SEMBAKO_ORDER_URL || `${TOKO_SEMBAKO_BASE_URL}:5002/graphql`;
+// Individual service URLs - Railway uses single port with path routing
+const TOKO_SEMBAKO_PRODUCT_URL = process.env.TOKO_SEMBAKO_PRODUCT_URL || `${TOKO_SEMBAKO_BASE_URL}/graphql/product`;
+const TOKO_SEMBAKO_INVENTORY_URL = process.env.TOKO_SEMBAKO_INVENTORY_URL || `${TOKO_SEMBAKO_BASE_URL}/graphql/inventory`;
+const TOKO_SEMBAKO_ORDER_URL = process.env.TOKO_SEMBAKO_ORDER_URL || `${TOKO_SEMBAKO_BASE_URL}/graphql/order`;
 
 // Log configuration on startup
 console.log('🔗 Toko Sembako Client Configuration:');
@@ -35,7 +36,7 @@ async function callTokoSembakoService(url, query, variables = {}) {
       query,
       variables
     }, {
-      timeout: 10000, // 10 seconds timeout
+      timeout: 30000, // 30 seconds timeout for Docker network latency
       headers: {
         'Content-Type': 'application/json'
       }
@@ -57,43 +58,38 @@ async function callTokoSembakoService(url, query, variables = {}) {
  */
 async function getProductsFromTokoSembako(category = null) {
   try {
-    const query = category
-      ? `
-        query GetProducts($category: String) {
-          products(category: $category) {
-            id
-            name
-            category
-            price
-            unit
-            available
-            description
-          }
+    // Railway schema only has getProducts with (id, name, price, unit)
+    // Use simple query that matches Railway's actual schema
+    const query = `
+      query GetProducts {
+        getProducts {
+          id
+          name
+          price
+          unit
         }
-      `
-      : `
-        query GetProducts {
-          getProducts {
-            id
-            name
-            price
-            unit
-          }
-        }
-      `;
+      }
+    `;
 
-    const data = await callTokoSembakoService(TOKO_SEMBAKO_PRODUCT_URL, query, { category });
-    const products = data.getProducts || data.products || [];
+    let data;
+    try {
+      data = await callTokoSembakoService(TOKO_SEMBAKO_PRODUCT_URL, query, {});
+    } catch (err) {
+      console.error('Error fetching from Toko Sembako:', err.message);
+      return [];
+    }
 
-    // Ensure all products have required fields with defaults
+    const products = data.getProducts || [];
+
+    // Map products and add default values for fields not in Railway schema
     return products.map(product => ({
       id: product.id,
       name: product.name,
-      category: product.category || 'Umum',
+      category: 'Umum', // Railway doesn't have category, default to 'Umum'
       price: product.price,
       unit: product.unit,
-      available: product.available !== undefined ? product.available : true, // Default to true if not provided
-      description: product.description || null
+      available: true, // Railway doesn't have available, default to true
+      description: null // Railway doesn't have description
     }));
   } catch (error) {
     console.error('Error fetching products from Toko Sembako:', error.message);

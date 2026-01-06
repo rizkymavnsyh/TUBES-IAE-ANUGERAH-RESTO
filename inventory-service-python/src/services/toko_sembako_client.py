@@ -68,38 +68,75 @@ async def graphql_request(url: str, query: str, variables: Dict = None, retries:
 
 
 async def get_products_from_toko_sembako(category: Optional[str] = None) -> List[Dict]:
-    """Fetch all products from Toko Sembako Product Service"""
+    """Fetch all products from Toko Sembako Product Service
+    
+    Updated to match Node.js logic: tries 'products' query first, falls back to 'getProducts'
+    """
+    # 1. Try new 'products' query which supports category filtering and returns more fields
     query = """
-        query GetProducts {
-            getProducts {
+        query GetProducts($category: String) {
+            products(category: $category) {
                 id
                 name
+                category
                 price
                 unit
+                available
+                description
             }
         }
     """
     
     try:
-        data = await graphql_request(TOKO_SEMBAKO_PRODUCT_URL, query)
-        products = data.get("getProducts", [])
+        data = await graphql_request(TOKO_SEMBAKO_PRODUCT_URL, query, {"category": category})
+        products = data.get("products", [])
         
         # Transform to match our schema
         return [
             {
                 "id": str(p.get("id", "")),
                 "name": p.get("name", ""),
-                "category": category,  # Toko Sembako doesn't have category
+                "category": p.get("category", "Umum"),
                 "price": float(p.get("price", 0)),
                 "unit": p.get("unit", ""),
-                "available": True,
-                "description": None
+                "available": p.get("available", True),
+                "description": p.get("description")
             }
             for p in products
         ]
     except Exception as e:
-        print(f"❌ Error fetching products from Toko Sembako: {e}")
-        return []
+        print(f"⚠️ 'products' query failed, falling back to 'getProducts': {e}")
+        
+        # 2. Fallback to old 'getProducts' query
+        fallback_query = """
+            query GetProducts {
+                getProducts {
+                    id
+                    name
+                    price
+                    unit
+                }
+            }
+        """
+        try:
+            data = await graphql_request(TOKO_SEMBAKO_PRODUCT_URL, fallback_query)
+            products = data.get("getProducts", [])
+            
+            return [
+                {
+                    "id": str(p.get("id", "")),
+                    "name": p.get("name", ""),
+                    "category": category or "Umum", # Default category
+                    "price": float(p.get("price", 0)),
+                    "unit": p.get("unit", ""),
+                    "available": True,
+                    "description": None
+                }
+                for p in products
+            ]
+        except Exception as e2:
+            print(f"❌ Error fetching products from Toko Sembako (fallback): {e2}")
+            return []
 
 
 async def get_product_by_id_from_toko_sembako(product_id: str) -> Optional[Dict]:

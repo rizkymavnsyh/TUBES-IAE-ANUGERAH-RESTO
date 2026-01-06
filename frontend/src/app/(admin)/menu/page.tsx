@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useQuery, useMutation, gql } from '@apollo/client';
-import { apolloClient } from '@/lib/apollo-client';
+import { apolloClient, inventoryApolloClient } from '@/lib/apollo-client';
 
 const GET_MENUS = gql`
   query GetMenus($category: String, $available: Boolean) {
@@ -29,6 +29,20 @@ const GET_MENUS = gql`
 const GET_MENU_CATEGORIES = gql`
   query GetMenuCategories {
     menuCategories
+  }
+`;
+
+// Query to fetch ingredients from Inventory Service
+const GET_INVENTORY_INGREDIENTS = gql`
+  query GetIngredients {
+    ingredients {
+      id
+      name
+      unit
+      category
+      currentStock
+      status
+    }
   }
 `;
 
@@ -91,6 +105,12 @@ export default function MenuPage() {
 
   const { data: categoriesData } = useQuery(GET_MENU_CATEGORIES, { client: apolloClient });
 
+  // Fetch ingredients from Inventory Service
+  const { data: ingredientsData } = useQuery(GET_INVENTORY_INGREDIENTS, {
+    client: inventoryApolloClient,
+    fetchPolicy: 'network-only'
+  });
+
   const [createMenu] = useMutation(CREATE_MENU, { client: apolloClient });
   const [updateMenu] = useMutation(UPDATE_MENU, { client: apolloClient });
   const [deleteMenu] = useMutation(DELETE_MENU, { client: apolloClient });
@@ -106,6 +126,14 @@ export default function MenuPage() {
     );
 
     try {
+      // Map ingredients to ensure correct types for GraphQL
+      const formattedIngredients = validIngredients.map(ing => ({
+        ingredientId: String(ing.ingredientId),
+        ingredientName: String(ing.ingredientName),
+        quantity: parseFloat(String(ing.quantity)) || 0,
+        unit: String(ing.unit)
+      }));
+
       if (editingMenu) {
         await updateMenu({
           variables: {
@@ -117,7 +145,7 @@ export default function MenuPage() {
               category: formData.category,
               image: formData.image || null,
               preparationTime: parseInt(formData.preparationTime) || 15,
-              ingredients: validIngredients.length > 0 ? validIngredients : undefined,
+              ingredients: formattedIngredients.length > 0 ? formattedIngredients : undefined,
             },
           },
         });
@@ -138,7 +166,7 @@ export default function MenuPage() {
               category: formData.category,
               image: formData.image || null,
               preparationTime: parseInt(formData.preparationTime) || 15,
-              ingredients: validIngredients,
+              ingredients: formattedIngredients,
             },
           },
         });
@@ -219,6 +247,22 @@ export default function MenuPage() {
 
   const updateIngredient = (index: number, field: keyof Ingredient, value: string | number) => {
     const newIngredients = [...formData.ingredients];
+
+    // If selecting from dropdown, auto-fill name and unit
+    if (field === 'ingredientId' && ingredientsData?.ingredients) {
+      const selected = ingredientsData.ingredients.find((ing: any) => ing.id === value);
+      if (selected) {
+        newIngredients[index] = {
+          ...newIngredients[index],
+          ingredientId: value as string,
+          ingredientName: selected.name,
+          unit: selected.unit
+        };
+        setFormData({ ...formData, ingredients: newIngredients });
+        return;
+      }
+    }
+
     newIngredients[index] = { ...newIngredients[index], [field]: value };
     setFormData({ ...formData, ingredients: newIngredients });
   };
@@ -409,22 +453,23 @@ export default function MenuPage() {
                   </label>
                   <div className="space-y-2">
                     {formData.ingredients.map((ing, index) => (
-                      <div key={index} className="flex gap-2 items-start">
-                        <div className="flex-1 grid grid-cols-4 gap-2">
-                          <input
-                            type="text"
+                      <div key={index} className="flex gap-2 items-start p-2 bg-slate-50 rounded-lg">
+                        <div className="flex-1 grid grid-cols-3 gap-2">
+                          {/* Ingredient Dropdown from Inventory */}
+                          <select
                             value={ing.ingredientId}
                             onChange={(e) => updateIngredient(index, 'ingredientId', e.target.value)}
-                            className="px-2 py-1 text-sm border border-slate-300 rounded"
-                            placeholder="ID Bahan"
-                          />
-                          <input
-                            type="text"
-                            value={ing.ingredientName}
-                            onChange={(e) => updateIngredient(index, 'ingredientName', e.target.value)}
-                            className="px-2 py-1 text-sm border border-slate-300 rounded"
-                            placeholder="Nama Bahan"
-                          />
+                            className="px-2 py-1 text-sm border border-slate-300 rounded col-span-2"
+                          >
+                            <option value="">Pilih Bahan</option>
+                            {ingredientsData?.ingredients
+                              ?.filter((item: any) => item.status === 'active' || item.status === 'ACTIVE')
+                              .map((item: any) => (
+                                <option key={item.id} value={item.id}>
+                                  {item.name} ({item.currentStock} {item.unit})
+                                </option>
+                              ))}
+                          </select>
                           <input
                             type="number"
                             value={ing.quantity || ''}
@@ -434,19 +479,9 @@ export default function MenuPage() {
                             min="0"
                             step="0.1"
                           />
-                          <select
-                            value={ing.unit}
-                            onChange={(e) => updateIngredient(index, 'unit', e.target.value)}
-                            className="px-2 py-1 text-sm border border-slate-300 rounded"
-                          >
-                            <option value="gram">gram</option>
-                            <option value="kg">kg</option>
-                            <option value="ml">ml</option>
-                            <option value="liter">liter</option>
-                            <option value="pcs">pcs</option>
-                            <option value="tbsp">tbsp</option>
-                            <option value="tsp">tsp</option>
-                          </select>
+                        </div>
+                        <div className="text-xs text-slate-500 self-center min-w-[60px]">
+                          {ing.ingredientName && `${ing.unit}`}
                         </div>
                         <button
                           type="button"

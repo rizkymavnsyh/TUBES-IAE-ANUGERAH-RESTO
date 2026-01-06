@@ -17,13 +17,15 @@ const authLink = setContext((_, { headers }) => {
   // Get token from localStorage (client-side only)
   let token = '';
   if (typeof window !== 'undefined') {
-    token = localStorage.getItem('token') || '';
+    token = localStorage.getItem('auth_token') || '';
+    // Debug logging
+    console.log('[Apollo Auth] Token found:', token ? `${token.substring(0, 20)}...` : 'NO TOKEN');
   }
 
   return {
     headers: {
       ...headers,
-      authorization: token ? `${token}` : '',
+      authorization: token ? `Bearer ${token}` : '',
     }
   };
 });

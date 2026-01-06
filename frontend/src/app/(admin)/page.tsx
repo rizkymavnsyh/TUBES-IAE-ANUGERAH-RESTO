@@ -1,7 +1,7 @@
 'use client';
 
 import { useQuery, gql } from '@apollo/client';
-import { apolloClient } from '@/lib/apollo-client';
+import { apolloClient, inventoryApolloClient } from '@/lib/apollo-client';
 
 // GraphQL Queries
 const GET_MENUS = gql`
@@ -29,12 +29,13 @@ const GET_ORDERS = gql`
 `;
 
 const GET_INVENTORY = gql`
-  query GetInventory {
-    inventoryItems {
+  query GetIngredients {
+    ingredients {
       id
       name
-      quantity
-      minStock
+      currentStock
+      minStockLevel
+      status
     }
   }
 `;
@@ -42,14 +43,16 @@ const GET_INVENTORY = gql`
 export default function DashboardPage() {
   const { data: menusData, loading: menusLoading, error: menusError } = useQuery(GET_MENUS, { client: apolloClient });
   const { data: ordersData, loading: ordersLoading, error: ordersError } = useQuery(GET_ORDERS, { client: apolloClient });
-  const { data: inventoryData, loading: inventoryLoading, error: inventoryError } = useQuery(GET_INVENTORY, { client: apolloClient });
+  const { data: inventoryData, loading: inventoryLoading, error: inventoryError } = useQuery(GET_INVENTORY, { client: inventoryApolloClient });
 
   // Calculate stats
   const totalMenus = menusData?.menus?.length || 0;
   const availableMenus = menusData?.menus?.filter((m: any) => m.available).length || 0;
   const totalOrders = ordersData?.orders?.length || 0;
   const pendingOrders = ordersData?.orders?.filter((o: any) => o.orderStatus === 'pending').length || 0;
-  const lowStockItems = inventoryData?.inventoryItems?.filter((i: any) => i.quantity <= i.minStock).length || 0;
+  const lowStockItems = inventoryData?.ingredients?.filter((i: any) =>
+    i.status !== 'inactive' && i.currentStock <= i.minStockLevel
+  ).length || 0;
   const totalRevenue = ordersData?.orders?.reduce((sum: number, o: any) => {
     if (o.orderStatus === 'completed') return sum + (o.total || 0);
     return sum;
@@ -120,9 +123,9 @@ export default function DashboardPage() {
                   </div>
                   <div className="text-right">
                     <span className={`px-2 py-1 text-xs font-medium rounded-full ${order.orderStatus === 'completed' ? 'bg-green-100 text-green-700' :
-                        order.orderStatus === 'pending' ? 'bg-yellow-100 text-yellow-700' :
-                          order.orderStatus === 'preparing' ? 'bg-blue-100 text-blue-700' :
-                            'bg-gray-100 text-gray-700'
+                      order.orderStatus === 'pending' ? 'bg-yellow-100 text-yellow-700' :
+                        order.orderStatus === 'preparing' ? 'bg-blue-100 text-blue-700' :
+                          'bg-gray-100 text-gray-700'
                       }`}>
                       {order.orderStatus}
                     </span>
@@ -169,14 +172,14 @@ export default function DashboardPage() {
         <div className="bg-amber-50 border border-amber-200 rounded-xl p-5">
           <h3 className="font-semibold text-amber-800 mb-3">⚠️ Low Stock Alert</h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-            {inventoryData?.inventoryItems
-              ?.filter((item: any) => item.quantity <= item.minStock)
+            {inventoryData?.ingredients
+              ?.filter((item: any) => item.status !== 'inactive' && item.currentStock <= item.minStockLevel)
               .slice(0, 6)
               .map((item: any) => (
                 <div key={item.id} className="bg-white p-3 rounded-lg border border-amber-200">
                   <p className="font-medium text-slate-700">{item.name}</p>
                   <p className="text-sm text-red-600">
-                    Stock: {item.quantity} (Min: {item.minStock})
+                    Stock: {item.currentStock} (Min: {item.minStockLevel})
                   </p>
                 </div>
               ))}

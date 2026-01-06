@@ -7,13 +7,23 @@ const KITCHEN_SERVICE_URL = process.env.KITCHEN_SERVICE_URL || 'http://localhost
 const INVENTORY_SERVICE_URL = process.env.INVENTORY_SERVICE_URL || 'http://localhost:4002/graphql';
 const USER_SERVICE_URL = process.env.USER_SERVICE_URL || 'http://localhost:4003/graphql';
 
-// Helper function to call GraphQL service
-async function callGraphQLService(url, query, variables = {}) {
+// Helper function to call GraphQL service with optional auth headers
+async function callGraphQLService(url, query, variables = {}, authToken = null) {
   try {
+    const headers = {
+      'Content-Type': 'application/json',
+    };
+
+    // Pass auth token if provided (for inter-service authentication)
+    if (authToken) {
+      headers['Authorization'] = authToken;
+    }
+
     const response = await axios.post(url, {
       query,
       variables
-    });
+    }, { headers });
+
     if (response.data.errors) {
       throw new Error(response.data.errors[0].message);
     }
@@ -388,6 +398,127 @@ const resolvers = {
       }
     },
 
+    updateMenu: async (parent, { id, input }, context) => {
+      // Require manager or admin role
+      requireMinRole(context, 'manager');
+      try {
+        const updates = [];
+        const params = [];
+
+        if (input.name !== undefined) {
+          updates.push('name = ?');
+          params.push(input.name);
+        }
+        if (input.description !== undefined) {
+          updates.push('description = ?');
+          params.push(input.description);
+        }
+        if (input.category !== undefined) {
+          updates.push('category = ?');
+          params.push(input.category);
+        }
+        if (input.price !== undefined) {
+          updates.push('price = ?');
+          params.push(input.price);
+        }
+        if (input.image !== undefined) {
+          updates.push('image = ?');
+          params.push(input.image);
+        }
+        if (input.ingredients !== undefined) {
+          updates.push('ingredients = ?');
+          params.push(JSON.stringify(input.ingredients));
+        }
+        if (input.available !== undefined) {
+          updates.push('available = ?');
+          params.push(input.available);
+        }
+        if (input.preparationTime !== undefined) {
+          updates.push('preparation_time = ?');
+          params.push(input.preparationTime);
+        }
+        if (input.tags !== undefined) {
+          updates.push('tags = ?');
+          params.push(JSON.stringify(input.tags));
+        }
+
+        if (updates.length === 0) {
+          throw new Error('No fields to update');
+        }
+
+        params.push(id);
+        await db.execute(
+          `UPDATE menus SET ${updates.join(', ')} WHERE id = ?`,
+          params
+        );
+
+        const [rows] = await db.execute('SELECT * FROM menus WHERE id = ?', [id]);
+        if (rows.length === 0) {
+          throw new Error('Menu not found');
+        }
+        const row = rows[0];
+        return {
+          id: row.id.toString(),
+          menuId: row.menu_id,
+          name: row.name,
+          description: row.description,
+          category: row.category,
+          price: parseFloat(row.price),
+          image: row.image,
+          ingredients: parseJSONField(row.ingredients) || [],
+          available: Boolean(row.available),
+          preparationTime: row.preparation_time,
+          tags: parseJSONField(row.tags) || [],
+          createdAt: row.created_at.toISOString(),
+          updatedAt: row.updated_at.toISOString()
+        };
+      } catch (error) {
+        throw new Error(`Error updating menu: ${error.message}`);
+      }
+    },
+
+    deleteMenu: async (parent, { id }, context) => {
+      // Require admin role
+      requireMinRole(context, 'admin');
+      try {
+        const [result] = await db.execute('DELETE FROM menus WHERE id = ?', [id]);
+        return result.affectedRows > 0;
+      } catch (error) {
+        throw new Error(`Error deleting menu: ${error.message}`);
+      }
+    },
+
+    toggleMenuAvailability: async (parent, { id }, context) => {
+      // Require manager or admin role
+      requireMinRole(context, 'manager');
+      try {
+        await db.execute('UPDATE menus SET available = NOT available WHERE id = ?', [id]);
+
+        const [rows] = await db.execute('SELECT * FROM menus WHERE id = ?', [id]);
+        if (rows.length === 0) {
+          throw new Error('Menu not found');
+        }
+        const row = rows[0];
+        return {
+          id: row.id.toString(),
+          menuId: row.menu_id,
+          name: row.name,
+          description: row.description,
+          category: row.category,
+          price: parseFloat(row.price),
+          image: row.image,
+          ingredients: parseJSONField(row.ingredients) || [],
+          available: Boolean(row.available),
+          preparationTime: row.preparation_time,
+          tags: parseJSONField(row.tags) || [],
+          createdAt: row.created_at.toISOString(),
+          updatedAt: row.updated_at.toISOString()
+        };
+      } catch (error) {
+        throw new Error(`Error toggling menu availability: ${error.message}`);
+      }
+    },
+
     createCart: async (parent, { input }, context) => {
       // Require authentication
       requireAuth(context);
@@ -548,7 +679,7 @@ const resolvers = {
               })),
               priority: 0
             }
-          });
+          }, context.token);
           kitchenOrderCreated = true;
 
           // Update order kitchen status
@@ -582,7 +713,7 @@ const resolvers = {
                   reason: `Order ${orderId}`,
                   referenceId: orderId,
                   referenceType: 'order'
-                });
+                }, context.token);
               }
             }
           }

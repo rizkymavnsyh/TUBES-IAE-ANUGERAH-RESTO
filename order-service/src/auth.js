@@ -5,7 +5,7 @@
 const jwt = require('jsonwebtoken');
 
 // JWT Secret - should match User Service
-const JWT_SECRET = process.env.JWT_SECRET || 'your-super-secret-key-change-in-production';
+const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
 
 // Role hierarchy for access control
 const ROLE_HIERARCHY = {
@@ -49,6 +49,7 @@ function getAuthContext(req) {
     return {
         user,
         isAuthenticated: !!user,
+        token: authHeader || null, // Include raw token for inter-service calls
     };
 }
 

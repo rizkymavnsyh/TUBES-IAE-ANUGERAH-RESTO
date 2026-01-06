@@ -90,9 +90,10 @@ export default function InventoryPage() {
   const [showFormModal, setShowFormModal] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [selectedItem, setSelectedItem] = useState<any>(null);
+  const [deleteConfirmation, setDeleteConfirmation] = useState<{ isOpen: boolean, id: string, name: string } | null>(null);
 
-  // Purchase State
-  const [purchaseItems, setPurchaseItems] = useState<{ productId: string, quantity: string | number }[]>([{ productId: '', quantity: '' }]);
+  // Purchase State - each item has its own category filter
+  const [purchaseItems, setPurchaseItems] = useState<{ productId: string, quantity: string | number, categoryFilter: string }[]>([{ productId: '', quantity: '', categoryFilter: '' }]);
   const [orderNumber, setOrderNumber] = useState('');
   const [isPurchasing, setIsPurchasing] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -193,12 +194,12 @@ export default function InventoryPage() {
 
   const closePurchaseModal = () => {
     setShowPurchaseModal(false);
-    setPurchaseItems([{ productId: '', quantity: '' }]);
+    setPurchaseItems([{ productId: '', quantity: '', categoryFilter: '' }]);
     setOrderNumber('');
   };
 
   const addPurchaseItem = () => {
-    setPurchaseItems([...purchaseItems, { productId: '', quantity: '' }]);
+    setPurchaseItems([...purchaseItems, { productId: '', quantity: '', categoryFilter: '' }]);
   };
 
   const removePurchaseItem = (index: number) => {
@@ -241,18 +242,27 @@ export default function InventoryPage() {
     setSelectedItem(null);
   };
 
-  const handleDelete = async (id: string, name: string) => {
-    if (!confirm(`Apakah Anda yakin ingin menghapus "${name}"? Data akan dinonaktifkan.`)) return;
+  const handleDelete = (id: string, name: string) => {
+    // Open custom modal instead of window.confirm
+    setDeleteConfirmation({ isOpen: true, id, name });
+  };
+
+  const confirmDeleteAction = async () => {
+    if (!deleteConfirmation) return;
+    const { id, name } = deleteConfirmation;
+
+    // Close modal immediately to prevent double click
+    setDeleteConfirmation(null);
 
     try {
       await updateIngredient({
         variables: {
-          id,
-          input: { status: 'INACTIVE' }
+          id: String(id),
+          input: { status: 'inactive' }
         }
       });
-      alert('✅ Data berhasil dihapus (nonaktif)');
-      refetch();
+      alert(`✅ Data "${name}" berhasil dihapus.`);
+      window.location.reload();
     } catch (err: any) {
       console.error('Delete error:', err);
       alert(`❌ Gagal menghapus: ${err.message}`);
@@ -398,60 +408,63 @@ export default function InventoryPage() {
                   <th className="px-4 py-3 text-left text-sm font-medium text-slate-600">Stok</th>
                   <th className="px-4 py-3 text-left text-sm font-medium text-slate-600">Min. Stok</th>
                   <th className="px-4 py-3 text-left text-sm font-medium text-slate-600">Harga/Unit</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-slate-600">Supplier</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-slate-600">Status</th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-slate-600">Aksi</th>
+                  <th className="px-4 py-3 text-center text-sm font-medium text-slate-600">Aksi</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {data.ingredients.map((item: any) => (
-                  <tr key={item.id} className="hover:bg-slate-50">
-                    <td className="px-4 py-3">
-                      <span className="font-medium text-slate-800">{item.name}</span>
-                    </td>
-                    <td className="px-4 py-3 text-slate-600">
-                      {item.category || '-'}
-                    </td>
-                    <td className="px-4 py-3">
-                      <span className={`font-medium ${item.currentStock <= item.minStockLevel ? 'text-red-600' : 'text-slate-700'
-                        }`}>
-                        {item.currentStock} {item.unit}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-slate-600">
-                      {item.minStockLevel} {item.unit}
-                    </td>
-                    <td className="px-4 py-3 text-slate-600">
-                      Rp {item.costPerUnit?.toLocaleString('de-DE') || 0}
-                    </td>
-                    <td className="px-4 py-3 text-slate-600">
-                      {item.supplier?.name || '-'}
-                    </td>
-                    <td className="px-4 py-3">
-                      <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(item.status)}`}>
-                        {item.status}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-right">
-                      <div className="flex justify-end gap-2">
-                        <button
-                          onClick={() => handleOpenEdit(item)}
-                          className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                          title="Edit"
-                        >
-                          ✏️
-                        </button>
-                        <button
-                          onClick={() => handleDelete(item.id, item.name)}
-                          className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                          title="Hapus"
-                        >
-                          🗑️
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
+                {data.ingredients
+                  .filter((item: any) => item.status && item.status.toLowerCase() !== 'inactive')
+                  .map((item: any) => (
+                    <tr key={item.id} className="hover:bg-slate-50">
+                      <td className="px-4 py-3">
+                        <span className="font-medium text-slate-800">{item.name}</span>
+                      </td>
+                      <td className="px-4 py-3 text-slate-600">
+                        {item.category || '-'}
+                      </td>
+                      <td className="px-4 py-3">
+                        <span className={`font-medium ${item.currentStock <= item.minStockLevel ? 'text-red-600' : 'text-slate-700'
+                          }`}>
+                          {item.currentStock} {item.unit}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-slate-600">
+                        {item.minStockLevel} {item.unit}
+                      </td>
+                      <td className="px-4 py-3 text-slate-600">
+                        Rp {item.costPerUnit?.toLocaleString('de-DE') || 0}
+                      </td>
+                      <td className="px-4 py-3 text-center">
+                        <div className="flex justify-center gap-2">
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleOpenEdit(item);
+                            }}
+                            className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors cursor-pointer"
+                            title="Edit"
+                          >
+                            ✏️
+                          </button>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              console.log('🛑 TOMBOL HAPUS DI-KLIK!', item.id);
+                              e.stopPropagation();
+                              e.preventDefault();
+                              handleDelete(item.id, item.name);
+                            }}
+                            className="relative z-10 p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
+                            title="Hapus"
+                            style={{ pointerEvents: 'auto' }} // Force pointer events
+                          >
+                            🗑️
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
               </tbody>
             </table>
           </div>
@@ -472,7 +485,7 @@ export default function InventoryPage() {
 
       {/* Purchase from Toko Sembako Modal */}
       {showPurchaseModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[60] p-4">
           <div className="bg-white rounded-xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
             <div className="p-6">
               <h2 className="text-xl font-bold text-slate-800 mb-4">🛒 Beli dari Toko Sembako</h2>
@@ -491,23 +504,46 @@ export default function InventoryPage() {
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-2">Produk</label>
                   {purchaseItems.map((item, index) => (
-                    <div key={index} className="flex gap-2 mb-2">
-                      <select
-                        value={item.productId}
-                        onChange={(e) => {
-                          const newItems = [...purchaseItems];
-                          newItems[index].productId = e.target.value;
-                          setPurchaseItems(newItems);
-                        }}
-                        className="flex-1 px-3 py-2 border border-slate-300 rounded-lg"
-                      >
-                        <option value="">Pilih Produk</option>
-                        {productsData?.tokoSembakoProducts?.filter((p: any) => p.available).map((product: any) => (
-                          <option key={product.id} value={product.id}>
-                            {product.name} - Rp {product.price.toLocaleString('de-DE')}/{product.unit}
-                          </option>
-                        ))}
-                      </select>
+                    <div key={index} className="flex gap-2 mb-3 p-3 bg-slate-50 rounded-lg">
+                      <div className="flex flex-col gap-2 flex-1">
+                        {/* Per-row Category Filter */}
+                        <select
+                          value={item.categoryFilter}
+                          onChange={(e) => {
+                            const newItems = [...purchaseItems];
+                            newItems[index].categoryFilter = e.target.value;
+                            newItems[index].productId = ''; // Reset product when category changes
+                            setPurchaseItems(newItems);
+                          }}
+                          className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm"
+                        >
+                          <option value="">Semua Kategori</option>
+                          <option value="Sembako">Sembako</option>
+                          <option value="Sayuran">Sayuran</option>
+                          <option value="Daging">Daging</option>
+                          <option value="Ikan">Ikan</option>
+                          <option value="Bumbu">Bumbu</option>
+                        </select>
+                        {/* Product Select (filtered by this row's categoryFilter) */}
+                        <select
+                          value={item.productId}
+                          onChange={(e) => {
+                            const newItems = [...purchaseItems];
+                            newItems[index].productId = e.target.value;
+                            setPurchaseItems(newItems);
+                          }}
+                          className="w-full px-3 py-2 border border-slate-300 rounded-lg"
+                        >
+                          <option value="">Pilih Produk</option>
+                          {productsData?.tokoSembakoProducts
+                            ?.filter((p: any) => p.available && (!item.categoryFilter || p.category === item.categoryFilter))
+                            .map((product: any) => (
+                              <option key={product.id} value={product.id}>
+                                {product.name} ({product.category}) - Rp {product.price.toLocaleString('de-DE')}/{product.unit}
+                              </option>
+                            ))}
+                        </select>
+                      </div>
                       <input
                         type="number"
                         value={item.quantity}
@@ -517,7 +553,6 @@ export default function InventoryPage() {
                           setPurchaseItems(newItems);
                         }}
                         onBlur={(e) => {
-                          // Set minimum value on blur if empty or 0
                           const newItems = [...purchaseItems];
                           const val = parseFloat(e.target.value);
                           if (isNaN(val) || val <= 0) {
@@ -526,14 +561,14 @@ export default function InventoryPage() {
                           setPurchaseItems(newItems);
                         }}
                         placeholder="Qty"
-                        className="w-24 px-3 py-2 border border-slate-300 rounded-lg"
+                        className="w-20 px-3 py-2 border border-slate-300 rounded-lg self-end"
                         min="0.1"
                         step="0.1"
                       />
                       <button
                         type="button"
                         onClick={() => removePurchaseItem(index)}
-                        className="px-3 py-2 text-red-600 hover:bg-red-50 rounded-lg"
+                        className="px-3 py-2 text-red-600 hover:bg-red-50 rounded-lg self-end"
                       >
                         ✕
                       </button>
@@ -568,124 +603,162 @@ export default function InventoryPage() {
             </div>
           </div>
         </div>
-      )}
+      )
+      }
 
       {/* Add/Edit Ingredient Modal */}
-      {showFormModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 animate-in fade-in duration-200">
-          <div className="bg-white rounded-2xl w-full max-w-lg flex flex-col shadow-xl">
-            <div className="p-6 border-b border-slate-100 flex justify-between items-center">
-              <div>
-                <h2 className="text-xl font-bold text-slate-800">
-                  {isEditing ? 'Edit Bahan Baku' : 'Tambah Bahan Baku'}
-                </h2>
-              </div>
-              <button
-                onClick={closeFormModal}
-                className="p-2 hover:bg-slate-100 rounded-full transition-colors"
-              >
-                ✕
-              </button>
-            </div>
-
-            <form onSubmit={handleFormSubmit} className="p-6 space-y-4">
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-slate-700">Nama Bahan</label>
-                <input
-                  type="text"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
-                  required
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-slate-700">Kategori</label>
-                  <select
-                    value={formData.category}
-                    onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                    className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
-                  >
-                    <option value="Vegetable">Sayuran</option>
-                    <option value="Meat">Daging</option>
-                    <option value="Spice">Bumbu</option>
-                    <option value="Dry">Bahan Kering</option>
-                    <option value="Other">Lainnya</option>
-                  </select>
+      {
+        showFormModal && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-[60] animate-in fade-in duration-200">
+            <div className="bg-white rounded-2xl w-full max-w-lg flex flex-col shadow-xl">
+              <div className="p-6 border-b border-slate-100 flex justify-between items-center">
+                <div>
+                  <h2 className="text-xl font-bold text-slate-800">
+                    {isEditing ? 'Edit Bahan Baku' : 'Tambah Bahan Baku'}
+                  </h2>
                 </div>
+                <button
+                  onClick={closeFormModal}
+                  className="p-2 hover:bg-slate-100 rounded-full transition-colors"
+                >
+                  ✕
+                </button>
+              </div>
+
+              <form onSubmit={handleFormSubmit} className="p-6 space-y-4">
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-slate-700">Satuan</label>
+                  <label className="text-sm font-medium text-slate-700">Nama Bahan</label>
                   <input
                     type="text"
-                    value={formData.unit}
-                    onChange={(e) => setFormData({ ...formData, unit: e.target.value })}
-                    className="w-full px-4 py-2 border border-slate-300 rounded-lg"
+                    value={formData.name}
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
                     required
                   />
                 </div>
-              </div>
 
-              <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-slate-700">Kategori</label>
+                    <select
+                      value={formData.category}
+                      onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                      className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                    >
+                      <option value="Vegetable">Sayuran</option>
+                      <option value="Meat">Daging</option>
+                      <option value="Spice">Bumbu</option>
+                      <option value="Dry">Bahan Kering</option>
+                      <option value="Other">Lainnya</option>
+                    </select>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-slate-700">Satuan</label>
+                    <input
+                      type="text"
+                      value={formData.unit}
+                      onChange={(e) => setFormData({ ...formData, unit: e.target.value })}
+                      className="w-full px-4 py-2 border border-slate-300 rounded-lg"
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-slate-700">Min. Stock Alert</label>
+                    <input
+                      type="number"
+                      value={formData.minStockLevel || ''}
+                      onChange={(e) => setFormData({ ...formData, minStockLevel: parseFloat(e.target.value) || 0 })}
+                      className="w-full px-4 py-2 border border-slate-300 rounded-lg"
+                      min="0"
+                      placeholder="0"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-slate-700">
+                      {isEditing ? 'Stok Saat Ini (Adjust)' : 'Stok Awal'}
+                    </label>
+                    <input
+                      type="number"
+                      value={formData.currentStock || ''}
+                      onChange={(e) => setFormData({ ...formData, currentStock: parseFloat(e.target.value) || 0 })}
+                      className="w-full px-4 py-2 border border-slate-300 rounded-lg"
+                      min="0"
+                      placeholder="0"
+                    />
+                  </div>
+                </div>
+
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-slate-700">Min. Stock Alert</label>
+                  <label className="text-sm font-medium text-slate-700">Harga Per Unit (Estimasi)</label>
                   <input
                     type="number"
-                    value={formData.minStockLevel}
-                    onChange={(e) => setFormData({ ...formData, minStockLevel: parseFloat(e.target.value) || 0 })}
+                    value={formData.costPerUnit || ''}
+                    onChange={(e) => setFormData({ ...formData, costPerUnit: parseFloat(e.target.value) || 0 })}
                     className="w-full px-4 py-2 border border-slate-300 rounded-lg"
                     min="0"
+                    placeholder="0"
                   />
                 </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-slate-700">
-                    {isEditing ? 'Stok Saat Ini (Adjust)' : 'Stok Awal'}
-                  </label>
-                  <input
-                    type="number"
-                    value={formData.currentStock}
-                    onChange={(e) => setFormData({ ...formData, currentStock: parseFloat(e.target.value) || 0 })}
-                    className="w-full px-4 py-2 border border-slate-300 rounded-lg"
-                    min="0"
-                    disabled={isEditing} // Biasanya stok diupdate via Opname/Purchase, tapi bisa di-enable kalau mau manual adjust
-                    title={isEditing ? "Gunakan fitur Stock Opname untuk mengubah stok" : ""}
-                  />
+
+                <div className="pt-4 flex justify-end gap-3">
+                  <button
+                    type="button"
+                    onClick={closeFormModal}
+                    className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg font-medium transition-colors"
+                  >
+                    Batal
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isSubmitting}
+                    className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium flex items-center gap-2"
+                  >
+                    {isSubmitting ? 'Menyimpan...' : (isEditing ? 'Simpan Perubahan' : 'Tambah Bahan')}
+                  </button>
                 </div>
-              </div>
+              </form>
+            </div>
+          </div>
+        )
+      }
 
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-slate-700">Harga Per Unit (Estimasi)</label>
-                <input
-                  type="number"
-                  value={formData.costPerUnit}
-                  onChange={(e) => setFormData({ ...formData, costPerUnit: parseFloat(e.target.value) || 0 })}
-                  className="w-full px-4 py-2 border border-slate-300 rounded-lg"
-                  min="0"
-                />
+      {/* Custom Delete Confirmation Modal */}
+      {deleteConfirmation && deleteConfirmation.isOpen && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-[70] animate-in fade-in duration-200">
+          <div className="bg-white rounded-xl w-full max-w-md shadow-2xl p-6 transform scale-100">
+            <div className="text-center">
+              <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <span className="text-3xl">🗑️</span>
               </div>
+              <h3 className="text-xl font-bold text-slate-800 mb-2">Hapus Bahan Baku?</h3>
+              <p className="text-slate-600 mb-6">
+                Apakah Anda yakin ingin menghapus <strong className="text-red-600">{deleteConfirmation.name}</strong>?
+                <br />
+                <span className="text-sm text-slate-400 mt-1 block">Data akan dinonaktifkan dari sistem.</span>
+              </p>
 
-              <div className="pt-4 flex justify-end gap-3">
+              <div className="flex gap-3 justify-center">
                 <button
-                  type="button"
-                  onClick={closeFormModal}
-                  className="px-4 py-2 text-slate-600 hover:bg-slate-100 rounded-lg font-medium transition-colors"
+                  onClick={() => setDeleteConfirmation(null)}
+                  className="px-5 py-2.5 bg-slate-100 text-slate-700 rounded-lg font-medium hover:bg-slate-200 transition-colors"
                 >
                   Batal
                 </button>
                 <button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium flex items-center gap-2"
+                  onClick={confirmDeleteAction}
+                  className="px-5 py-2.5 bg-red-600 text-white rounded-lg font-bold hover:bg-red-700 shadow-lg shadow-red-200 transition-all transform hover:scale-105"
                 >
-                  {isSubmitting ? 'Menyimpan...' : (isEditing ? 'Simpan Perubahan' : 'Tambah Bahan')}
+                  Ya, Hapus!
                 </button>
               </div>
-            </form>
+            </div>
           </div>
         </div>
       )}
-    </div>
+    </div >
   );
 }
 
