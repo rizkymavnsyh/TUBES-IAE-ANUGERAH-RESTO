@@ -78,9 +78,18 @@ async function initDatabase() {
         `);
         console.log('✅ Added "description" column to products table');
     } catch (err) {
-        if (err.code !== 'ER_DUP_FIELDNAME') {
-            console.log('ℹ️  Column "description" likely exists or other non-critical error:', err.message);
-        }
+        // Ignore duplicate column error
+    }
+
+    // Migration: Add category column to products if not exists
+    try {
+        await connection.execute(`
+            ALTER TABLE products 
+            ADD COLUMN category VARCHAR(50)
+        `);
+        console.log('✅ Added "category" column to products table');
+    } catch (err) {
+        // Ignore duplicate column error
     }
 
     console.log('✅ All tables created/verified');

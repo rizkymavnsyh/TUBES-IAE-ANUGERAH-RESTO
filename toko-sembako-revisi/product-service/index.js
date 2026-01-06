@@ -7,9 +7,13 @@ const typeDefs = gql`
     name: String!
     price: Int!
     unit: String!
+    category: String
+    description: String
+    available: Boolean
   }
 
   type Query {
+    products(category: String): [Product]
     getProducts: [Product]
     getProductById(id: ID!): Product
   }
@@ -23,13 +27,42 @@ const typeDefs = gql`
 
 const resolvers = {
   Query: {
+    // Standard query for listing all products (legacy/admin)
     getProducts: async () => {
       const rows = await query("SELECT * FROM products ORDER BY id DESC");
       return rows;
     },
+    // New query with filtering support for integration
+    products: async (_, { category }) => {
+      let sql = "SELECT p.*, i.stock FROM products p LEFT JOIN inventory i ON p.id = i.product_id";
+      const params = [];
+
+      if (category) {
+        sql += " WHERE p.category = ?";
+        params.push(category);
+      }
+
+      sql += " ORDER BY p.id DESC";
+      const rows = await query(sql, params);
+
+      return rows.map(r => ({
+        ...r,
+        available: (r.stock || 0) > 0
+      }));
+    },
     getProductById: async (_, { id }) => {
-      const rows = await query("SELECT * FROM products WHERE id = ?", [id]);
-      return rows[0] || null;
+      // Need to join inventory to get stock/available status
+      const rows = await query(
+        "SELECT p.*, i.stock FROM products p LEFT JOIN inventory i ON p.id = i.product_id WHERE p.id = ?",
+        [id]
+      );
+      const product = rows[0];
+      if (!product) return null;
+
+      return {
+        ...product,
+        available: (product.stock || 0) > 0
+      };
     }
   },
   Mutation: {

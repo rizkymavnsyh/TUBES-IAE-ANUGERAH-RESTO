@@ -47,8 +47,8 @@ async function seedDatabase(isStandalone = false) {
                 const description = `Stok segar untuk ${product.name} kategori ${product.category}`;
 
                 await queryInsert(
-                    'INSERT INTO products (name, price, unit, description) VALUES (?, ?, ?, ?)',
-                    [product.name, product.price, product.unit, description]
+                    'INSERT INTO products (name, price, unit, description, category) VALUES (?, ?, ?, ?, ?)',
+                    [product.name, product.price, product.unit, description, product.category]
                 );
                 console.log(`  ✅ Added product: ${product.name}`);
             } else {
