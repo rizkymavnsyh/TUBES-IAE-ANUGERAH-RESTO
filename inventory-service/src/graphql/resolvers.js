@@ -697,34 +697,39 @@ const resolvers = {
           let ingredientId;
 
           // Smart category mapping based on product name
-          const categoryMap = {
-            'bawang': 'Bumbu',
-            'cabai': 'Bumbu',
-            'tomat': 'Sayuran',
-            'wortel': 'Sayuran',
-            'kentang': 'Sayuran',
-            'kangkung': 'Sayuran',
-            'bayam': 'Sayuran',
-            'beras': 'Bahan Pokok',
-            'gula': 'Bahan Pokok',
-            'minyak': 'Bahan Pokok',
-            'tepung': 'Bahan Pokok',
-            'garam': 'Bumbu',
-            'ayam': 'Daging',
-            'sapi': 'Daging',
-            'ikan': 'Seafood',
-            'udang': 'Seafood',
-            'telur': 'Telur & Dairy',
-            'susu': 'Telur & Dairy'
-          };
+          // Use category from Toko Sembako API if available, otherwise use smart mapping
+          let category = item.category; // From Toko Sembako API
 
-          // Get category from product name
-          const productNameLower = item.name.toLowerCase();
-          let category = 'Bahan Lainnya'; // Default
-          for (const [keyword, cat] of Object.entries(categoryMap)) {
-            if (productNameLower.includes(keyword)) {
-              category = cat;
-              break;
+          if (!category || category === 'null') {
+            // Fallback: Smart category mapping based on product name
+            const categoryMap = {
+              'bawang': 'Bumbu',
+              'cabai': 'Bumbu',
+              'tomat': 'Sayuran',
+              'wortel': 'Sayuran',
+              'kentang': 'Sayuran',
+              'kangkung': 'Sayuran',
+              'bayam': 'Sayuran',
+              'beras': 'Bahan Pokok',
+              'gula': 'Bahan Pokok',
+              'minyak': 'Bahan Pokok',
+              'tepung': 'Bahan Pokok',
+              'garam': 'Bumbu',
+              'ayam': 'Daging',
+              'sapi': 'Daging',
+              'ikan': 'Seafood',
+              'udang': 'Seafood',
+              'telur': 'Telur & Dairy',
+              'susu': 'Telur & Dairy'
+            };
+
+            const productNameLower = item.name.toLowerCase();
+            category = 'Bahan Lainnya'; // Default
+            for (const [keyword, cat] of Object.entries(categoryMap)) {
+              if (productNameLower.includes(keyword)) {
+                category = cat;
+                break;
+              }
             }
           }
 
@@ -842,34 +847,39 @@ const resolvers = {
             supplierId = suppliers[0].id;
           }
 
-          // Smart category mapping based on product name
-          const categoryMap = {
-            'bawang': 'Bumbu',
-            'cabai': 'Bumbu',
-            'tomat': 'Sayuran',
-            'wortel': 'Sayuran',
-            'kentang': 'Sayuran',
-            'kangkung': 'Sayuran',
-            'bayam': 'Sayuran',
-            'beras': 'Bahan Pokok',
-            'gula': 'Bahan Pokok',
-            'minyak': 'Bahan Pokok',
-            'tepung': 'Bahan Pokok',
-            'garam': 'Bumbu',
-            'ayam': 'Daging',
-            'sapi': 'Daging',
-            'ikan': 'Seafood',
-            'udang': 'Seafood',
-            'telur': 'Telur & Dairy',
-            'susu': 'Telur & Dairy'
-          };
+          // Use category from Toko Sembako API if available, otherwise use smart mapping
+          let category = product.category; // From Toko Sembako API
 
-          const productNameLower = product.name.toLowerCase();
-          let category = 'Bahan Lainnya';
-          for (const [keyword, cat] of Object.entries(categoryMap)) {
-            if (productNameLower.includes(keyword)) {
-              category = cat;
-              break;
+          if (!category || category === 'null') {
+            // Fallback: Smart category mapping based on product name
+            const categoryMap = {
+              'bawang': 'Bumbu',
+              'cabai': 'Bumbu',
+              'tomat': 'Sayuran',
+              'wortel': 'Sayuran',
+              'kentang': 'Sayuran',
+              'kangkung': 'Sayuran',
+              'bayam': 'Sayuran',
+              'beras': 'Bahan Pokok',
+              'gula': 'Bahan Pokok',
+              'minyak': 'Bahan Pokok',
+              'tepung': 'Bahan Pokok',
+              'garam': 'Bumbu',
+              'ayam': 'Daging',
+              'sapi': 'Daging',
+              'ikan': 'Seafood',
+              'udang': 'Seafood',
+              'telur': 'Telur & Dairy',
+              'susu': 'Telur & Dairy'
+            };
+
+            const productNameLower = product.name.toLowerCase();
+            category = 'Bahan Lainnya';
+            for (const [keyword, cat] of Object.entries(categoryMap)) {
+              if (productNameLower.includes(keyword)) {
+                category = cat;
+                break;
+              }
             }
           }
 

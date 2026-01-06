@@ -58,8 +58,7 @@ async function callTokoSembakoService(url, query, variables = {}) {
  */
 async function getProductsFromTokoSembako(category = null) {
   try {
-    // Railway schema only has getProducts with (id, name, price, unit)
-    // Use simple query that matches Railway's actual schema
+    // Query Toko Sembako - now includes category field
     const query = `
       query GetProducts {
         getProducts {
@@ -67,6 +66,7 @@ async function getProductsFromTokoSembako(category = null) {
           name
           price
           unit
+          category
         }
       }
     `;
@@ -81,15 +81,15 @@ async function getProductsFromTokoSembako(category = null) {
 
     const products = data.getProducts || [];
 
-    // Map products and add default values for fields not in Railway schema
+    // Map products using category from Toko Sembako, fallback to 'Bahan Lainnya'
     return products.map(product => ({
       id: product.id,
       name: product.name,
-      category: 'Umum', // Railway doesn't have category, default to 'Umum'
+      category: product.category || 'Bahan Lainnya', // Use actual category from Toko Sembako
       price: product.price,
       unit: product.unit,
-      available: true, // Railway doesn't have available, default to true
-      description: null // Railway doesn't have description
+      available: true,
+      description: null
     }));
   } catch (error) {
     console.error('Error fetching products from Toko Sembako:', error.message);
@@ -110,12 +110,18 @@ async function getProductByIdFromTokoSembako(productId) {
           name
           price
           unit
+          category
         }
       }
     `;
 
     const data = await callTokoSembakoService(TOKO_SEMBAKO_PRODUCT_URL, query, { id: productId });
-    return data.getProductById;
+    const product = data.getProductById;
+    if (product) {
+      // Add category fallback
+      product.category = product.category || 'Bahan Lainnya';
+    }
+    return product;
   } catch (error) {
     console.error('Error fetching product from Toko Sembako:', error.message);
     return null;
