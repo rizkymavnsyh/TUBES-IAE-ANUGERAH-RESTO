@@ -132,7 +132,7 @@ async function getProductByIdFromTokoSembako(productId) {
 async function checkStockFromTokoSembako(productId, quantity) {
   try {
     const query = `
-      query CheckStock($productId: ID!, $quantity: Float!) {
+      query CheckStock($productId: ID!, $quantity: Int!) {
         checkStock(productId: $productId, quantity: $quantity) {
           available
           currentStock
@@ -144,7 +144,7 @@ async function checkStockFromTokoSembako(productId, quantity) {
 
     const data = await callTokoSembakoService(TOKO_SEMBAKO_INVENTORY_URL, query, {
       productId,
-      quantity
+      quantity: parseInt(quantity, 10)
     });
 
     return data.checkStock;
