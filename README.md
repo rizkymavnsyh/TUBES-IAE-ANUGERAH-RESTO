@@ -508,6 +508,75 @@ Sistem **Anugerah Resto** (Kelompok 5) terintegrasi secara langsung dengan siste
 | **Inventory Service** | `https://toko-sembako-revisi-production.up.railway.app/graphql/inventory` |
 | **Order Service** | `https://toko-sembako-revisi-production.up.railway.app/graphql/order` |
 
+### 🔌 Metode Integrasi: GraphQL API
+
+Integrasi antar kelompok menggunakan **GraphQL API** melalui protokol HTTPS. Berikut adalah detail teknisnya:
+
+```
+┌─────────────────────────────┐        HTTPS POST Request        ┌─────────────────────────────┐
+│    ANUGERAH RESTO           │  ─────────────────────────────►  │      TOKO SEMBAKO           │
+│    (Consumer)               │                                  │      (Provider)             │
+│                             │  ◄─────────────────────────────  │                             │
+│  Inventory Service          │         JSON Response            │  Railway Cloud              │
+│  localhost:4002             │                                  │  toko-sembako-revisi        │
+└─────────────────────────────┘                                  └─────────────────────────────┘
+```
+
+#### Spesifikasi API:
+
+| Aspek | Detail |
+|-------|--------|
+| **Protokol** | HTTPS (Secure HTTP) |
+| **Format API** | GraphQL (Query & Mutation) |
+| **Data Format** | JSON |
+| **HTTP Method** | POST |
+| **Content-Type** | `application/json` |
+
+#### Contoh Request API:
+
+```javascript
+// Request dari Anugerah Resto ke Toko Sembako
+const response = await axios.post(
+  'https://toko-sembako-revisi-production.up.railway.app/graphql/product',
+  {
+    query: `
+      query GetProducts {
+        products {
+          id
+          name
+          price
+          unit
+          available
+        }
+      }
+    `
+  },
+  {
+    headers: { 'Content-Type': 'application/json' }
+  }
+);
+
+// Response dari Toko Sembako
+{
+  "data": {
+    "products": [
+      { "id": "1", "name": "Beras Premium", "price": 15000, "unit": "kg", "available": true },
+      { "id": "2", "name": "Minyak Goreng", "price": 18000, "unit": "liter", "available": true }
+    ]
+  }
+}
+```
+
+#### Fitur API Integration:
+
+| Fitur | Deskripsi |
+|-------|-----------|
+| 📦 **Fetch Products** | Mengambil daftar produk dari katalog Toko Sembako |
+| ✅ **Check Stock** | Mengecek ketersediaan stok sebelum melakukan order |
+| 🛒 **Create Order** | Membuat pesanan pembelian bahan baku |
+| 🔄 **Auto Retry** | Otomatis retry 3x dengan exponential backoff (1s → 2s → 4s) jika gagal |
+| ⏱️ **Timeout** | 10 detik per request untuk mencegah hanging |
+
 
 ### 📡 API Endpoints Toko Sembako
 
