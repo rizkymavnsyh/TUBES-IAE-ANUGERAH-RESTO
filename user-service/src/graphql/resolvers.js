@@ -194,7 +194,10 @@ const resolvers = {
   },
 
   Mutation: {
-    createStaff: async (parent, { input }, { db }) => {
+    createStaff: async (parent, { input }, context) => {
+      // Require at least manager role for staff management
+      requireMinRole(context, 'manager');
+      const { db } = context;
       try {
         const { employeeId, name, email, phone, role, department, password, hireDate, salary } = input;
 
@@ -252,7 +255,10 @@ const resolvers = {
       }
     },
 
-    updateStaff: async (parent, { id, input }, { db }) => {
+    updateStaff: async (parent, { id, input }, context) => {
+      // Require at least manager role for staff management
+      requireMinRole(context, 'manager');
+      const { db } = context;
       try {
         const { name, email, phone, role, department, status, salary } = input;
 
@@ -300,7 +306,10 @@ const resolvers = {
       }
     },
 
-    deleteStaff: async (parent, { id }, { db }) => {
+    deleteStaff: async (parent, { id }, context) => {
+      // Require admin role for deleting staff
+      requireMinRole(context, 'admin');
+      const { db } = context;
       try {
         const [result] = await db.execute('DELETE FROM staff WHERE id = ?', [id]);
         return result.affectedRows > 0;
@@ -309,7 +318,10 @@ const resolvers = {
       }
     },
 
-    createCustomer: async (parent, { input }, { db }) => {
+    createCustomer: async (parent, { input }, context) => {
+      // Require at least cashier role for customer management
+      requireMinRole(context, 'cashier');
+      const { db } = context;
       try {
         const { customerId, name, email, phone, address, dateOfBirth } = input;
 
@@ -336,7 +348,10 @@ const resolvers = {
       }
     },
 
-    updateCustomer: async (parent, { id, input }, { db }) => {
+    updateCustomer: async (parent, { id, input }, context) => {
+      // Require at least cashier role for customer management
+      requireMinRole(context, 'cashier');
+      const { db } = context;
       try {
         const { name, email, phone, address, status } = input;
 
@@ -377,7 +392,10 @@ const resolvers = {
       }
     },
 
-    deleteCustomer: async (parent, { id }, { db }) => {
+    deleteCustomer: async (parent, { id }, context) => {
+      // Require manager role for deleting customer
+      requireMinRole(context, 'manager');
+      const { db } = context;
       try {
         const [result] = await db.execute('DELETE FROM customers WHERE id = ?', [id]);
         return result.affectedRows > 0;
