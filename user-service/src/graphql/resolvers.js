@@ -510,7 +510,7 @@ const resolvers = {
         const loyalty = loyalties[0];
 
         // Start transaction
-        await db.execute('START TRANSACTION');
+        await db.query('START TRANSACTION');
 
         // Update total points
         await db.execute(
@@ -541,7 +541,7 @@ const resolvers = {
           [newTier, loyalty.id]
         );
 
-        await db.execute('COMMIT');
+        await db.query('COMMIT');
 
         const [transactions] = await db.execute('SELECT * FROM loyalty_transactions WHERE id = ?', [result.insertId]);
         return {
@@ -550,7 +550,7 @@ const resolvers = {
           points: parseFloat(transactions[0].points)
         };
       } catch (error) {
-        await db.execute('ROLLBACK');
+        await db.query('ROLLBACK');
         throw new Error(`Error earning points: ${error.message}`);
       }
     },
@@ -575,7 +575,7 @@ const resolvers = {
         }
 
         // Start transaction
-        await db.execute('START TRANSACTION');
+        await db.query('START TRANSACTION');
 
         // Update redeemed points
         await db.execute(
@@ -590,7 +590,7 @@ const resolvers = {
           [loyalty.id, points, description]
         );
 
-        await db.execute('COMMIT');
+        await db.query('COMMIT');
 
         const [transactions] = await db.execute('SELECT * FROM loyalty_transactions WHERE id = ?', [result.insertId]);
         return {
@@ -599,7 +599,7 @@ const resolvers = {
           points: parseFloat(transactions[0].points)
         };
       } catch (error) {
-        await db.execute('ROLLBACK');
+        await db.query('ROLLBACK');
         throw new Error(`Error redeeming points: ${error.message}`);
       }
     },
