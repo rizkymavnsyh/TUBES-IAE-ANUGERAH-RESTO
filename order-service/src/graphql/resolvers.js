@@ -677,6 +677,58 @@ const resolvers = {
       }
     },
 
+    removeItemFromCart: async (parent, { cartId, menuId }, context) => {
+      // Require authentication
+      requireAuth(context);
+      try {
+        const [cartRows] = await db.execute('SELECT * FROM carts WHERE cart_id = ?', [cartId]);
+        if (cartRows.length === 0) {
+          throw new Error('Cart not found');
+        }
+
+        const cart = cartRows[0];
+        const items = parseJSONField(cart.items) || [];
+
+        const itemIndex = items.findIndex(i => i.menuId === menuId);
+        if (itemIndex === -1) {
+          throw new Error('Item not found in cart');
+        }
+
+        // Remove item
+        items.splice(itemIndex, 1);
+
+        const subtotal = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+        const tax = subtotal * 0.1;
+        const serviceCharge = subtotal * 0.05;
+        const total = subtotal + tax + serviceCharge - parseFloat(cart.discount);
+
+        await db.execute(`
+          UPDATE carts SET items = ?, subtotal = ?, tax = ?, service_charge = ?, total = ?
+          WHERE cart_id = ?
+        `, [JSON.stringify(items), subtotal, tax, serviceCharge, total, cartId]);
+
+        const [updatedRows] = await db.execute('SELECT * FROM carts WHERE cart_id = ?', [cartId]);
+        const row = updatedRows[0];
+        return {
+          id: row.id.toString(),
+          cartId: row.cart_id,
+          customerId: row.customer_id,
+          tableNumber: row.table_number,
+          items: parseJSONField(row.items) || [],
+          subtotal: parseFloat(row.subtotal),
+          tax: parseFloat(row.tax),
+          serviceCharge: parseFloat(row.service_charge),
+          discount: parseFloat(row.discount),
+          total: parseFloat(row.total),
+          status: row.status,
+          createdAt: row.created_at.toISOString(),
+          updatedAt: row.updated_at.toISOString()
+        };
+      } catch (error) {
+        throw new Error(`Error removing item from cart: ${error.message}`);
+      }
+    },
+
     createOrder: async (parent, { input }, context) => {
       // Require authentication
       requireAuth(context);
