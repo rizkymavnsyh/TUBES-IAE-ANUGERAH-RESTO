@@ -1003,7 +1003,7 @@ const resolvers = {
           }))
         };
 
-        const result = await resolvers.Mutation.createOrder(parent, { input: orderInput });
+        const result = await resolvers.Mutation.createOrder(parent, { input: orderInput }, context);
 
         // Update cart status
         await db.execute('UPDATE carts SET status = ? WHERE cart_id = ?', ['completed', cartId]);
