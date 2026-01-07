@@ -10,6 +10,21 @@ const REFRESH_TOKEN_SECRET = process.env.REFRESH_TOKEN_SECRET || 'refresh-secret
 const ACCESS_TOKEN_EXPIRY = '7h';  // Access token expires in 7 hours
 const REFRESH_TOKEN_EXPIRY_MS = 7 * 24 * 60 * 60 * 1000; // Refresh token expires in 7 days (milliseconds)
 
+// Helper to map DB customer fields to GraphQL Schema
+const mapCustomer = (c) => ({
+  id: c.id.toString(),
+  customerId: c.customer_id || `CUST${c.id.toString().padStart(3, '0')}`,
+  name: c.name,
+  email: c.email,
+  phone: c.phone,
+  address: c.address,
+  dateOfBirth: c.date_of_birth && c.date_of_birth instanceof Date ? c.date_of_birth.toISOString().split('T')[0] : (typeof c.date_of_birth === 'string' ? c.date_of_birth : null),
+  registrationDate: c.registration_date ? (c.registration_date instanceof Date ? c.registration_date.toISOString() : new Date(c.registration_date).toISOString()) : new Date().toISOString(),
+  status: c.status || 'active',
+  createdAt: c.created_at ? c.created_at.toISOString() : new Date().toISOString(),
+  updatedAt: c.updated_at ? c.updated_at.toISOString() : new Date().toISOString()
+});
+
 const resolvers = {
   Query: {
     staff: async (parent, { employeeId, role, status }, { db }) => {
@@ -127,16 +142,7 @@ const resolvers = {
         query += ' ORDER BY name';
 
         const [customers] = await db.execute(query, params);
-        return customers.map(c => ({
-          id: c.id.toString(),
-          customerId: c.customer_id || `CUST${c.id.toString().padStart(3, '0')}`,
-          name: c.name,
-          email: c.email,
-          phone: c.phone,
-          address: c.address,
-          registrationDate: c.registration_date ? c.registration_date.toISOString() : new Date().toISOString(),
-          status: c.status || 'active'
-        }));
+        return customers.map(mapCustomer);
       } catch (error) {
         throw new Error(`Error fetching customers: ${error.message}`);
       }
@@ -148,10 +154,7 @@ const resolvers = {
         if (customers.length === 0) {
           throw new Error('Customer not found');
         }
-        return {
-          ...customers[0],
-          id: customers[0].id.toString()
-        };
+        return mapCustomer(customers[0]);
       } catch (error) {
         throw new Error(`Error fetching customer: ${error.message}`);
       }
@@ -163,12 +166,21 @@ const resolvers = {
         if (customers.length === 0) {
           return null;
         }
-        return {
-          ...customers[0],
-          id: customers[0].id.toString()
-        };
+        return mapCustomer(customers[0]);
       } catch (error) {
         throw new Error(`Error fetching customer: ${error.message}`);
+      }
+    },
+
+    customerByEmail: async (parent, { email }, { db }) => {
+      try {
+        const [customers] = await db.execute('SELECT * FROM customers WHERE email = ?', [email]);
+        if (customers.length === 0) {
+          return null;
+        }
+        return mapCustomer(customers[0]);
+      } catch (error) {
+        throw new Error(`Error fetching customer by email: ${error.message}`);
       }
     },
 
