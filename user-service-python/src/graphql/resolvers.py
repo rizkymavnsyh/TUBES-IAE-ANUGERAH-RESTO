@@ -8,7 +8,7 @@ from ariadne import QueryType, MutationType, ObjectType
 from src.database.connection import get_db_connection
 from src.auth import require_auth, require_min_role
 
-JWT_SECRET = "your-secret-key-change-in-production"
+JWT_SECRET = "supersecretkey123"
 REFRESH_TOKEN_SECRET = "refresh-secret-key-change-in-production"
 ACCESS_TOKEN_EXPIRY_HOURS = 7  # 7 hours like Apollo JS
 REFRESH_TOKEN_EXPIRY_DAYS = 7  # 7 days like Apollo JS
