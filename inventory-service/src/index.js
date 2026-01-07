@@ -105,6 +105,8 @@ async function startServer() {
         "ALTER TABLE purchase_orders ADD COLUMN notes TEXT",
         "ALTER TABLE purchase_orders ADD COLUMN expected_delivery_date DATE",
         "ALTER TABLE purchase_orders ADD COLUMN received_date DATE",
+        "ALTER TABLE purchase_orders ADD COLUMN created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP",
+        "ALTER TABLE purchase_orders ADD COLUMN updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP",
         // purchase_order_items
         "ALTER TABLE purchase_order_items ADD COLUMN unit_price DECIMAL(10,2) DEFAULT 0",
         "ALTER TABLE purchase_order_items ADD COLUMN total_price DECIMAL(10,2) DEFAULT 0",
