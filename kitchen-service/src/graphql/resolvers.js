@@ -1,6 +1,9 @@
 const axios = require('axios');
 const { requireAuth, requireMinRole } = require('../auth');
 
+// User Service URL for fetching staff/chef data
+const USER_SERVICE_URL = process.env.USER_SERVICE_URL || 'http://localhost:4003/graphql';
+
 // Helper function to safely parse JSON
 function safeParseJSON(field, defaultValue = []) {
   if (field === null || field === undefined) return defaultValue;
@@ -9,6 +12,25 @@ function safeParseJSON(field, defaultValue = []) {
     return JSON.parse(field);
   } catch (e) {
     return defaultValue;
+  }
+}
+
+// Helper function to call User Service GraphQL API
+async function callUserService(query, variables = {}) {
+  try {
+    const response = await axios.post(USER_SERVICE_URL, {
+      query,
+      variables
+    }, {
+      headers: { 'Content-Type': 'application/json' }
+    });
+    if (response.data.errors) {
+      throw new Error(response.data.errors[0].message);
+    }
+    return response.data.data;
+  } catch (error) {
+    console.error('Error calling User Service:', error.message);
+    throw error;
   }
 }
 
@@ -127,19 +149,92 @@ const resolvers = {
 
     chefs: async (parent, args, { db }) => {
       try {
+        // Query User Service for staff with role=chef
+        const query = `
+          query GetChefs {
+            staff(role: chef, status: active) {
+              id
+              employeeId
+              name
+              email
+              phone
+              department
+              status
+            }
+          }
+        `;
+
+        const data = await callUserService(query);
+        const staffChefs = data.staff || [];
+
+        // Get current orders count for each chef from kitchen_orders
+        const chefsWithOrders = await Promise.all(staffChefs.map(async (chef) => {
+          const [orders] = await db.execute(
+            'SELECT COUNT(*) as count FROM kitchen_orders WHERE chef_id = ? AND status NOT IN ("completed", "cancelled")',
+            [chef.id]
+          );
+          return {
+            id: chef.id,
+            name: chef.name,
+            specialty: chef.department || 'General',
+            status: 'available',
+            currentOrders: orders[0].count || 0
+          };
+        }));
+
+        return chefsWithOrders;
+      } catch (error) {
+        console.error('Error fetching chefs from User Service:', error.message);
+        // Fallback to local chefs table if User Service fails
         const [chefs] = await db.execute('SELECT * FROM chefs ORDER BY name');
         return chefs.map(chef => ({
           ...chef,
           id: chef.id.toString(),
           currentOrders: chef.current_orders || 0
         }));
-      } catch (error) {
-        throw new Error(`Error fetching chefs: ${error.message}`);
       }
     },
 
     chef: async (parent, { id }, { db }) => {
       try {
+        // Query User Service for specific staff by ID
+        const query = `
+          query GetChef($id: ID!) {
+            staffById(id: $id) {
+              id
+              employeeId
+              name
+              email
+              phone
+              department
+              status
+            }
+          }
+        `;
+
+        const data = await callUserService(query, { id });
+        const staffChef = data.staffById;
+
+        if (!staffChef) {
+          throw new Error('Chef not found');
+        }
+
+        // Get current orders count
+        const [orders] = await db.execute(
+          'SELECT COUNT(*) as count FROM kitchen_orders WHERE chef_id = ? AND status NOT IN ("completed", "cancelled")',
+          [id]
+        );
+
+        return {
+          id: staffChef.id,
+          name: staffChef.name,
+          specialty: staffChef.department || 'General',
+          status: 'available',
+          currentOrders: orders[0].count || 0
+        };
+      } catch (error) {
+        console.error('Error fetching chef from User Service:', error.message);
+        // Fallback to local chefs table
         const [chefs] = await db.execute('SELECT * FROM chefs WHERE id = ?', [id]);
         if (chefs.length === 0) {
           throw new Error('Chef not found');
@@ -148,8 +243,6 @@ const resolvers = {
           ...chefs[0],
           id: chefs[0].id.toString()
         };
-      } catch (error) {
-        throw new Error(`Error fetching chef: ${error.message}`);
       }
     },
 
