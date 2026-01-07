@@ -251,6 +251,7 @@ const typeDefs = gql`
   input TokoSembakoOrderItemInput {
     productId: ID!
     quantity: Float!
+    minStockLevel: Float
   }
 `;
 
