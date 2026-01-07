@@ -9,15 +9,15 @@ from typing import Optional, List, Dict, Any
 # URLs from environment or defaults (Railway deployment)
 TOKO_SEMBAKO_PRODUCT_URL = os.getenv(
     'TOKO_SEMBAKO_PRODUCT_URL', 
-    'https://tubes-iae-anugerah-resto-production-3278.up.railway.app/graphql/product'
+    'https://toko-sembako-revisi-production.up.railway.app/graphql/product'
 )
 TOKO_SEMBAKO_INVENTORY_URL = os.getenv(
     'TOKO_SEMBAKO_INVENTORY_URL', 
-    'https://tubes-iae-anugerah-resto-production-3278.up.railway.app/graphql/inventory'
+    'https://toko-sembako-revisi-production.up.railway.app/graphql/inventory'
 )
 TOKO_SEMBAKO_ORDER_URL = os.getenv(
     'TOKO_SEMBAKO_ORDER_URL', 
-    'https://tubes-iae-anugerah-resto-production-3278.up.railway.app/graphql/order'
+    'https://toko-sembako-revisi-production.up.railway.app/graphql/order'
 )
 
 print(f"🔗 Toko Sembako Client Configuration (Python):")

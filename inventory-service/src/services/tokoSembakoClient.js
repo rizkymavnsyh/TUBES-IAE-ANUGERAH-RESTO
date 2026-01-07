@@ -14,7 +14,7 @@ require('dotenv').config();
 
 // Base URL untuk Toko Sembako (Railway Cloud URL jika remote)
 // Railway uses path-based routing instead of port-based
-const TOKO_SEMBAKO_BASE_URL = process.env.TOKO_SEMBAKO_URL || 'https://tubes-iae-anugerah-resto-production-3278.up.railway.app';
+const TOKO_SEMBAKO_BASE_URL = process.env.TOKO_SEMBAKO_URL || 'https://toko-sembako-revisi-production.up.railway.app';
 
 // Individual service URLs - Railway uses single port with path routing
 const TOKO_SEMBAKO_PRODUCT_URL = process.env.TOKO_SEMBAKO_PRODUCT_URL || `${TOKO_SEMBAKO_BASE_URL}/graphql/product`;

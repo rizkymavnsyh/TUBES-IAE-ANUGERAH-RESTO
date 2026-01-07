@@ -558,9 +558,9 @@ Di `docker-compose.yml` atau environment variables:
 
 ```yaml
 environment:
-  TOKO_SEMBAKO_PRODUCT_URL: https://tubes-iae-anugerah-resto-production-3278.up.railway.app/graphql/product
-  TOKO_SEMBAKO_INVENTORY_URL: https://tubes-iae-anugerah-resto-production-3278.up.railway.app/graphql/inventory
-  TOKO_SEMBAKO_ORDER_URL: https://tubes-iae-anugerah-resto-production-3278.up.railway.app/graphql/order
+  TOKO_SEMBAKO_PRODUCT_URL: https://toko-sembako-revisi-production.up.railway.app/graphql/product
+  TOKO_SEMBAKO_INVENTORY_URL: https://toko-sembako-revisi-production.up.railway.app/graphql/inventory
+  TOKO_SEMBAKO_ORDER_URL: https://toko-sembako-revisi-production.up.railway.app/graphql/order
 ```
 
 ---
