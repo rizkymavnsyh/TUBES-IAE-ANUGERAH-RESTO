@@ -28,6 +28,8 @@ const mapCustomer = (c) => ({
 // Helper to map DB customer loyalty fields
 const mapCustomerLoyalty = (l) => ({
   id: l.id.toString(),
+  customerId: l.customer_id,
+  loyaltyProgramId: l.loyalty_program_id,
   totalPoints: parseFloat(l.total_points),
   redeemedPoints: parseFloat(l.redeemed_points),
   availablePoints: parseFloat(l.total_points) - parseFloat(l.redeemed_points),
@@ -42,6 +44,7 @@ const mapCustomerLoyalty = (l) => ({
 // Helper to map DB loyalty transaction fields
 const mapLoyaltyTransaction = (t) => ({
   id: t.id.toString(),
+  customerLoyaltyId: t.customer_loyalty_id,
   transactionType: t.transaction_type,
   points: parseFloat(t.points),
   orderId: t.order_id,
@@ -255,7 +258,7 @@ const resolvers = {
            WHERE status = 'active'
            ORDER BY total_points DESC
            LIMIT ?`,
-          [limit]
+          [parseInt(limit)]
         );
         return loyalties.map(mapCustomerLoyalty);
       } catch (error) {
@@ -827,25 +830,23 @@ const resolvers = {
   CustomerLoyalty: {
     customer: async (parent, args, { db }) => {
       try {
-        const [customers] = await db.execute('SELECT * FROM customers WHERE id = ?', [parent.customer_id]);
+        const [customers] = await db.execute('SELECT * FROM customers WHERE id = ?', [parent.customerId]);
         if (customers.length === 0) return null;
-        return {
-          ...customers[0],
-          id: customers[0].id.toString()
-        };
+        return mapCustomer(customers[0]);
       } catch (error) {
         return null;
       }
     },
     loyaltyProgram: async (parent, args, { db }) => {
       try {
-        const [programs] = await db.execute('SELECT * FROM loyalty_programs WHERE id = ?', [parent.loyalty_program_id]);
+        const [programs] = await db.execute('SELECT * FROM loyalty_programs WHERE id = ?', [parent.loyaltyProgramId]);
         if (programs.length === 0) return null;
+        const p = programs[0];
         return {
-          ...programs[0],
-          id: programs[0].id.toString(),
-          pointsPerRupiah: parseFloat(programs[0].points_per_rupiah),
-          minPointsToRedeem: programs[0].min_points_to_redeem
+          ...p,
+          id: p.id.toString(),
+          pointsPerRupiah: parseFloat(p.points_per_rupiah),
+          minPointsToRedeem: p.min_points_to_redeem
         };
       } catch (error) {
         return null;
@@ -857,11 +858,7 @@ const resolvers = {
           'SELECT * FROM loyalty_transactions WHERE customer_loyalty_id = ? ORDER BY created_at DESC LIMIT 50',
           [parent.id]
         );
-        return transactions.map(t => ({
-          ...t,
-          id: t.id.toString(),
-          points: parseFloat(t.points)
-        }));
+        return transactions.map(mapLoyaltyTransaction);
       } catch (error) {
         return [];
       }
@@ -871,16 +868,9 @@ const resolvers = {
   LoyaltyTransaction: {
     customerLoyalty: async (parent, args, { db }) => {
       try {
-        const [loyalties] = await db.execute('SELECT * FROM customer_loyalty WHERE id = ?', [parent.customer_loyalty_id]);
+        const [loyalties] = await db.execute('SELECT * FROM customer_loyalty WHERE id = ?', [parent.customerLoyaltyId]);
         if (loyalties.length === 0) return null;
-        const loyalty = loyalties[0];
-        return {
-          ...loyalty,
-          id: loyalty.id.toString(),
-          totalPoints: parseFloat(loyalty.total_points),
-          redeemedPoints: parseFloat(loyalty.redeemed_points),
-          availablePoints: parseFloat(loyalty.total_points) - parseFloat(loyalty.redeemed_points)
-        };
+        return mapCustomerLoyalty(loyalties[0]);
       } catch (error) {
         return null;
       }
