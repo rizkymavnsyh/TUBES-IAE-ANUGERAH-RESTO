@@ -981,7 +981,7 @@ const resolvers = {
       }
     },
 
-    createOrderFromCart: async (parent, { cartId, input }) => {
+    createOrderFromCart: async (parent, { cartId, input }, context) => {
       try {
         const [cartRows] = await db.execute('SELECT * FROM carts WHERE cart_id = ?', [cartId]);
         if (cartRows.length === 0) {
