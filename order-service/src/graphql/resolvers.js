@@ -1158,7 +1158,7 @@ const resolvers = {
       }
     },
 
-    sendToKitchen: async (parent, { orderId }) => {
+    sendToKitchen: async (parent, { orderId }, context) => {
       try {
         const [orderRows] = await db.execute('SELECT * FROM orders WHERE order_id = ?', [orderId]);
         if (orderRows.length === 0) {
@@ -1180,6 +1180,8 @@ const resolvers = {
             }
           `;
 
+          const token = context.req.headers.authorization;
+
           await callGraphQLService(KITCHEN_SERVICE_URL, kitchenQuery, {
             input: {
               orderId: order.order_id,
@@ -1192,7 +1194,7 @@ const resolvers = {
               })),
               priority: 0
             }
-          });
+          }, token);
 
           await db.execute('UPDATE orders SET kitchen_status = ?, order_status = ? WHERE order_id = ?',
             ['pending', 'preparing', orderId]);
