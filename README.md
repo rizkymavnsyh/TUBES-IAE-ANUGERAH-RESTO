@@ -492,34 +492,22 @@ Sistem **Anugerah Resto** (Kelompok 5) terintegrasi secara langsung dengan siste
 - 🛒 **Melakukan pembelian otomatis** bahan baku
 - 🔄 **Sinkronisasi stok real-time** ke inventory lokal
 
-### 🌍 Railway Deployment Information
+### 🌍 Railway Deployment - Link Project
+
+#### 🍽️ Anugerah Resto (Consumer - Kelompok 5)
 
 | Komponen | URL |
 |----------|-----|
-| **Base URL** | `https://toko-sembako-revisi-production.up.railway.app` |
+| **GraphQL Endpoint** | `https://tubes-iae-anugerah-resto-production.up.railway.app/graphql` |
+
+#### 🏪 Toko Sembako (Provider - Kelompok Mitra)
+
+| Service | URL |
+|---------|-----|
 | **Product Service** | `https://toko-sembako-revisi-production.up.railway.app/graphql/product` |
 | **Inventory Service** | `https://toko-sembako-revisi-production.up.railway.app/graphql/inventory` |
 | **Order Service** | `https://toko-sembako-revisi-production.up.railway.app/graphql/order` |
-| **Auth Service** | `https://toko-sembako-revisi-production.up.railway.app/graphql/auth` |
 
-### 🔐 Authentication (Jika Diperlukan)
-
-Beberapa endpoint Toko Sembako mungkin memerlukan authentication:
-
-```graphql
-# Login ke Toko Sembako (jika diperlukan)
-mutation {
-  login(username: "anugerah-resto", password: "partnership-key") {
-    token
-    expiresAt
-  }
-}
-```
-
-Gunakan token di HTTP Header:
-```
-Authorization: Bearer <token>
-```
 
 ### 📡 API Endpoints Toko Sembako
 
