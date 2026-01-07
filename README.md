@@ -483,16 +483,67 @@ Order Service
 
 ## 🌐 Integrasi Lintas Kelompok (Toko Sembako)
 
-### Overview
+### 📋 Overview Integrasi
 
-Sistem terintegrasi dengan **Toko Sembako** (kelompok lain) via Railway cloud untuk pembelian bahan baku.
+Sistem **Anugerah Resto** (Kelompok 5) terintegrasi secara langsung dengan sistem **Toko Sembako** (Kelompok Mitra) melalui **Railway Cloud Platform**. Integrasi ini memungkinkan restoran untuk:
 
-### Sebagai Consumer (Memanggil Toko Sembako)
+- 📦 **Melihat katalog produk** bahan baku dari Toko Sembako
+- ✅ **Mengecek ketersediaan stok** sebelum order
+- 🛒 **Melakukan pembelian otomatis** bahan baku
+- 🔄 **Sinkronisasi stok real-time** ke inventory lokal
+
+### 🌍 Railway Deployment Information
+
+| Komponen | URL |
+|----------|-----|
+| **Base URL** | `https://toko-sembako-revisi-production.up.railway.app` |
+| **Product Service** | `https://toko-sembako-revisi-production.up.railway.app/graphql/product` |
+| **Inventory Service** | `https://toko-sembako-revisi-production.up.railway.app/graphql/inventory` |
+| **Order Service** | `https://toko-sembako-revisi-production.up.railway.app/graphql/order` |
+| **Auth Service** | `https://toko-sembako-revisi-production.up.railway.app/graphql/auth` |
+
+### 🔐 Authentication (Jika Diperlukan)
+
+Beberapa endpoint Toko Sembako mungkin memerlukan authentication:
 
 ```graphql
-# Lihat produk tersedia
-query {
-  tokoSembakoProducts {
+# Login ke Toko Sembako (jika diperlukan)
+mutation {
+  login(username: "anugerah-resto", password: "partnership-key") {
+    token
+    expiresAt
+  }
+}
+```
+
+Gunakan token di HTTP Header:
+```
+Authorization: Bearer <token>
+```
+
+### 📡 API Endpoints Toko Sembako
+
+#### 1. Product Service - Katalog Produk
+
+**Endpoint:** `https://toko-sembako-revisi-production.up.railway.app/graphql/product`
+
+```graphql
+# Lihat semua produk
+query GetProducts {
+  products {
+    id
+    name
+    category
+    price
+    unit
+    available
+    description
+  }
+}
+
+# Lihat produk berdasarkan kategori
+query GetProductsByCategory {
+  products(category: "Bahan Pokok") {
     id
     name
     price
@@ -501,67 +552,344 @@ query {
   }
 }
 
-# Cek ketersediaan stok
-query {
-  checkTokoSembakoStock(productId: "1", quantity: 10) {
+# Lihat detail produk by ID
+query GetProductById {
+  getProductById(id: "1") {
+    id
+    name
+    price
+    unit
+  }
+}
+```
+
+#### 2. Inventory Service - Cek Stok
+
+**Endpoint:** `https://toko-sembako-revisi-production.up.railway.app/graphql/inventory`
+
+```graphql
+# Cek ketersediaan stok spesifik
+query CheckStock {
+  checkStock(productId: "1", quantity: 50) {
     available
     currentStock
+    requestedQuantity
     message
   }
 }
 
-# Buat pesanan pembelian
-mutation {
-  purchaseFromTokoSembako(input: {
-    orderNumber: "PO-001"
+# Lihat semua inventory
+query GetAllInventory {
+  getAllInventory {
+    productId
+    stock
+  }
+}
+
+# Set stock (untuk supplier/admin)
+mutation SetStock {
+  setStock(productId: "1", stock: 100) {
+    productId
+    stock
+  }
+}
+```
+
+#### 3. Order Service - Pemesanan
+
+**Endpoint:** `https://toko-sembako-revisi-production.up.railway.app/graphql/order`
+
+```graphql
+# Buat pesanan baru
+mutation CreateOrder {
+  createOrder(
+    restaurantId: "anugerah-resto"
     items: [
-      { productId: "1", quantity: 10 }
+      { productId: "1", qty: 10 }
+      { productId: "2", qty: 5 }
     ]
-  }) {
-    success
-    message
-    order {
-      id
-      status
-      total
+  ) {
+    id
+    restaurantId
+    items {
+      productId
+      qty
+      price
+      subtotal
+    }
+    total
+    status
+  }
+}
+
+# Cek status pesanan
+query GetOrderById {
+  getOrderById(orderId: "123") {
+    id
+    status
+    total
+    items {
+      productId
+      qty
     }
   }
 }
 ```
 
-### Sebagai Provider (Dipanggil oleh Toko Sembako)
+### 🔄 Alur Integrasi Lengkap
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                        ANUGERAH RESTO (Localhost/Docker)                     │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│    ┌─────────────────┐                      ┌───────────────────────┐       │
+│    │ Inventory Service│                      │   Frontend Dashboard  │       │
+│    │   (Port 4002)    │◄─────────────────────│     Toko Sembako      │       │
+│    └────────┬─────────┘                      │      Integration      │       │
+│             │                                └───────────────────────┘       │
+│             │ HTTP/GraphQL                                                   │
+│             ▼                                                                │
+└─────────────┼────────────────────────────────────────────────────────────────┘
+              │
+              │ Internet (HTTPS)
+              ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                      RAILWAY CLOUD (toko-sembako-revisi)                     │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│  ┌────────────────┐  ┌─────────────────┐  ┌────────────────┐                │
+│  │ Product Service│  │Inventory Service│  │ Order Service  │                │
+│  │    /graphql/   │  │    /graphql/    │  │   /graphql/    │                │
+│  │    product     │  │    inventory    │  │     order      │                │
+│  └───────┬────────┘  └───────┬─────────┘  └───────┬────────┘                │
+│          │                   │                    │                          │
+│          └───────────────────┴────────────────────┘                          │
+│                              │                                               │
+│                              ▼                                               │
+│                    ┌─────────────────┐                                       │
+│                    │   MySQL (Railway)│                                       │
+│                    │   toko_sembako_db│                                       │
+│                    └─────────────────┘                                       │
+│                                                                              │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+### 💻 Implementasi di Anugerah Resto
+
+#### Node.js Client (`inventory-service/src/services/tokoSembakoClient.js`)
+
+```javascript
+const TOKO_SEMBAKO_BASE_URL = process.env.TOKO_SEMBAKO_URL 
+  || 'https://toko-sembako-revisi-production.up.railway.app';
+
+// Fetch produk
+async function getTokoSembakoProducts(category) {
+  const response = await axios.post(`${TOKO_SEMBAKO_BASE_URL}/graphql/product`, {
+    query: `query { products(category: "${category}") { id name price unit } }`
+  });
+  return response.data.data.products;
+}
+
+// Check stock
+async function checkTokoSembakoStock(productId, quantity) {
+  const response = await axios.post(`${TOKO_SEMBAKO_BASE_URL}/graphql/inventory`, {
+    query: `query { checkStock(productId: "${productId}", quantity: ${quantity}) { available currentStock } }`
+  });
+  return response.data.data.checkStock;
+}
+```
+
+#### Python Client (`inventory-service-python/src/services/toko_sembako_client.py`)
+
+```python
+import aiohttp
+
+TOKO_SEMBAKO_PRODUCT_URL = os.getenv(
+    'TOKO_SEMBAKO_PRODUCT_URL',
+    'https://toko-sembako-revisi-production.up.railway.app/graphql/product'
+)
+
+async def get_products_from_toko_sembako(category=None):
+    query = """
+    query { products { id name price unit available } }
+    """
+    async with aiohttp.ClientSession() as session:
+        async with session.post(TOKO_SEMBAKO_PRODUCT_URL, json={"query": query}) as resp:
+            data = await resp.json()
+            return data.get("data", {}).get("products", [])
+```
+
+### 📊 GraphQL Queries dari Anugerah Resto
+
+Berikut adalah queries yang tersedia dari **Inventory Service** Anugerah Resto untuk berinteraksi dengan Toko Sembako:
 
 ```graphql
-# Cek item low stock
-query {
-  lowStockIngredients {
+# =====================================================
+# 📍 ENDPOINT: http://localhost:4002/graphql (Inventory Service)
+# =====================================================
+
+# 1. Lihat produk Toko Sembako
+query GetTokoSembakoProducts {
+  tokoSembakoProducts(category: "Bahan Pokok") {
+    id
+    name
+    category
+    price
+    unit
+    available
+    description
+  }
+}
+
+# 2. Cek stok sebelum order
+query CheckTokoSembakoStock {
+  checkTokoSembakoStock(productId: "1", quantity: 10) {
+    available
+    currentStock
+    requestedQuantity
+    message
+  }
+}
+
+# 3. Beli dari Toko Sembako (otomatis tambah ke inventory lokal)
+mutation PurchaseFromTokoSembako {
+  purchaseFromTokoSembako(input: {
+    orderNumber: "PO-2026-001"
+    items: [
+      { productId: "1", quantity: 50 }
+      { productId: "2", quantity: 25 }
+    ]
+    notes: "Pembelian bulanan bahan pokok"
+  }) {
+    success
+    message
+    tokoSembakoOrder {
+      id
+      status
+      total
+    }
+    stockAdded
+  }
+}
+
+# 4. Sync stok individual
+mutation SyncStockFromTokoSembako {
+  syncStockFromTokoSembako(productId: "1", quantity: 100) {
     id
     name
     currentStock
-    minStockLevel
-  }
-}
-
-# Update stok (notifikasi pengiriman)
-mutation {
-  addStock(ingredientId: "1", quantity: 50, reason: "Delivery from Toko Sembako") {
-    id
-    quantity
-    reason
+    unit
   }
 }
 ```
 
-### Konfigurasi Railway URLs
+### ⚙️ Konfigurasi Environment Variables
 
-Di `docker-compose.yml` atau environment variables:
+#### Docker Compose (Recommended)
+
+Di `docker-compose.yml` atau `docker-compose-python.yml`:
 
 ```yaml
-environment:
-  TOKO_SEMBAKO_PRODUCT_URL: https://toko-sembako-revisi-production.up.railway.app/graphql/product
-  TOKO_SEMBAKO_INVENTORY_URL: https://toko-sembako-revisi-production.up.railway.app/graphql/inventory
-  TOKO_SEMBAKO_ORDER_URL: https://toko-sembako-revisi-production.up.railway.app/graphql/order
+services:
+  inventory-service:
+    environment:
+      # Toko Sembako Railway Cloud URLs
+      TOKO_SEMBAKO_PRODUCT_URL: https://toko-sembako-revisi-production.up.railway.app/graphql/product
+      TOKO_SEMBAKO_INVENTORY_URL: https://toko-sembako-revisi-production.up.railway.app/graphql/inventory
+      TOKO_SEMBAKO_ORDER_URL: https://toko-sembako-revisi-production.up.railway.app/graphql/order
 ```
+
+#### Local Development (.env)
+
+```env
+TOKO_SEMBAKO_URL=https://toko-sembako-revisi-production.up.railway.app
+TOKO_SEMBAKO_PRODUCT_URL=https://toko-sembako-revisi-production.up.railway.app/graphql/product
+TOKO_SEMBAKO_INVENTORY_URL=https://toko-sembako-revisi-production.up.railway.app/graphql/inventory
+TOKO_SEMBAKO_ORDER_URL=https://toko-sembako-revisi-production.up.railway.app/graphql/order
+```
+
+### 🔄 Fitur Smart Integration
+
+#### 1. Smart Category Mapping
+Saat membeli dari Toko Sembako, sistem otomatis mengkategorikan bahan baku:
+
+| Nama Produk | Kategori Otomatis |
+|-------------|-------------------|
+| Beras, Tepung, Mie | Bahan Pokok |
+| Ayam, Sapi, Ikan | Daging & Ikan |
+| Bayam, Wortel, Tomat | Sayuran |
+| Garam, Gula, Merica | Bumbu |
+| Susu, Keju, Telur | Dairy & Telur |
+| Lainnya | Bahan Baku |
+
+#### 2. Auto-Sync Chef (Kitchen ↔ User Service)
+Jika assign chef yang belum ada di database Kitchen, sistem otomatis:
+1. Query ke User Service
+2. Cek apakah staff tersebut role-nya CHEF
+3. Tambahkan ke database Kitchen lokal
+4. Lanjutkan assignment
+
+#### 3. Retry Mechanism
+API calls ke Toko Sembako dilengkapi dengan automatic retry:
+
+| Setting | Value |
+|---------|-------|
+| Max Retries | 3 |
+| Backoff | Exponential (1s → 2s → 4s) |
+| Timeout | 10 seconds per request |
+
+### 🧪 Testing Integrasi
+
+#### Quick Test via GraphQL Playground
+
+1. Buka `http://localhost:4002/graphql` (Inventory Service)
+2. Jalankan query berikut:
+
+```graphql
+# Test 1: Fetch products
+query { tokoSembakoProducts { id name price } }
+
+# Test 2: Check stock
+query { checkTokoSembakoStock(productId: "1", quantity: 5) { available message } }
+```
+
+#### Integration Test Scenarios
+
+| Skenario | Expected Result |
+|----------|----------------|
+| Fetch products dari Railway | Return array produk dengan id, name, price |
+| Check stock dengan qty tersedia | `available: true` |
+| Check stock dengan qty > stock | `available: false`, message: "Stock tidak cukup" |
+| Purchase dengan stock cukup | `success: true`, stock lokal bertambah |
+| Purchase dengan stock kurang | Error message dari Toko Sembako |
+
+### ❗ Troubleshooting Integrasi
+
+#### Connection Refused
+```
+Error: connect ECONNREFUSED
+```
+**Solusi:** 
+- Pastikan Railway service aktif
+- Cek URL tidak typo
+- Test dengan curl: `curl https://toko-sembako-revisi-production.up.railway.app/graphql/product`
+
+#### GraphQL Errors
+```
+Error: Cannot query field "xxx" on type "Query"
+```
+**Solusi:**
+- Cek schema Toko Sembako (mungkin berubah)
+- Gunakan introspection untuk melihat schema terbaru
+
+#### Network Timeout
+```
+Error: timeout of 10000ms exceeded
+```
+**Solusi:**
+- Railway mungkin cold start (tunggu 10-30 detik)
+- Tingkatkan timeout jika diperlukan
 
 ---
 

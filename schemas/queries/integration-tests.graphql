@@ -16,10 +16,10 @@
 #
 # RAILWAY ENDPOINTS:
 # - Anugerah (jika monolith): https://tubes-iae-anugerah-resto-production.up.railway.app/graphql
-# - Toko Sembako Product:     https://tubes-iae-anugerah-resto-production-3278.up.railway.app/graphql/product
-# - Toko Sembako Inventory:   https://tubes-iae-anugerah-resto-production-3278.up.railway.app/graphql/inventory
-# - Toko Sembako Order:       https://tubes-iae-anugerah-resto-production-3278.up.railway.app/graphql/order
-# - Toko Sembako Auth:        https://tubes-iae-anugerah-resto-production-3278.up.railway.app/graphql/auth
+# - Toko Sembako Product:     https://toko-sembako-revisi-production.up.railway.app/graphql/product
+# - Toko Sembako Inventory:   https://toko-sembako-revisi-production.up.railway.app/graphql/inventory
+# - Toko Sembako Order:       https://toko-sembako-revisi-production.up.railway.app/graphql/order
+# - Toko Sembako Auth:        https://toko-sembako-revisi-production.up.railway.app/graphql/auth
 #
 # =================================================================
 
@@ -633,7 +633,7 @@ mutation CreateOrderFromCart {
 # =================================================================
 # 2.1 PRODUCT SERVICE
 # =================================================================
-# 📍 Endpoint: https://tubes-iae-anugerah-resto-production-3278.up.railway.app/graphql/product
+# 📍 Endpoint: https://toko-sembako-revisi-production.up.railway.app/graphql/product
 
 # READ: Ambil semua produk
 query TokoSembako_GetAllProducts {
@@ -664,7 +664,7 @@ mutation TokoSembako_CreateProduct {
 # =================================================================
 # 2.2 INVENTORY SERVICE
 # =================================================================
-# 📍 Endpoint: https://tubes-iae-anugerah-resto-production-3278.up.railway.app/graphql/inventory
+# 📍 Endpoint: https://toko-sembako-revisi-production.up.railway.app/graphql/inventory
 
 # READ: Cek stok produk
 query TokoSembako_GetInventory {
@@ -695,7 +695,7 @@ mutation TokoSembako_DecreaseStock {
 # =================================================================
 # 2.3 ORDER SERVICE
 # =================================================================
-# 📍 Endpoint: https://tubes-iae-anugerah-resto-production-3278.up.railway.app/graphql/order
+# 📍 Endpoint: https://toko-sembako-revisi-production.up.railway.app/graphql/order
 
 # READ: Ambil semua pesanan
 query TokoSembako_GetAllOrders {
@@ -758,7 +758,7 @@ mutation TokoSembako_CancelOrder {
 # =================================================================
 # 2.4 AUTH SERVICE
 # =================================================================
-# 📍 Endpoint: https://tubes-iae-anugerah-resto-production-3278.up.railway.app/graphql/auth
+# 📍 Endpoint: https://toko-sembako-revisi-production.up.railway.app/graphql/auth
 
 # REGISTER: Daftar user baru
 mutation TokoSembako_Register {
@@ -803,9 +803,9 @@ mutation TokoSembako_Login {
 # │ Service                 │ URL                                              │
 # ├────────────────────────────────────────────────────────────────────────────┤
 # │ Anugerah Inventory      │ https://tubes-iae-anugerah-resto-production.up.railway.app/graphql │
-# │ Toko Sembako Product    │ https://tubes-iae-anugerah-resto-production-3278.up.railway.app/graphql/product │
-# │ Toko Sembako Inventory  │ https://tubes-iae-anugerah-resto-production-3278.up.railway.app/graphql/inventory │
-# │ Toko Sembako Order      │ https://tubes-iae-anugerah-resto-production-3278.up.railway.app/graphql/order │
+# │ Toko Sembako Product    │ https://toko-sembako-revisi-production.up.railway.app/graphql/product │
+# │ Toko Sembako Inventory  │ https://toko-sembako-revisi-production.up.railway.app/graphql/inventory │
+# │ Toko Sembako Order      │ https://toko-sembako-revisi-production.up.railway.app/graphql/order │
 # └────────────────────────────────────────────────────────────────────────────┘
 # =================================================================
 
@@ -973,7 +973,7 @@ query Anugerah_GetPurchaseOrders {
 # =================================================================
 # 3.2 TOKO SEMBAKO PRODUCT SERVICE (LANGSUNG)
 # =================================================================
-# 📍 ENDPOINT: https://tubes-iae-anugerah-resto-production-3278.up.railway.app/graphql/product
+# 📍 ENDPOINT: https://toko-sembako-revisi-production.up.railway.app/graphql/product
 # =================================================================
 
 # Ambil semua produk
@@ -1074,7 +1074,7 @@ mutation TokoSembako_CreateProduct_Ikan {
 # =================================================================
 # 3.3 TOKO SEMBAKO INVENTORY SERVICE (LANGSUNG)
 # =================================================================
-# 📍 ENDPOINT: https://tubes-iae-anugerah-resto-production-3278.up.railway.app/graphql/inventory
+# 📍 ENDPOINT: https://toko-sembako-revisi-production.up.railway.app/graphql/inventory
 # =================================================================
 
 # Cek stok produk
@@ -1106,7 +1106,7 @@ mutation TokoSembako_DecreaseStock {
 # =================================================================
 # 3.4 TOKO SEMBAKO ORDER SERVICE (LANGSUNG)
 # =================================================================
-# 📍 ENDPOINT: https://tubes-iae-anugerah-resto-production-3278.up.railway.app/graphql/order
+# 📍 ENDPOINT: https://toko-sembako-revisi-production.up.railway.app/graphql/order
 # =================================================================
 
 # Ambil semua orders
