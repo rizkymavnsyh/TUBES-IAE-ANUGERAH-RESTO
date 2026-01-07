@@ -1182,19 +1182,29 @@ const resolvers = {
 
           const token = context.req.headers.authorization;
 
-          await callGraphQLService(KITCHEN_SERVICE_URL, kitchenQuery, {
-            input: {
-              orderId: order.order_id,
-              tableNumber: order.table_number,
-              items: items.map(item => ({
-                menuId: item.menuId,
-                name: item.name,
-                quantity: item.quantity,
-                specialInstructions: item.specialInstructions
-              })),
-              priority: 0
+          try {
+            await callGraphQLService(KITCHEN_SERVICE_URL, kitchenQuery, {
+              input: {
+                orderId: order.order_id,
+                tableNumber: order.table_number,
+                items: items.map(item => ({
+                  menuId: item.menuId,
+                  name: item.name,
+                  quantity: item.quantity,
+                  specialInstructions: item.specialInstructions
+                })),
+                priority: 0
+              }
+            }, token);
+          } catch (serviceError) {
+            // Check if error is because order already exists (idempotency)
+            if (serviceError.message.includes('Order already exists') ||
+              serviceError.message.includes('Duplicate entry')) {
+              console.log('Order already exists in kitchen, syncing status...');
+            } else {
+              throw serviceError;
             }
-          }, token);
+          }
 
           await db.execute('UPDATE orders SET kitchen_status = ?, order_status = ? WHERE order_id = ?',
             ['pending', 'preparing', orderId]);
