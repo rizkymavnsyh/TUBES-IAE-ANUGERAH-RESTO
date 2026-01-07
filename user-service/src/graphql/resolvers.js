@@ -25,6 +25,30 @@ const mapCustomer = (c) => ({
   updatedAt: c.updated_at ? c.updated_at.toISOString() : new Date().toISOString()
 });
 
+// Helper to map DB customer loyalty fields
+const mapCustomerLoyalty = (l) => ({
+  id: l.id.toString(),
+  totalPoints: parseFloat(l.total_points),
+  redeemedPoints: parseFloat(l.redeemed_points),
+  availablePoints: parseFloat(l.total_points) - parseFloat(l.redeemed_points),
+  tier: l.tier,
+  joinDate: l.join_date ? (l.join_date instanceof Date ? l.join_date.toISOString() : new Date(l.join_date).toISOString()) : new Date().toISOString(),
+  lastActivityDate: l.last_activity_date ? (l.last_activity_date instanceof Date ? l.last_activity_date.toISOString() : new Date(l.last_activity_date).toISOString()) : null,
+  status: l.status || 'active',
+  createdAt: l.created_at ? (l.created_at instanceof Date ? l.created_at.toISOString() : new Date(l.created_at).toISOString()) : new Date().toISOString(),
+  updatedAt: l.updated_at ? (l.updated_at instanceof Date ? l.updated_at.toISOString() : new Date(l.updated_at).toISOString()) : new Date().toISOString()
+});
+
+// Helper to map DB loyalty transaction fields
+const mapLoyaltyTransaction = (t) => ({
+  id: t.id.toString(),
+  transactionType: t.transaction_type,
+  points: parseFloat(t.points),
+  orderId: t.order_id,
+  description: t.description,
+  createdAt: t.created_at ? (t.created_at instanceof Date ? t.created_at.toISOString() : new Date(t.created_at).toISOString()) : new Date().toISOString()
+});
+
 const resolvers = {
   Query: {
     staff: async (parent, { employeeId, role, status }, { db }) => {
@@ -218,13 +242,7 @@ const resolvers = {
           return null;
         }
         const loyalty = loyalties[0];
-        return {
-          ...loyalty,
-          id: loyalty.id.toString(),
-          totalPoints: parseFloat(loyalty.total_points),
-          redeemedPoints: parseFloat(loyalty.redeemed_points),
-          availablePoints: parseFloat(loyalty.total_points) - parseFloat(loyalty.redeemed_points)
-        };
+        return mapCustomerLoyalty(loyalty);
       } catch (error) {
         throw new Error(`Error fetching customer loyalty: ${error.message}`);
       }
@@ -233,23 +251,29 @@ const resolvers = {
     topCustomersByPoints: async (parent, { limit = 10 }, { db }) => {
       try {
         const [loyalties] = await db.execute(
-          `SELECT * FROM customer_loyalty 
-           WHERE status = 'active' 
-           ORDER BY total_points DESC 
+          `SELECT * FROM customer_loyalty
+           WHERE status = 'active'
+           ORDER BY total_points DESC
            LIMIT ?`,
           [limit]
         );
-        return loyalties.map(l => ({
-          ...l,
-          id: l.id.toString(),
-          totalPoints: parseFloat(l.total_points),
-          redeemedPoints: parseFloat(l.redeemed_points),
-          availablePoints: parseFloat(l.total_points) - parseFloat(l.redeemed_points)
-        }));
+        return loyalties.map(mapCustomerLoyalty);
       } catch (error) {
         throw new Error(`Error fetching top customers: ${error.message}`);
       }
-    }
+    },
+
+    loyaltyTransactions: async (parent, { customerLoyaltyId }, { db }) => {
+      try {
+        const [transactions] = await db.execute(
+          'SELECT * FROM loyalty_transactions WHERE customer_loyalty_id = ? ORDER BY created_at DESC',
+          [customerLoyaltyId]
+        );
+        return transactions.map(mapLoyaltyTransaction);
+      } catch (error) {
+        throw new Error(`Error fetching loyalty transactions: ${error.message}`);
+      }
+    },
   },
 
   Mutation: {
@@ -544,11 +568,7 @@ const resolvers = {
         await db.query('COMMIT');
 
         const [transactions] = await db.execute('SELECT * FROM loyalty_transactions WHERE id = ?', [result.insertId]);
-        return {
-          ...transactions[0],
-          id: transactions[0].id.toString(),
-          points: parseFloat(transactions[0].points)
-        };
+        return mapLoyaltyTransaction(transactions[0]);
       } catch (error) {
         await db.query('ROLLBACK');
         throw new Error(`Error earning points: ${error.message}`);
@@ -593,11 +613,7 @@ const resolvers = {
         await db.query('COMMIT');
 
         const [transactions] = await db.execute('SELECT * FROM loyalty_transactions WHERE id = ?', [result.insertId]);
-        return {
-          ...transactions[0],
-          id: transactions[0].id.toString(),
-          points: parseFloat(transactions[0].points)
-        };
+        return mapLoyaltyTransaction(transactions[0]);
       } catch (error) {
         await db.query('ROLLBACK');
         throw new Error(`Error redeeming points: ${error.message}`);
