@@ -124,6 +124,8 @@ async function startServer() {
       // Also handle status column type change for purchase_orders (from ENUM to VARCHAR)
       try {
         await db.query("ALTER TABLE purchase_orders MODIFY COLUMN status VARCHAR(50) DEFAULT 'pending'");
+        // Fix null order_numbers
+        await db.query("UPDATE purchase_orders SET order_number = CONCAT('PO-', id) WHERE order_number IS NULL");
       } catch (e) { /* ignore */ }
 
       // Seed dummy data if needed
