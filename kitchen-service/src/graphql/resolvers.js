@@ -176,7 +176,7 @@ const resolvers = {
           return {
             id: chef.id,
             name: chef.name,
-            specialty: chef.department || 'General',
+            specialization: chef.department || 'General',
             status: 'available',
             currentOrders: orders[0].count || 0
           };
@@ -228,7 +228,7 @@ const resolvers = {
         return {
           id: staffChef.id,
           name: staffChef.name,
-          specialty: staffChef.department || 'General',
+          specialization: staffChef.department || 'General',
           status: 'available',
           currentOrders: orders[0].count || 0
         };
