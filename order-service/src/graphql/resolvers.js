@@ -774,6 +774,45 @@ const resolvers = {
       }
     },
 
+    applyDiscount: async (parent, { cartId, discount }, context) => {
+      // Require authentication
+      requireAuth(context);
+      try {
+        const [cartRows] = await db.execute('SELECT * FROM carts WHERE cart_id = ?', [cartId]);
+        if (cartRows.length === 0) {
+          throw new Error('Cart not found');
+        }
+
+        const cart = cartRows[0];
+        const subtotal = parseFloat(cart.subtotal);
+        const tax = parseFloat(cart.tax);
+        const serviceCharge = parseFloat(cart.service_charge);
+        const total = subtotal + tax + serviceCharge - discount;
+
+        await db.execute('UPDATE carts SET discount = ?, total = ? WHERE cart_id = ?', [discount, total, cartId]);
+
+        const [updatedRows] = await db.execute('SELECT * FROM carts WHERE cart_id = ?', [cartId]);
+        const row = updatedRows[0];
+        return {
+          id: row.id.toString(),
+          cartId: row.cart_id,
+          customerId: row.customer_id,
+          tableNumber: row.table_number,
+          items: parseJSONField(row.items) || [],
+          subtotal: parseFloat(row.subtotal),
+          tax: parseFloat(row.tax),
+          serviceCharge: parseFloat(row.service_charge),
+          discount: parseFloat(row.discount),
+          total: parseFloat(row.total),
+          status: row.status,
+          createdAt: row.created_at.toISOString(),
+          updatedAt: row.updated_at.toISOString()
+        };
+      } catch (error) {
+        throw new Error(`Error applying discount: ${error.message}`);
+      }
+    },
+
     createOrder: async (parent, { input }, context) => {
       // Require authentication
       requireAuth(context);
@@ -1182,6 +1221,74 @@ const resolvers = {
         };
       } catch (error) {
         throw new Error(`Error sending to kitchen: ${error.message}`);
+      }
+    },
+
+    updatePaymentStatus: async (parent, { orderId, paymentStatus }, context) => {
+      try {
+        await db.execute('UPDATE orders SET payment_status = ? WHERE order_id = ?', [paymentStatus, orderId]);
+        const [rows] = await db.execute('SELECT * FROM orders WHERE order_id = ?', [orderId]);
+        if (rows.length === 0) throw new Error('Order not found');
+        const row = rows[0];
+        return {
+          id: row.id.toString(),
+          orderId: row.order_id,
+          customerId: row.customer_id,
+          tableNumber: row.table_number,
+          items: parseJSONField(row.items) || [],
+          subtotal: parseFloat(row.subtotal),
+          tax: parseFloat(row.tax),
+          serviceCharge: parseFloat(row.service_charge),
+          discount: parseFloat(row.discount),
+          loyaltyPointsUsed: parseFloat(row.loyalty_points_used),
+          loyaltyPointsEarned: parseFloat(row.loyalty_points_earned),
+          total: parseFloat(row.total),
+          paymentMethod: row.payment_method,
+          paymentStatus: row.payment_status,
+          orderStatus: row.order_status,
+          kitchenStatus: row.kitchen_status,
+          staffId: row.staff_id,
+          notes: row.notes,
+          createdAt: row.created_at.toISOString(),
+          updatedAt: row.updated_at.toISOString(),
+          completedAt: row.completed_at ? row.completed_at.toISOString() : null
+        };
+      } catch (error) {
+        throw new Error(`Error updating payment status: ${error.message}`);
+      }
+    },
+
+    cancelOrder: async (parent, { orderId }, context) => {
+      try {
+        await db.execute('UPDATE orders SET order_status = ? WHERE order_id = ?', ['cancelled', orderId]);
+        const [rows] = await db.execute('SELECT * FROM orders WHERE order_id = ?', [orderId]);
+        if (rows.length === 0) throw new Error('Order not found');
+        const row = rows[0];
+        return {
+          id: row.id.toString(),
+          orderId: row.order_id,
+          customerId: row.customer_id,
+          tableNumber: row.table_number,
+          items: parseJSONField(row.items) || [],
+          subtotal: parseFloat(row.subtotal),
+          tax: parseFloat(row.tax),
+          serviceCharge: parseFloat(row.service_charge),
+          discount: parseFloat(row.discount),
+          loyaltyPointsUsed: parseFloat(row.loyalty_points_used),
+          loyaltyPointsEarned: parseFloat(row.loyalty_points_earned),
+          total: parseFloat(row.total),
+          paymentMethod: row.payment_method,
+          paymentStatus: row.payment_status,
+          orderStatus: row.order_status,
+          kitchenStatus: row.kitchen_status,
+          staffId: row.staff_id,
+          notes: row.notes,
+          createdAt: row.created_at.toISOString(),
+          updatedAt: row.updated_at.toISOString(),
+          completedAt: row.completed_at ? row.completed_at.toISOString() : null
+        };
+      } catch (error) {
+        throw new Error(`Error cancelling order: ${error.message}`);
       }
     }
   }
