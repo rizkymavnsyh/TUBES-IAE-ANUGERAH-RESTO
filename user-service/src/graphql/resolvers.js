@@ -87,6 +87,33 @@ const resolvers = {
       }
     },
 
+    staffByEmployeeId: async (parent, { employeeId }, { db }) => {
+      try {
+        const [staff] = await db.execute('SELECT * FROM staff WHERE employee_id = ?', [employeeId]);
+        if (staff.length === 0) {
+          return null;
+        }
+        const s = staff[0];
+        return {
+          id: s.id.toString(),
+          employeeId: s.employee_id || `EMP${s.id.toString().padStart(3, '0')}`,
+          username: s.username,
+          name: s.name,
+          email: s.email,
+          phone: s.phone,
+          role: s.role,
+          department: s.department,
+          status: s.status || 'active',
+          hireDate: s.hire_date ? s.hire_date.toISOString().split('T')[0] : null,
+          salary: s.salary ? parseFloat(s.salary) : null,
+          createdAt: s.created_at ? s.created_at.toISOString() : new Date().toISOString(),
+          updatedAt: s.updated_at ? s.updated_at.toISOString() : new Date().toISOString()
+        };
+      } catch (error) {
+        throw new Error(`Error fetching staff by employee ID: ${error.message}`);
+      }
+    },
+
     customers: async (parent, { status }, { db }) => {
       try {
         let query = 'SELECT * FROM customers';
