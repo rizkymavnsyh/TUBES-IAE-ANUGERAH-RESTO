@@ -902,6 +902,21 @@ def resolve_reduce_stock(_, info, ingredientId: str, quantity: float, reason: Op
         cursor.close()
         conn.close()
 
+# Helper for smart category mapping
+def determine_category(name: str) -> str:
+    name_lower = name.lower()
+    if 'beras' in name_lower:
+        return 'Bahan Pokok'
+    elif any(x in name_lower for x in ['ayam', 'sapi', 'ikan', 'daging']):
+        return 'Daging & Ikan'
+    elif any(x in name_lower for x in ['sayur', 'bayam', 'wortel', 'tomat']):
+        return 'Sayuran'
+    elif any(x in name_lower for x in ['bumbu', 'garam', 'gula', 'merica']):
+        return 'Bumbu'
+    elif any(x in name_lower for x in ['susu', 'keju', 'telur']):
+        return 'Dairy & Telur'
+    return 'Bahan Baku'
+
 @mutation.field("purchaseFromTokoSembako")
 async def resolve_purchase_from_toko_sembako(_, info, input: Dict[str, Any]):
     """Purchase from Toko Sembako - requires manager role"""
@@ -976,11 +991,12 @@ async def resolve_purchase_from_toko_sembako(_, info, input: Dict[str, Any]):
                 ingredient = cursor.fetchone()
                 
                 if not ingredient:
+                    category = determine_category(item['name'])
                     cursor.execute(
                         """INSERT INTO ingredients (name, unit, category, min_stock_level, current_stock, 
                            supplier_id, cost_per_unit, status)
                            VALUES (%s, %s, %s, %s, %s, %s, %s, %s)""",
-                        (item['name'], item['unit'], 'Sembako', 10, 0, supplier_id, item['price'], 'active')
+                        (item['name'], item['unit'], category, 10, 0, supplier_id, item['price'], 'active')
                     )
                     ingredient_id = cursor.lastrowid
                 else:
@@ -1381,11 +1397,12 @@ async def resolve_sync_stock_from_toko_sembako(_, info, productId: str, quantity
                  supplier_id = cursor.lastrowid
              else:
                  supplier_id = sup['id']
-                 
+             
+             category = determine_category(product['name'])
              cursor.execute("""
                  INSERT INTO ingredients (name, unit, category, min_stock_level, current_stock, supplier_id, cost_per_unit, status)
-                 VALUES (%s, %s, 'Vegetable', 10, 0, %s, %s, 'active')
-             """, (product['name'], product['unit'], supplier_id, product['price']))
+                 VALUES (%s, %s, %s, 10, 0, %s, %s, 'active')
+             """, (product['name'], product['unit'], category, supplier_id, product['price']))
              ingredient_id = cursor.lastrowid
         else:
              ingredient_id = ing['id']

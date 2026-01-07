@@ -39,6 +39,15 @@ const GET_TOKO_SEMBAKO_PRODUCTS = gql`
   }
 `;
 
+const GET_SUPPLIERS = gql`
+  query GetAllSuppliers {
+    suppliers {
+      id
+      name
+    }
+  }
+`;
+
 const PURCHASE_FROM_TOKO_SEMBAKO = gql`
   mutation PurchaseFromTokoSembako($input: PurchaseFromTokoSembakoInput!) {
     purchaseFromTokoSembako(input: $input) {
@@ -105,7 +114,8 @@ export default function InventoryPage() {
     unit: 'kg',
     minStockLevel: 0,
     currentStock: 0,
-    costPerUnit: 0
+    costPerUnit: 0,
+    supplierId: ''
   });
 
   const { data, loading, error, refetch } = useQuery(GET_INGREDIENTS, {
@@ -114,6 +124,10 @@ export default function InventoryPage() {
   });
 
   const { data: productsData } = useQuery(GET_TOKO_SEMBAKO_PRODUCTS, {
+    client: inventoryApolloClient
+  });
+
+  const { data: suppliersData } = useQuery(GET_SUPPLIERS, {
     client: inventoryApolloClient
   });
 
@@ -218,7 +232,8 @@ export default function InventoryPage() {
       unit: 'kg',
       minStockLevel: 5,
       currentStock: 0,
-      costPerUnit: 0
+      costPerUnit: 0,
+      supplierId: ''
     });
     setShowFormModal(true);
   };
@@ -232,7 +247,9 @@ export default function InventoryPage() {
       unit: item.unit,
       minStockLevel: item.minStockLevel,
       currentStock: item.currentStock,
-      costPerUnit: item.costPerUnit
+      currentStock: item.currentStock,
+      costPerUnit: item.costPerUnit,
+      supplierId: item.supplier?.id || ''
     });
     setShowFormModal(true);
   };
@@ -287,7 +304,8 @@ export default function InventoryPage() {
               // currentStock usually updated via addStock/reduceStock, but allows editing here if needed or separate
               // Note: schema allows updating currentStock in UpdateIngredientInput if we want
               // Let's allow updating everything for flexibility
-              costPerUnit: Number(formData.costPerUnit)
+              costPerUnit: Number(formData.costPerUnit),
+              supplierId: formData.supplierId || null
             }
           }
         });
@@ -301,8 +319,10 @@ export default function InventoryPage() {
               category: formData.category,
               unit: formData.unit,
               minStockLevel: Number(formData.minStockLevel),
+              minStockLevel: Number(formData.minStockLevel),
               currentStock: Number(formData.currentStock), // Allow setting initial stock
-              costPerUnit: Number(formData.costPerUnit)
+              costPerUnit: Number(formData.costPerUnit),
+              supplierId: formData.supplierId || null
             }
           }
         });
@@ -408,6 +428,7 @@ export default function InventoryPage() {
                   <th className="px-4 py-3 text-left text-sm font-medium text-slate-600">Stok</th>
                   <th className="px-4 py-3 text-left text-sm font-medium text-slate-600">Min. Stok</th>
                   <th className="px-4 py-3 text-left text-sm font-medium text-slate-600">Harga/Unit</th>
+                  <th className="px-4 py-3 text-left text-sm font-medium text-slate-600">Supplier</th>
                   <th className="px-4 py-3 text-center text-sm font-medium text-slate-600">Aksi</th>
                 </tr>
               </thead>
@@ -433,6 +454,9 @@ export default function InventoryPage() {
                       </td>
                       <td className="px-4 py-3 text-slate-600">
                         Rp {item.costPerUnit?.toLocaleString('de-DE') || 0}
+                      </td>
+                      <td className="px-4 py-3 text-slate-600 text-sm">
+                        {item.supplier?.name || '-'}
                       </td>
                       <td className="px-4 py-3 text-center">
                         <div className="flex justify-center gap-2">
@@ -652,6 +676,23 @@ export default function InventoryPage() {
                       <option value="Other">Lainnya</option>
                     </select>
                   </div>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-slate-700">Supplier</label>
+                  <select
+                    value={formData.supplierId}
+                    onChange={(e) => setFormData({ ...formData, supplierId: e.target.value })}
+                    className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                  >
+                    <option value="">-- Pilih Supplier --</option>
+                    {suppliersData?.suppliers?.map((s: any) => (
+                      <option key={s.id} value={s.id}>{s.name}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <label className="text-sm font-medium text-slate-700">Satuan</label>
                     <input

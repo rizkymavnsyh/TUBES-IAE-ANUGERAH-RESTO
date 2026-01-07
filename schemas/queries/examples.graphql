@@ -878,133 +878,22 @@ query GetOrdersByChef {
 # ╚═╝╚═╝  ╚═══╝  ╚═══╝  ╚══════╝╚═╝  ╚═══╝   ╚═╝    ╚═════╝ ╚═╝  ╚═╝   ╚═╝       ╚══════╝╚══════╝╚═╝  ╚═╝  ╚═══╝  ╚═╝ ╚═════╝╚══════╝
 # Port: 4002 | http://localhost:4002/graphql
 
-# ==================== SUPPLIER CRUD ====================
+# ==================== INGREDIENT STOCK CHECK ====================
 
-# CREATE - Buat Supplier Baru
-mutation CreateSupplier {
-  createSupplier(input: {
-    name: "Toko Sayuran Segar"
-    contactPerson: "Pak Ahmad"
-    email: "ahmad@sayuran.com"
-    phone: "08123456789"
-    address: "Pasar Induk Blok A No. 5"
-  }) {
-    id
-    name
-    contactPerson
-    status
-  }
-}
-
-# READ - Ambil Semua Supplier
-query GetAllSuppliers {
-  suppliers {
-    id
-    name
-    contactPerson
-    email
-    phone
-    address
-    status
-    createdAt
-  }
-}
-
-# READ - Ambil Supplier by ID
-query GetSupplierById {
-  supplier(id: "1") {
-    id
-    name
-    contactPerson
-    phone
-    status
-  }
-}
-
-# READ - Filter Supplier by Status
-query GetActiveSuppliers {
-  suppliers(status: active) {
-    id
-    name
-    contactPerson
-  }
-}
-
-# UPDATE - Update Supplier
-mutation UpdateSupplier {
-  updateSupplier(id: "1", input: {
-    name: "Toko Sayuran Segar Prima"
-    phone: "08111222333"
-    address: "Pasar Induk Blok B No. 10"
-  }) {
-    id
-    name
-    phone
-    address
-  }
-}
-
-# ==================== INGREDIENT CRUD ====================
-
-# CREATE - Buat Ingredient Baru
-mutation CreateIngredient {
-  createIngredient(input: {
-    name: "Beras Premium"
-    unit: "kg"
-    category: "Bahan Pokok"
-    minStockLevel: 50
-    currentStock: 100
-    supplierId: "1"
-    costPerUnit: 15000
-  }) {
-    id
-    name
-    currentStock
-    unit
-    status
-  }
-}
-
-# READ - Ambil Semua Ingredient
-query GetAllIngredients {
-  ingredients {
+# READ - Ambil Stock Bahan Baku (Otomatis dari Toko Sembako)
+query GetIngredients($category: String, $status: IngredientStatus) {
+  ingredients(category: $category, status: $status) {
     id
     name
     unit
     category
-    currentStock
     minStockLevel
+    currentStock
     costPerUnit
     status
     supplier {
       name
     }
-  }
-}
-
-# READ - Ambil Ingredient by ID
-query GetIngredientById {
-  ingredient(id: "1") {
-    id
-    name
-    currentStock
-    minStockLevel
-    unit
-    costPerUnit
-    supplier {
-      name
-      phone
-    }
-  }
-}
-
-# READ - Filter Ingredient by Category
-query GetIngredientsByCategory {
-  ingredients(category: "Bahan Pokok") {
-    id
-    name
-    currentStock
-    unit
   }
 }
 
@@ -1019,215 +908,11 @@ query GetLowStockIngredients {
   }
 }
 
-# READ - Ambil Out of Stock Ingredients
-query GetOutOfStockIngredients {
-  outOfStockIngredients {
-    id
-    name
-    minStockLevel
-    supplier {
-      name
-      phone
-    }
-  }
-}
-
-# UPDATE - Update Ingredient
-mutation UpdateIngredient {
-  updateIngredient(id: "1", input: {
-    name: "Beras Premium Super"
-    minStockLevel: 75
-    costPerUnit: 16000
-  }) {
-    id
-    name
-    minStockLevel
-    costPerUnit
-  }
-}
-
-# ==================== STOCK MOVEMENT CRUD ====================
-
-# CREATE - Tambah Stock
-mutation AddStock {
-  addStock(
-    ingredientId: "1"
-    quantity: 50
-    reason: "Restocking dari supplier"
-  ) {
-    id
-    quantity
-    movementType
-    reason
-    createdAt
-  }
-}
-
-# CREATE - Kurangi Stock
-mutation ReduceStock {
-  reduceStock(
-    ingredientId: "1"
-    quantity: 5
-    reason: "Digunakan untuk pesanan"
-    referenceId: "ORD001"
-    referenceType: "order"
-  ) {
-    id
-    quantity
-    movementType
-    reason
-    referenceId
-  }
-}
-
-# UPDATE - Adjust Stock
-mutation AdjustStock {
-  adjustStock(
-    ingredientId: "1"
-    newQuantity: 80
-    reason: "Penyesuaian setelah stock opname"
-  ) {
-    id
-    quantity
-    movementType
-    reason
-  }
-}
-
-# READ - Ambil Stock Movements
-query GetStockMovements {
-  stockMovements {
-    id
-    ingredient {
-      name
-    }
-    movementType
-    quantity
-    reason
-    createdAt
-  }
-}
-
-# READ - Filter Stock Movements by Ingredient
-query GetStockMovementsByIngredient {
-  stockMovements(ingredientId: "1") {
-    id
-    movementType
-    quantity
-    reason
-    createdAt
-  }
-}
-
-# READ - Cek Stock Availability
-query CheckStockAvailability {
-  checkStock(ingredientId: "1", quantity: 10) {
-    available
-    currentStock
-    requestedQuantity
-    message
-  }
-}
-
-# ==================== PURCHASE ORDER CRUD ====================
-
-# CREATE - Buat Purchase Order
-mutation CreatePurchaseOrder {
-  createPurchaseOrder(input: {
-    supplierId: "1"
-    orderNumber: "PO-2024-001"
-    orderDate: "2024-12-25"
-    expectedDeliveryDate: "2024-12-27"
-    notes: "Pesanan mendesak"
-    items: [
-      { ingredientId: "1", quantity: 100, unitPrice: 15000 }
-      { ingredientId: "2", quantity: 50, unitPrice: 25000 }
-    ]
-  }) {
-    id
-    orderNumber
-    status
-    totalAmount
-    items {
-      ingredient {
-        name
-      }
-      quantity
-      unitPrice
-      totalPrice
-    }
-  }
-}
-
-# READ - Ambil Semua Purchase Orders
-query GetAllPurchaseOrders {
-  purchaseOrders {
-    id
-    orderNumber
-    status
-    totalAmount
-    orderDate
-    expectedDeliveryDate
-    supplier {
-      name
-    }
-    items {
-      ingredient {
-        name
-      }
-      quantity
-      totalPrice
-    }
-  }
-}
-
-# READ - Ambil Purchase Order by ID
-query GetPurchaseOrderById {
-  purchaseOrder(id: "1") {
-    id
-    orderNumber
-    status
-    totalAmount
-    supplier {
-      name
-      phone
-    }
-    items {
-      ingredient {
-        name
-      }
-      quantity
-      unitPrice
-      totalPrice
-      receivedQuantity
-    }
-  }
-}
-
-# UPDATE - Update Purchase Order Status
-mutation UpdatePurchaseOrderStatus {
-  updatePurchaseOrderStatus(id: "1", status: ordered) {
-    id
-    orderNumber
-    status
-  }
-}
-
-# UPDATE - Receive Purchase Order
-mutation ReceivePurchaseOrder {
-  receivePurchaseOrder(id: "1") {
-    id
-    orderNumber
-    status
-    receivedDate
-  }
-}
-
 # ==================== TOKO SEMBAKO INTEGRATION ====================
 
-# READ - Ambil Products dari Toko Sembako
-query GetTokoSembakoProducts {
-  tokoSembakoProducts {
+# 1. CEK PRODUK - Lihat katalog Toko Sembako
+query GetTokoSembakoProducts($category: String) {
+  tokoSembakoProducts(category: $category) {
     id
     name
     category
@@ -1238,87 +923,24 @@ query GetTokoSembakoProducts {
   }
 }
 
-# READ - Filter Products by Category
-query GetTokoSembakoProductsByCategory {
-  tokoSembakoProducts(category: "sembako") {
-    id
-    name
-    price
-    available
-  }
-}
-
-# READ - Ambil Product by ID
-query GetTokoSembakoProductById {
-  tokoSembakoProduct(id: "1") {
-    id
-    name
-    price
-    unit
-    available
-    description
-  }
-}
-
-# READ - Cek Stock di Toko Sembako
-query CheckTokoSembakoStock {
-  checkTokoSembakoStock(productId: "1", quantity: 25) {
-    available
-    currentStock
-    requestedQuantity
-    message
-  }
-}
-
-# READ - Cek Order Status di Toko Sembako
-query GetTokoSembakoOrderStatus {
-  tokoSembakoOrderStatus(orderId: "TS-ORD-001") {
-    id
-    orderId
-    status
-    total
-    items {
-      productId
-      name
-      quantity
-      price
-    }
-    createdAt
-  }
-}
-
-# CREATE - Buat Pembelian dari Toko Sembako
+# 2. BELI BAHAN - Order dari Toko Sembako (Otomatis menambah Stock)
 mutation PurchaseFromTokoSembako {
   purchaseFromTokoSembako(input: {
-    orderNumber: "PO-TS-2024-001"
+    orderNumber: "PO-TS-TEST-001"
     items: [
-      { productId: "1", quantity: 50 }
-      { productId: "2", quantity: 25 }
+      { productId: "1", quantity: 50 } # Beras
+      { productId: "2", quantity: 25 } # Minyak/Gula
     ]
-    notes: "Pembelian bahan baku rutin"
+    notes: "Restock bahan baku"
   }) {
     success
     message
-    purchaseOrder {
-      id
-      orderNumber
-      totalAmount
-    }
     tokoSembakoOrder {
+      id
       orderId
       status
       total
     }
     stockAdded
-  }
-}
-
-# CREATE - Sync Stock dari Toko Sembako
-mutation SyncStockFromTokoSembako {
-  syncStockFromTokoSembako(productId: "1", quantity: 30) {
-    id
-    quantity
-    movementType
-    reason
   }
 }

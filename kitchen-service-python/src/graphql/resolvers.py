@@ -443,10 +443,61 @@ def resolve_assign_chef(_, info, orderId: str, chefId: str):
     cursor = conn.cursor(dictionary=True)
     
     try:
-        # Check if chef exists
+        # Check if chef exists locally
         cursor.execute("SELECT * FROM chefs WHERE id = %s", (chefId,))
-        if not cursor.fetchone():
-            raise Exception("Chef not found")
+        chef = cursor.fetchone()
+        
+        if not chef:
+            # Try to sync from User Service
+            import os
+            import httpx
+            
+            user_service_url = os.getenv('USER_SERVICE_URL')
+            if not user_service_url:
+                 # Fallback for local testing if env not set
+                 user_service_url = "http://user-service-python:4003/graphql"
+                 
+            print(f"👨‍🍳 Chef {chefId} not found locally. Syncing from User Service at {user_service_url}...")
+            
+            try:
+                query = """
+                query GetStaff($id: String!) {
+                    staffById(id: $id) {
+                        id
+                        name
+                        role
+                        status
+                    }
+                }
+                """
+                response = httpx.post(
+                    user_service_url, 
+                    json={'query': query, 'variables': {'id': chefId}},
+                    timeout=5.0
+                )
+                
+                if response.status_code == 200:
+                    data = response.json()
+                    staff = data.get('data', {}).get('staffById')
+                    
+                    if staff and staff['role'] == 'CHEF':
+                        # Insert into local chefs table
+                        cursor.execute("""
+                            INSERT INTO chefs (id, name, specialization, status, current_orders)
+                            VALUES (%s, %s, 'General', 'available', 0)
+                        """, (staff['id'], staff['name']))
+                        conn.commit()
+                        print(f"✅ Chef {staff['name']} synced successfully!")
+                    else:
+                        raise Exception("Chef not found in User Service or not a Chef role")
+                else:
+                    raise Exception(f"Failed to contact User Service: {response.status_code}")
+                    
+            except Exception as e:
+                print(f"❌ Chef sync failed: {str(e)}")
+                raise Exception(f"Chef not found locally and sync failed: {str(e)}")
+
+        # Proceed with assignment (Chef guaranteed to exist now)
         
         # Update order
         cursor.execute("""

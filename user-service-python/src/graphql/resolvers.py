@@ -720,8 +720,8 @@ def resolve_logout(_, info, refreshToken: str):
         conn.close()
 
 
-@mutation.field("addLoyaltyPoints")
-def resolve_add_loyalty_points(_, info, customerId: str, points: float, orderId: Optional[str] = None, description: Optional[str] = None):
+@mutation.field("earnPoints")
+def resolve_earn_points(_, info, customerId: str, points: float, orderId: Optional[str] = None, description: Optional[str] = None):
     """Add loyalty points"""
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
@@ -774,8 +774,8 @@ def resolve_add_loyalty_points(_, info, customerId: str, points: float, orderId:
         cursor.close()
         conn.close()
 
-@mutation.field("redeemLoyaltyPoints")
-def resolve_redeem_loyalty_points(_, info, customerId: str, points: float, orderId: Optional[str] = None, description: Optional[str] = None):
+@mutation.field("redeemPoints")
+def resolve_redeem_points(_, info, customerId: str, points: float, orderId: Optional[str] = None, description: Optional[str] = None):
     """Redeem loyalty points"""
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)

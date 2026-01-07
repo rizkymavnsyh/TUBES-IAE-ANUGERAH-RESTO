@@ -104,6 +104,7 @@ services:
       DB_PASSWORD: kitchen_pass
       DB_NAME: kitchen_db
       ORDER_SERVICE_URL: http://order-service-python:4004/graphql
+      USER_SERVICE_URL: http://user-service-python:4003/graphql
     depends_on:
       kitchen-db:
         condition: service_healthy

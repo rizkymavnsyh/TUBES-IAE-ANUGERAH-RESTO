@@ -17,8 +17,8 @@ type Mutation {
   loginStaff(username: String!, password: String!): AuthResponse!
   refreshToken(refreshToken: String!): RefreshTokenResponse!
   logout(refreshToken: String!): LogoutResponse!
-  addLoyaltyPoints(customerId: String!, points: Float!, orderId: String, description: String): LoyaltyTransaction!
-  redeemLoyaltyPoints(customerId: String!, points: Float!, orderId: String, description: String): LoyaltyTransaction!
+  earnPoints(customerId: String!, points: Float!, orderId: String, description: String): LoyaltyTransaction!
+  redeemPoints(customerId: String!, points: Float!, orderId: String, description: String): LoyaltyTransaction!
 }
 
 enum StaffRole {
