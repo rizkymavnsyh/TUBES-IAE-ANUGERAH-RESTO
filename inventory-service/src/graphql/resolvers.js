@@ -281,7 +281,10 @@ const resolvers = {
   },
 
   Mutation: {
-    createSupplier: async (parent, { input }, { db }) => {
+    createSupplier: async (parent, { input }, context) => {
+      // Require at least cashier role for write operations
+      requireMinRole(context, 'cashier');
+      const { db } = context;
       try {
         const { name, contactPerson, email, phone, address } = input;
         const [result] = await db.execute(
@@ -300,7 +303,10 @@ const resolvers = {
       }
     },
 
-    createIngredient: async (parent, { input }, { db }) => {
+    createIngredient: async (parent, { input }, context) => {
+      // Require at least cashier role for write operations
+      requireMinRole(context, 'cashier');
+      const { db } = context;
       try {
         const { name, unit, category, minStockLevel, currentStock, supplierId, costPerUnit } = input;
         const [result] = await db.execute(
@@ -376,7 +382,10 @@ const resolvers = {
       }
     },
 
-    addStock: async (parent, { ingredientId, quantity, reason }, { db }) => {
+    addStock: async (parent, { ingredientId, quantity, reason }, context) => {
+      // Require at least cashier role for stock operations
+      requireMinRole(context, 'cashier');
+      const { db } = context;
       try {
         // Start transaction
         await db.query('START TRANSACTION');
@@ -603,7 +612,10 @@ const resolvers = {
     },
 
     // Toko Sembako Integration Mutations
-    purchaseFromTokoSembako: async (parent, { input }, { db }) => {
+    purchaseFromTokoSembako: async (parent, { input }, context) => {
+      // Require at least cashier role for purchase operations
+      requireMinRole(context, 'cashier');
+      const { db } = context;
       try {
         const { orderNumber, items, notes } = input;
 
