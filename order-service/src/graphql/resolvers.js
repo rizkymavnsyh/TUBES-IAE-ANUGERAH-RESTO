@@ -311,6 +311,12 @@ const resolvers = {
 
         const results = [];
         for (const ingredient of ingredients) {
+          // Map legacy/dummy IDs to real Inventory IDs for MENU080
+          let targetId = ingredient.ingredientId;
+          if (targetId === 'ING001') targetId = '1'; // Nasi -> Beras
+          if (targetId === 'ING002') targetId = '7'; // Telur -> Telur
+          if (targetId === 'ING003') targetId = '2'; // Ayam -> Ayam
+
           const query = `
             query CheckStock($ingredientId: ID!, $quantity: Float!) {
               checkStock(ingredientId: $ingredientId, quantity: $quantity) {
@@ -324,7 +330,7 @@ const resolvers = {
 
           try {
             const data = await callGraphQLService(INVENTORY_SERVICE_URL, query, {
-              ingredientId: ingredient.ingredientId,
+              ingredientId: targetId,
               quantity: ingredient.quantity * quantity
             });
 
