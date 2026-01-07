@@ -57,7 +57,7 @@ const CREATE_MENU = gql`
 `;
 
 const UPDATE_MENU = gql`
-  mutation UpdateMenu($id: String!, $input: UpdateMenuInput!) {
+  mutation UpdateMenu($id: ID!, $input: UpdateMenuInput!) {
     updateMenu(id: $id, input: $input) {
       id
       menuId
@@ -67,7 +67,7 @@ const UPDATE_MENU = gql`
 `;
 
 const DELETE_MENU = gql`
-  mutation DeleteMenu($id: String!) {
+  mutation DeleteMenu($id: ID!) {
     deleteMenu(id: $id)
   }
 `;

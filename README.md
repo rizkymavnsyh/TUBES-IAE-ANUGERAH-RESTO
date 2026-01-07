@@ -261,13 +261,15 @@ docker exec order-service-python python src/database/migrate.py
 docker exec order-service-python python src/database/seed.py
 ```
 
-#### Node.js Services
+#### Node.js Services (Auto-Migration Enabled)
+> **Note:** Services ini sudah dikonfigurasi untuk **otomatis menjalankan migration dan seeding** saat container baru dijalankan. Anda TIDAK PERLU menjalankan perintah manual di bawah ini kecuali untuk troubleshooting.
+
 ```bash
+# Manual Migration (Optional/Troubleshooting only)
 docker exec kitchen-service npm run migrate
 docker exec inventory-service npm run migrate
 docker exec user-service npm run migrate
 docker exec order-service npm run migrate
-docker exec order-service npm run seed
 ```
 
 ### Opsi 2: Development Lokal (Tanpa Docker)
@@ -281,6 +283,22 @@ uvicorn src.main:app --host 0.0.0.0 --port 4001
 cd kitchen-service && npm install
 npm run dev
 ```
+
+---
+
+## 👥 Access & Credentials (Default Users)
+
+Berikut adalah daftar pengguna default yang telah disiapkan untuk testing:
+
+| Role | Username | Password | Deskripsi |
+|------|----------|----------|-----------|
+| **Admin** | `admin` | `admin123` | Akses penuh ke seluruh sistem |
+| **Manager** | `manager` | `password123` | Manajemen menu, staf, report |
+| **Chef** | `chef`, `chef_budi`, `chef_agus`, `chef_citra` | `password123` | Manajemen pesanan dapur |
+| **Waiter** | `waiter` | `password123` | Order taking, serve food |
+| **Cashier** | `cashier` | `password123` | Pembayaran dan billing |
+
+> **Note:** Password untuk semua akun staff default adalah `password123`, kecuali Admin yang menggunakan `admin123`.
 
 ---
 

@@ -104,6 +104,7 @@ services:
       DB_NAME: kitchen_db
       ORDER_SERVICE_URL: http://order-service:4004/graphql
       USER_SERVICE_URL: http://user-service:4003/graphql
+      JWT_SECRET: "rahasia-negara-api-key-2024"
     depends_on:
       kitchen-db:
         condition: service_healthy
@@ -128,9 +129,9 @@ services:
       DB_NAME: inventory_db
       ORDER_SERVICE_URL: http://order-service:4004/graphql
       # Toko Sembako Integration URLs (Railway Cloud)
-      TOKO_SEMBAKO_PRODUCT_URL: https://toko-sembako-revisi-production.up.railway.app/graphql/product
       TOKO_SEMBAKO_INVENTORY_URL: https://toko-sembako-revisi-production.up.railway.app/graphql/inventory
       TOKO_SEMBAKO_ORDER_URL: https://toko-sembako-revisi-production.up.railway.app/graphql/order
+      JWT_SECRET: "rahasia-negara-api-key-2024"
     depends_on:
       inventory-db:
         condition: service_healthy
@@ -154,6 +155,7 @@ services:
       DB_PASSWORD: user_pass
       DB_NAME: user_db
       ORDER_SERVICE_URL: http://order-service:4004/graphql
+      JWT_SECRET: "rahasia-negara-api-key-2024"
     depends_on:
       user-db:
         condition: service_healthy
@@ -179,6 +181,7 @@ services:
       KITCHEN_SERVICE_URL: http://kitchen-service:4001/graphql
       INVENTORY_SERVICE_URL: http://inventory-service:4002/graphql
       USER_SERVICE_URL: http://user-service:4003/graphql
+      JWT_SECRET: "rahasia-negara-api-key-2024"
     depends_on:
       order-db:
         condition: service_healthy

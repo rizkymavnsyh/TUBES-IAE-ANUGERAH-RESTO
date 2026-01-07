@@ -2,7 +2,17 @@
 
 import { useQuery, useMutation, gql } from '@apollo/client';
 import { useEffect, useState } from 'react';
-import { kitchenApolloClient } from '@/lib/apollo-client';
+import { kitchenApolloClient, userApolloClient } from '@/lib/apollo-client';
+
+const GET_ALL_CHEFS_USER = gql`
+  query GetAllChefsUser {
+    staff(role: chef, status: active) {
+      id
+      name
+      department
+    }
+  }
+`;
 
 const GET_PENDING_ORDERS = gql`
   query GetPendingOrders {
@@ -134,6 +144,27 @@ export default function KitchenPage() {
     client: kitchenApolloClient,
     pollInterval: 5000,
     fetchPolicy: 'cache-and-network',
+  });
+
+  const { data: userData } = useQuery(GET_ALL_CHEFS_USER, {
+    client: userApolloClient,
+    pollInterval: 5000,
+    fetchPolicy: 'network-only',
+  });
+
+  // Calculate merged chefs list (User Service identity + Kitchen Service status)
+  const allChefsUser = userData?.staff || [];
+  const kitchenChefsMap = new Map((chefsData?.chefs || []).map((c: any) => [c.id, c]));
+
+  const mergedChefs = allChefsUser.map((staffChef: any) => {
+    const kitchenChef = kitchenChefsMap.get(staffChef.id);
+    return {
+      ...staffChef,
+      status: kitchenChef?.status || 'available',
+      specialization: kitchenChef?.specialization || staffChef.department || 'General',
+      currentOrders: kitchenChef?.currentOrders || 0,
+      id: staffChef.id
+    };
   });
 
   useEffect(() => {
@@ -282,7 +313,8 @@ export default function KitchenPage() {
   // Get chefs that can handle this order based on specialization
   const getAvailableChefsForOrder = (order: any) => {
     const orderCategory = getOrderCategory(order.items || []);
-    return (chefsData?.chefs || []).filter((c: any) => {
+
+    return mergedChefs.filter((c: any) => {
       const isAvailable = c.status === 'available' || c.status === 'AVAILABLE' || c.status === 'busy' || c.status === 'BUSY';
       const specialization = c.specialization?.toLowerCase() || '';
       const orderCatLower = orderCategory.toLowerCase();
@@ -298,7 +330,7 @@ export default function KitchenPage() {
     });
   };
 
-  const availableChefs = chefsData?.chefs?.filter((c: any) => c.status === 'available' || c.status === 'AVAILABLE') || [];
+  const availableChefs = mergedChefs.filter((c: any) => c.status === 'available' || c.status === 'AVAILABLE');
 
   return (
     <div className="space-y-6">
@@ -346,17 +378,17 @@ export default function KitchenPage() {
           <p className="text-sm text-green-600">Chef Tersedia</p>
         </div>
         <div className="bg-purple-50 border border-purple-200 rounded-xl p-4">
-          <p className="text-3xl font-bold text-purple-700">{chefsData?.chefs?.length || 0}</p>
+          <p className="text-3xl font-bold text-purple-700">{mergedChefs.length}</p>
           <p className="text-sm text-purple-600">Total Chef</p>
         </div>
       </div>
 
       {/* Chef List */}
-      {chefsData?.chefs?.length > 0 && (
+      {mergedChefs.length > 0 && (
         <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-4">
           <h3 className="font-semibold text-slate-800 mb-3">👨‍🍳 Status Chef</h3>
           <div className="flex flex-wrap gap-2">
-            {chefsData.chefs.map((chef: any) => (
+            {mergedChefs.map((chef: any) => (
               <div
                 key={chef.id}
                 className={`px-3 py-2 rounded-lg text-sm ${(chef.status === 'available' || chef.status === 'AVAILABLE')

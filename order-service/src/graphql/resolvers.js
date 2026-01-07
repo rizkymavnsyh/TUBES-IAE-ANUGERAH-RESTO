@@ -299,7 +299,7 @@ const resolvers = {
       }
     },
 
-    checkMenuStock: async (parent, { menuId, quantity }) => {
+    checkMenuStock: async (parent, { menuId, quantity }, context) => {
       try {
         const [menuRows] = await db.execute('SELECT * FROM menus WHERE menu_id = ?', [menuId]);
         if (menuRows.length === 0) {
@@ -329,10 +329,16 @@ const resolvers = {
           `;
 
           try {
-            const data = await callGraphQLService(INVENTORY_SERVICE_URL, query, {
-              ingredientId: targetId,
-              quantity: ingredient.quantity * quantity
-            });
+            // Use token from context for inter-service authentication
+            const data = await callGraphQLService(
+              INVENTORY_SERVICE_URL,
+              query,
+              {
+                ingredientId: targetId,
+                quantity: ingredient.quantity * quantity
+              },
+              context.token // Pass auth token
+            );
 
             results.push({
               available: data.checkStock.available,
@@ -1279,6 +1285,43 @@ const resolvers = {
     cancelOrder: async (parent, { orderId }, context) => {
       try {
         await db.execute('UPDATE orders SET order_status = ? WHERE order_id = ?', ['cancelled', orderId]);
+
+        // Propagate cancellation to Kitchen Service
+        try {
+          // 1. Get Kitchen Order ID
+          const kitchenQuery = `
+            query GetKitchenOrder($orderId: String!) {
+              kitchenOrderByOrderId(orderId: $orderId) {
+                id
+              }
+            }
+          `;
+
+          const kitchenOrderData = await callGraphQLService(KITCHEN_SERVICE_URL, kitchenQuery, { orderId });
+
+          if (kitchenOrderData && kitchenOrderData.kitchenOrderByOrderId) {
+            const kitchenId = kitchenOrderData.kitchenOrderByOrderId.id;
+
+            // 2. Cancel Kitchen Order
+            const cancelMutation = `
+              mutation CancelOrder($orderId: ID!) {
+                cancelOrder(orderId: $orderId) {
+                  id
+                  status
+                }
+              }
+            `;
+
+            await callGraphQLService(KITCHEN_SERVICE_URL, cancelMutation, { orderId: kitchenId }, context.token);
+
+            // Update local kitchen_status
+            await db.execute('UPDATE orders SET kitchen_status = ? WHERE order_id = ?', ['cancelled', orderId]);
+          }
+        } catch (kitchenError) {
+          console.error('Error synchronizing cancellation with Kitchen Service:', kitchenError.message);
+          // Don't fail the main request if kitchen sync fails, just log it
+        }
+
         const [rows] = await db.execute('SELECT * FROM orders WHERE order_id = ?', [orderId]);
         if (rows.length === 0) throw new Error('Order not found');
         const row = rows[0];

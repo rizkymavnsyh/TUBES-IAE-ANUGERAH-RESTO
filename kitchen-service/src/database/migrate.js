@@ -46,14 +46,20 @@ async function migrate() {
     `);
 
     console.log('✅ Kitchen Service migrations completed');
-    process.exit(0);
+    return true;
   } catch (error) {
     console.error('❌ Migration error:', error);
-    process.exit(1);
+    throw error;
   }
 }
 
-migrate();
+// Export for use as module
+module.exports = migrate;
+
+// Run directly if called as main script
+if (require.main === module) {
+  migrate().then(() => process.exit(0)).catch(() => process.exit(1));
+}
 
 
 

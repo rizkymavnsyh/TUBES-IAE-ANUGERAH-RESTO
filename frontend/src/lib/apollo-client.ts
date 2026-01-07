@@ -2,10 +2,8 @@ import { ApolloClient, InMemoryCache, createHttpLink, from } from '@apollo/clien
 import { setContext } from '@apollo/client/link/context';
 
 // Service URLs Configuration
-// INVENTORY SERVICE → Local (Port 4002) - Switched from Railway for CRUD support
-// OTHER SERVICES → Localhost
-
-const RAILWAY_INVENTORY_URL = 'https://tubes-iae-anugerah-resto-production.up.railway.app/graphql';
+// INVENTORY SERVICE → Local (Port 4002) - Acts as bridge to Toko Sembako Cloud
+// Toko Sembako Cloud: https://toko-sembako-revisi-production.up.railway.app
 
 const ORDER_SERVICE_URL = process.env.NEXT_PUBLIC_ORDER_SERVICE_URL || 'http://localhost:4004/graphql';
 const KITCHEN_SERVICE_URL = process.env.NEXT_PUBLIC_KITCHEN_SERVICE_URL || 'http://localhost:4001/graphql';
@@ -40,7 +38,7 @@ const kitchenServiceLink = createHttpLink({
 });
 
 const inventoryServiceLink = createHttpLink({
-  uri: RAILWAY_INVENTORY_URL, // Using Railway Cloud URL
+  uri: INVENTORY_SERVICE_URL, // Local Inventory Service → bridges to Toko Sembako Cloud
 });
 
 const userServiceLink = createHttpLink({

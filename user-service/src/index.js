@@ -1,4 +1,5 @@
 const express = require('express');
+const cors = require('cors');
 const { ApolloServer } = require('apollo-server-express');
 const { ApolloServerPluginLandingPageLocalDefault } = require('apollo-server-core');
 const typeDefs = require('./graphql/typeDefs');
@@ -9,6 +10,12 @@ require('dotenv').config();
 
 const app = express();
 const PORT = process.env.PORT || 4003;
+
+// Enable CORS
+app.use(cors({
+  origin: ['http://localhost:3000', 'http://localhost:3001'],
+  credentials: true
+}));
 
 // Initialize Apollo Server with embedded Sandbox and auth context
 const server = new ApolloServer({
@@ -30,6 +37,11 @@ const server = new ApolloServer({
 
 async function startServer() {
   try {
+    // Run migrations automatically on startup
+    console.log('🔄 Running database migrations...');
+    const migrate = require('./database/migrate');
+    await migrate();
+
     // Test database connection
     await db.execute('SELECT 1');
     console.log('✅ User Service (Node.js/Apollo): MySQL database connected');

@@ -87,6 +87,7 @@ async function migrate() {
         ingredient_id INT NOT NULL,
         quantity DECIMAL(10, 2) NOT NULL,
         unit_price DECIMAL(10, 2) NOT NULL,
+        price_per_unit DECIMAL(10, 2) NOT NULL,
         total_price DECIMAL(10, 2) NOT NULL,
         received_quantity DECIMAL(10, 2) DEFAULT 0,
         FOREIGN KEY (purchase_order_id) REFERENCES purchase_orders(id) ON DELETE CASCADE,
@@ -94,36 +95,37 @@ async function migrate() {
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
     `);
 
-    // Insert sample suppliers
-    await db.execute(`
-      INSERT IGNORE INTO suppliers (id, name, contact_person, email, phone, address) VALUES
-      (1, 'PT Bahan Baku Sejahtera', 'Budi Santoso', 'budi@bahanbaku.com', '081234567890', 'Jl. Raya Jakarta No. 123'),
-      (2, 'CV Supplier Makmur', 'Siti Nurhaliza', 'siti@makmur.com', '081234567891', 'Jl. Bandung Raya No. 456'),
-      (3, 'UD Segar Abadi', 'Ahmad Yani', 'ahmad@segar.com', '081234567892', 'Jl. Surabaya No. 789');
-    `);
+    // Check and add price_per_unit if missing (fix for existing containers)
+    try {
+      const [columns] = await db.execute("SHOW COLUMNS FROM purchase_order_items LIKE 'price_per_unit'");
+      if (columns.length === 0) {
+        console.log('⚠️ Column price_per_unit missing in purchase_order_items. Adding it...');
+        await db.execute("ALTER TABLE purchase_order_items ADD COLUMN price_per_unit DECIMAL(10, 2) NOT NULL AFTER unit_price");
+        console.log('✅ Added missing price_per_unit column');
+      }
+    } catch (err) {
+      console.error('⚠️ Could not check/add price_per_unit column:', err.message);
+    }
 
-    // Insert sample ingredients
-    await db.execute(`
-      INSERT IGNORE INTO ingredients (id, name, unit, category, min_stock_level, current_stock, supplier_id, cost_per_unit) VALUES
-      (1, 'Beras', 'kg', 'Staple', 50, 100, 1, 12000),
-      (2, 'Ayam', 'kg', 'Protein', 20, 30, 2, 35000),
-      (3, 'Ikan', 'kg', 'Protein', 15, 25, 2, 40000),
-      (4, 'Sayuran Mix', 'kg', 'Vegetable', 10, 20, 3, 15000),
-      (5, 'Bumbu Dasar', 'pack', 'Spice', 20, 50, 1, 5000),
-      (6, 'Minyak Goreng', 'liter', 'Cooking', 30, 60, 1, 18000),
-      (7, 'Telur', 'butir', 'Protein', 100, 200, 2, 2000),
-      (8, 'Tahu', 'potong', 'Protein', 50, 100, 3, 3000);
-    `);
+    // Note: Inventory data (ingredients, suppliers) comes from Toko Sembako cloud integration
+    // No local seed data needed - data will be synced from:
+    // https://toko-sembako-revisi-production.up.railway.app
 
     console.log('✅ Inventory Service migrations completed');
-    process.exit(0);
+    return true;
   } catch (error) {
     console.error('❌ Migration error:', error);
-    process.exit(1);
+    throw error;
   }
 }
 
-migrate();
+// Export for use as module
+module.exports = migrate;
+
+// Run directly if called as main script
+if (require.main === module) {
+  migrate().then(() => process.exit(0)).catch(() => process.exit(1));
+}
 
 
 

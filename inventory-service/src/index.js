@@ -50,54 +50,8 @@ async function startServer() {
     await db.execute('SELECT 1');
     console.log('✅ Inventory Service (Node.js/Apollo): MySQL database connected');
 
-    // Auto-Migrate Database (Create Tables if not exist)
+    // Auto-Migrate Database
     try {
-      console.log('🔄 Checking database schema...');
-
-      await db.query(`
-        CREATE TABLE IF NOT EXISTS suppliers (
-          id INT AUTO_INCREMENT PRIMARY KEY,
-          name VARCHAR(255) NOT NULL,
-          contact_person VARCHAR(255),
-          email VARCHAR(255),
-          phone VARCHAR(50),
-          address TEXT,
-          status VARCHAR(50) DEFAULT 'active',
-          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        )
-      `);
-
-      await db.query(`
-        CREATE TABLE IF NOT EXISTS ingredients (
-          id INT AUTO_INCREMENT PRIMARY KEY,
-          name VARCHAR(255) NOT NULL,
-          unit VARCHAR(50) NOT NULL,
-          category VARCHAR(100),
-          min_stock_level FLOAT DEFAULT 0,
-          current_stock FLOAT DEFAULT 0,
-          cost_per_unit DECIMAL(10, 2) DEFAULT 0,
-          supplier_id INT,
-          status VARCHAR(50) DEFAULT 'active',
-          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-          updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-          FOREIGN KEY (supplier_id) REFERENCES suppliers(id) ON DELETE SET NULL
-        )
-      `);
-
-      await db.query(`
-        CREATE TABLE IF NOT EXISTS stock_movements (
-          id INT AUTO_INCREMENT PRIMARY KEY,
-          ingredient_id INT NOT NULL,
-          movement_type VARCHAR(20) NOT NULL,
-          quantity FLOAT NOT NULL,
-          reason TEXT,
-          reference_id VARCHAR(100),
-          reference_type VARCHAR(50),
-          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-          FOREIGN KEY (ingredient_id) REFERENCES ingredients(id) ON DELETE CASCADE
-        )
-      `);
-
       await db.query(`
         CREATE TABLE IF NOT EXISTS purchase_orders (
           id INT AUTO_INCREMENT PRIMARY KEY,

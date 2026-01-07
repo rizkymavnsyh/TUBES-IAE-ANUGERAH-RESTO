@@ -16,14 +16,17 @@ function safeParseJSON(field, defaultValue = []) {
 }
 
 // Helper function to call User Service GraphQL API
-async function callUserService(query, variables = {}) {
+async function callUserService(query, variables = {}, authToken = null) {
   try {
+    const headers = { 'Content-Type': 'application/json' };
+    if (authToken) {
+      headers['Authorization'] = authToken;
+    }
+
     const response = await axios.post(USER_SERVICE_URL, {
       query,
       variables
-    }, {
-      headers: { 'Content-Type': 'application/json' }
-    });
+    }, { headers });
     if (response.data.errors) {
       throw new Error(response.data.errors[0].message);
     }
@@ -171,7 +174,8 @@ const resolvers = {
       }
     },
 
-    chefs: async (parent, args, { db }) => {
+    chefs: async (parent, args, context) => {
+      const { db } = context;
       try {
         // Query User Service for staff with role=chef
         const query = `
@@ -188,7 +192,7 @@ const resolvers = {
           }
         `;
 
-        const data = await callUserService(query);
+        const data = await callUserService(query, {}, context.token);
         const staffChefs = data.staff || [];
 
         // Get current orders count for each chef from kitchen_orders
@@ -219,24 +223,25 @@ const resolvers = {
       }
     },
 
-    chef: async (parent, { id }, { db }) => {
+    chef: async (parent, { id }, context) => {
+      const { db } = context;
       try {
         // Query User Service for specific staff by ID
         const query = `
           query GetChef($id: ID!) {
-            staffById(id: $id) {
-              id
-              employeeId
-              name
-              email
-              phone
-              department
-              status
-            }
-          }
-        `;
+        staffById(id: $id) {
+          id
+          employeeId
+          name
+          email
+          phone
+          department
+          status
+        }
+      }
+      `;
 
-        const data = await callUserService(query, { id });
+        const data = await callUserService(query, { id }, context.token);
         const staffChef = data.staffById;
 
         if (!staffChef) {
@@ -278,7 +283,7 @@ const resolvers = {
         );
         return orders.map(order => ({
           id: order.id.toString(),
-          orderId: order.order_id || `ORD-${order.id}`,
+          orderId: order.order_id || `ORD - ${order.id} `,
           tableNumber: order.table_number,
           status: order.status,
           items: safeParseJSON(order.items, []),
@@ -290,7 +295,7 @@ const resolvers = {
           updatedAt: order.updated_at ? order.updated_at.toISOString() : new Date().toISOString()
         }));
       } catch (error) {
-        throw new Error(`Error fetching orders by chef: ${error.message}`);
+        throw new Error(`Error fetching orders by chef: ${error.message} `);
       }
     }
   },
@@ -310,15 +315,30 @@ const resolvers = {
         );
 
         if (existing.length > 0) {
-          throw new Error('Order already exists in kitchen queue');
+          // Idempotency: Return existing order if already created
+          const [orders] = await db.execute('SELECT * FROM kitchen_orders WHERE id = ?', [existing[0].id]);
+          const o = orders[0];
+          return {
+            id: o.id.toString(),
+            orderId: o.order_id,
+            tableNumber: o.table_number,
+            status: o.status || 'pending',
+            items: safeParseJSON(o.items, []),
+            priority: o.priority || 0,
+            estimatedTime: o.estimated_time,
+            chefId: o.chef_id,
+            notes: o.notes,
+            createdAt: o.created_at ? o.created_at.toISOString() : new Date().toISOString(),
+            updatedAt: o.updated_at ? o.updated_at.toISOString() : new Date().toISOString()
+          };
         }
 
         // Ensure items is a JSON string
         const itemsJson = typeof items === 'string' ? items : JSON.stringify(items || []);
 
         const [result] = await db.execute(
-          `INSERT INTO kitchen_orders (order_id, table_number, status, items, priority, notes)
-           VALUES (?, ?, 'pending', ?, ?, ?)`,
+          `INSERT INTO kitchen_orders(order_id, table_number, status, items, priority, notes)
+      VALUES(?, ?, 'pending', ?, ?, ?)`,
           [orderId, tableNumber || null, itemsJson, priority, notes || null]
         );
 
@@ -342,7 +362,7 @@ const resolvers = {
           updatedAt: o.updated_at ? o.updated_at.toISOString() : new Date().toISOString()
         };
       } catch (error) {
-        throw new Error(`Error creating kitchen order: ${error.message}`);
+        throw new Error(`Error creating kitchen order: ${error.message} `);
       }
     },
 
@@ -383,7 +403,7 @@ const resolvers = {
         if (updates.length > 0) {
           params.push(id);
           await db.execute(
-            `UPDATE kitchen_orders SET ${updates.join(', ')} WHERE id = ?`,
+            `UPDATE kitchen_orders SET ${updates.join(', ')} WHERE id = ? `,
             params
           );
         }
@@ -392,7 +412,7 @@ const resolvers = {
         const o = updatedRows[0];
         return {
           id: o.id.toString(),
-          orderId: o.order_id || `ORD-${o.id}`,
+          orderId: o.order_id || `ORD - ${o.id} `,
           tableNumber: o.table_number,
           status: o.status || 'pending',
           items: safeParseJSON(o.items, []),
@@ -404,7 +424,7 @@ const resolvers = {
           updatedAt: o.updated_at ? o.updated_at.toISOString() : new Date().toISOString()
         };
       } catch (error) {
-        throw new Error(`Error updating kitchen order: ${error.message}`);
+        throw new Error(`Error updating kitchen order: ${error.message} `);
       }
     },
 
@@ -437,7 +457,7 @@ const resolvers = {
 
         return {
           id: orders[0].id.toString(),
-          orderId: orders[0].order_id || `ORD-${orders[0].id}`,
+          orderId: orders[0].order_id || `ORD - ${orders[0].id} `,
           tableNumber: orders[0].table_number,
           status: orders[0].status,
           items: safeParseJSON(orders[0].items, []),
@@ -449,11 +469,12 @@ const resolvers = {
           updatedAt: orders[0].updated_at ? orders[0].updated_at.toISOString() : new Date().toISOString()
         };
       } catch (error) {
-        throw new Error(`Error updating order status: ${error.message}`);
+        throw new Error(`Error updating order status: ${error.message} `);
       }
     },
 
-    assignChef: async (parent, { orderId, chefId }, { db }) => {
+    assignChef: async (parent, { orderId, chefId }, context) => {
+      const { db } = context;
       try {
         // Check if chef is available locally
         let [chefs] = await db.execute('SELECT * FROM chefs WHERE id = ?', [chefId]);
@@ -463,15 +484,15 @@ const resolvers = {
           try {
             const query = `
               query GetChef($id: ID!) {
-                staffById(id: $id) {
-                  id
-                  name
-                  department
-                }
-              }
-            `;
+        staffById(id: $id) {
+          id
+          name
+          department
+        }
+      }
+      `;
 
-            const data = await callUserService(query, { id: chefId });
+            const data = await callUserService(query, { id: chefId }, context.token);
             const staff = data.staffById;
 
             if (staff) {
@@ -487,7 +508,7 @@ const resolvers = {
               throw new Error('Chef not found in User Service');
             }
           } catch (error) {
-            throw new Error(`Chef not found: ${error.message}`);
+            throw new Error(`Chef not found: ${error.message} `);
           }
         }
 
@@ -510,7 +531,7 @@ const resolvers = {
 
         return {
           id: orders[0].id.toString(),
-          orderId: orders[0].order_id || `ORD-${orders[0].id}`,
+          orderId: orders[0].order_id || `ORD - ${orders[0].id} `,
           tableNumber: orders[0].table_number,
           status: orders[0].status,
           items: safeParseJSON(orders[0].items, []),
@@ -522,7 +543,7 @@ const resolvers = {
           updatedAt: orders[0].updated_at ? orders[0].updated_at.toISOString() : new Date().toISOString()
         };
       } catch (error) {
-        throw new Error(`Error assigning chef: ${error.message}`);
+        throw new Error(`Error assigning chef: ${error.message} `);
       }
     },
 
@@ -544,7 +565,7 @@ const resolvers = {
 
         return {
           id: orders[0].id.toString(),
-          orderId: orders[0].order_id || `ORD-${orders[0].id}`,
+          orderId: orders[0].order_id || `ORD - ${orders[0].id} `,
           tableNumber: orders[0].table_number,
           status: orders[0].status,
           items: safeParseJSON(orders[0].items, []),
@@ -556,7 +577,7 @@ const resolvers = {
           updatedAt: orders[0].updated_at ? orders[0].updated_at.toISOString() : new Date().toISOString()
         };
       } catch (error) {
-        throw new Error(`Error updating estimated time: ${error.message}`);
+        throw new Error(`Error updating estimated time: ${error.message} `);
       }
     },
 
@@ -567,12 +588,12 @@ const resolvers = {
         const whereClause = isNumeric ? 'id = ?' : 'order_id = ?';
 
         await db.execute(
-          `UPDATE kitchen_orders SET status = "ready" WHERE ${whereClause}`,
+          `UPDATE kitchen_orders SET status = "ready" WHERE ${whereClause} `,
           [orderId]
         );
 
         const [orders] = await db.execute(
-          `SELECT * FROM kitchen_orders WHERE ${whereClause}`,
+          `SELECT * FROM kitchen_orders WHERE ${whereClause} `,
           [orderId]
         );
 
@@ -590,7 +611,7 @@ const resolvers = {
 
         return {
           id: orders[0].id.toString(),
-          orderId: orders[0].order_id || `ORD-${orders[0].id}`,
+          orderId: orders[0].order_id || `ORD - ${orders[0].id} `,
           tableNumber: orders[0].table_number,
           status: orders[0].status,
           items: safeParseJSON(orders[0].items, []),
@@ -602,7 +623,7 @@ const resolvers = {
           updatedAt: orders[0].updated_at ? orders[0].updated_at.toISOString() : new Date().toISOString()
         };
       } catch (error) {
-        throw new Error(`Error completing order: ${error.message}`);
+        throw new Error(`Error completing order: ${error.message} `);
       }
     },
 
@@ -632,7 +653,7 @@ const resolvers = {
 
         return {
           id: orders[0].id.toString(),
-          orderId: orders[0].order_id || `ORD-${orders[0].id}`,
+          orderId: orders[0].order_id || `ORD - ${orders[0].id} `,
           tableNumber: orders[0].table_number,
           status: orders[0].status,
           items: safeParseJSON(orders[0].items, []),
@@ -644,7 +665,7 @@ const resolvers = {
           updatedAt: orders[0].updated_at ? orders[0].updated_at.toISOString() : new Date().toISOString()
         };
       } catch (error) {
-        throw new Error(`Error cancelling order: ${error.message}`);
+        throw new Error(`Error cancelling order: ${error.message} `);
       }
     }
   },

@@ -123,8 +123,10 @@ export default function InventoryPage() {
     fetchPolicy: 'network-only' // Ensure fresh data
   });
 
-  const { data: productsData } = useQuery(GET_TOKO_SEMBAKO_PRODUCTS, {
-    client: inventoryApolloClient
+  const { data: productsData, refetch: refetchProducts } = useQuery(GET_TOKO_SEMBAKO_PRODUCTS, {
+    client: inventoryApolloClient,
+    pollInterval: 30000, // Auto-refresh every 30 seconds
+    fetchPolicy: 'network-only' // Skip cache, always fetch from server
   });
 
   const { data: suppliersData } = useQuery(GET_SUPPLIERS, {

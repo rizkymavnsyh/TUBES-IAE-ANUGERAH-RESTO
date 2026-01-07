@@ -30,6 +30,11 @@ const server = new ApolloServer({
 
 async function startServer() {
   try {
+    // Run migrations automatically on startup
+    console.log('🔄 Running database migrations...');
+    const migrate = require('./database/migrate');
+    await migrate();
+
     // Test database connection
     await db.execute('SELECT 1');
     console.log('✅ Kitchen Service (Node.js/Apollo): MySQL database connected');

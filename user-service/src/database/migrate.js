@@ -11,6 +11,7 @@ async function migrate() {
       CREATE TABLE IF NOT EXISTS staff (
         id INT AUTO_INCREMENT PRIMARY KEY,
         employee_id VARCHAR(50) UNIQUE NOT NULL,
+        username VARCHAR(100) UNIQUE,
         name VARCHAR(255) NOT NULL,
         email VARCHAR(255) UNIQUE,
         phone VARCHAR(50),
@@ -124,15 +125,20 @@ async function migrate() {
       (1, 'Anugerah Rewards', 'Program loyalitas untuk pelanggan setia', 0.01, 100);
     `);
 
-    // Insert sample staff
+    // Insert sample staff (with admin user)
     const hashedPassword = await bcrypt.hash('password123', 10);
+    const adminHashedPassword = await bcrypt.hash('admin123', 10);
     await db.execute(`
-      INSERT IGNORE INTO staff (id, employee_id, name, email, phone, role, department, password_hash, hire_date, salary) VALUES
-      (1, 'EMP001', 'Manager Budi', 'manager@anugerah.com', '081234567890', 'manager', 'Management', ?, '2023-01-15', 8000000),
-      (2, 'EMP002', 'Chef Sari', 'chef@anugerah.com', '081234567891', 'chef', 'Kitchen', ?, '2023-02-01', 6000000),
-      (3, 'EMP003', 'Waiter Andi', 'waiter@anugerah.com', '081234567892', 'waiter', 'Service', ?, '2023-03-01', 4000000),
-      (4, 'EMP004', 'Cashier Rina', 'cashier@anugerah.com', '081234567893', 'cashier', 'Finance', ?, '2023-03-15', 4500000);
-    `, [hashedPassword, hashedPassword, hashedPassword, hashedPassword]);
+      INSERT IGNORE INTO staff (id, employee_id, username, name, email, phone, role, department, password_hash, hire_date, salary) VALUES
+      (1, 'EMP001', 'manager', 'Manager Budi', 'manager@anugerah.com', '081234567890', 'manager', 'Management', ?, '2023-01-15', 8000000),
+      (2, 'EMP002', 'chef', 'Chef Sari', 'chef@anugerah.com', '081234567891', 'chef', 'Kitchen', ?, '2023-02-01', 6000000),
+      (3, 'EMP003', 'waiter', 'Waiter Andi', 'waiter@anugerah.com', '081234567892', 'waiter', 'Service', ?, '2023-03-01', 4000000),
+      (4, 'EMP004', 'cashier', 'Cashier Rina', 'cashier@anugerah.com', '081234567893', 'cashier', 'Finance', ?, '2023-03-15', 4500000),
+      (5, 'ADMIN001', 'admin', 'Administrator', 'admin@anugerah.com', '081234567899', 'admin', 'IT', ?, '2023-01-01', 10000000),
+      (6, 'EMP006', 'chef_budi', 'Chef Budi', 'budi@anugerah.com', '081234567888', 'chef', 'Main Course', ?, '2023-04-01', 6000000),
+      (7, 'EMP007', 'chef_agus', 'Chef Agus', 'agus@anugerah.com', '081234567887', 'chef', 'Appetizer', ?, '2023-04-01', 6000000),
+      (8, 'EMP008', 'chef_citra', 'Chef Citra', 'citra@anugerah.com', '081234567886', 'chef', 'Dessert', ?, '2023-04-01', 6000000);
+    `, [hashedPassword, hashedPassword, hashedPassword, hashedPassword, adminHashedPassword, hashedPassword, hashedPassword, hashedPassword]);
 
     // Insert sample customers
     await db.execute(`
@@ -151,14 +157,20 @@ async function migrate() {
     `);
 
     console.log('✅ User Service migrations completed');
-    process.exit(0);
+    return true;
   } catch (error) {
     console.error('❌ Migration error:', error);
-    process.exit(1);
+    throw error;
   }
 }
 
-migrate();
+// Export for use as module
+module.exports = migrate;
+
+// Run directly if called as main script
+if (require.main === module) {
+  migrate().then(() => process.exit(0)).catch(() => process.exit(1));
+}
 
 
 
