@@ -41,10 +41,19 @@ const resolvers = {
 
         const [staff] = await db.execute(query, params);
         return staff.map(s => ({
-          ...s,
           id: s.id.toString(),
           employeeId: s.employee_id || `EMP${s.id.toString().padStart(3, '0')}`,
-          salary: s.salary ? parseFloat(s.salary) : null
+          username: s.username,
+          name: s.name,
+          email: s.email,
+          phone: s.phone,
+          role: s.role,
+          department: s.department,
+          status: s.status || 'active',
+          hireDate: s.hire_date ? s.hire_date.toISOString().split('T')[0] : null,
+          salary: s.salary ? parseFloat(s.salary) : null,
+          createdAt: s.created_at ? s.created_at.toISOString() : new Date().toISOString(),
+          updatedAt: s.updated_at ? s.updated_at.toISOString() : new Date().toISOString()
         }));
       } catch (error) {
         throw new Error(`Error fetching staff: ${error.message}`);
@@ -57,10 +66,21 @@ const resolvers = {
         if (staff.length === 0) {
           throw new Error('Staff not found');
         }
+        const s = staff[0];
         return {
-          ...staff[0],
-          id: staff[0].id.toString(),
-          salary: staff[0].salary ? parseFloat(staff[0].salary) : null
+          id: s.id.toString(),
+          employeeId: s.employee_id || `EMP${s.id.toString().padStart(3, '0')}`,
+          username: s.username,
+          name: s.name,
+          email: s.email,
+          phone: s.phone,
+          role: s.role,
+          department: s.department,
+          status: s.status || 'active',
+          hireDate: s.hire_date ? s.hire_date.toISOString().split('T')[0] : null,
+          salary: s.salary ? parseFloat(s.salary) : null,
+          createdAt: s.created_at ? s.created_at.toISOString() : new Date().toISOString(),
+          updatedAt: s.updated_at ? s.updated_at.toISOString() : new Date().toISOString()
         };
       } catch (error) {
         throw new Error(`Error fetching staff: ${error.message}`);
