@@ -208,9 +208,15 @@ const resolvers = {
 
     checkStock: async (parent, { ingredientId, quantity }, { db }) => {
       try {
-        const [ingredients] = await db.execute('SELECT * FROM ingredients WHERE id = ?', [ingredientId]);
+        let [ingredients] = await db.execute('SELECT * FROM ingredients WHERE id = ?', [ingredientId]);
+
         if (ingredients.length === 0) {
-          throw new Error('Ingredient not found');
+          // If not found by ID, try finding by name (in case ID argument contains name)
+          [ingredients] = await db.execute('SELECT * FROM ingredients WHERE name = ?', [ingredientId]);
+        }
+
+        if (ingredients.length === 0) {
+          throw new Error(`Ingredient not found (id/name: ${ingredientId})`);
         }
 
         const ingredient = ingredients[0];
