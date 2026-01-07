@@ -50,9 +50,17 @@ const resolvers = {
 
         const [orders] = await db.execute(query, params);
         return orders.map(order => ({
-          ...order,
+          id: order.id.toString(),
+          orderId: order.order_id || `ORD-${order.id}`,
+          tableNumber: order.table_number,
+          status: order.status,
           items: safeParseJSON(order.items, []),
-          id: order.id.toString()
+          priority: order.priority || 0,
+          estimatedTime: order.estimated_time,
+          chefId: order.chef_id,
+          notes: order.notes,
+          createdAt: order.created_at ? order.created_at.toISOString() : new Date().toISOString(),
+          updatedAt: order.updated_at ? order.updated_at.toISOString() : new Date().toISOString()
         }));
       } catch (error) {
         throw new Error(`Error fetching kitchen orders: ${error.message}`);
@@ -118,9 +126,17 @@ const resolvers = {
         }
         const order = orders[0];
         return {
-          ...order,
-          items: JSON.parse(order.items || '[]'),
-          id: order.id.toString()
+          id: order.id.toString(),
+          orderId: order.order_id || `ORD-${order.id}`,
+          tableNumber: order.table_number,
+          status: order.status,
+          items: safeParseJSON(order.items, []),
+          priority: order.priority || 0,
+          estimatedTime: order.estimated_time,
+          chefId: order.chef_id,
+          notes: order.notes,
+          createdAt: order.created_at ? order.created_at.toISOString() : new Date().toISOString(),
+          updatedAt: order.updated_at ? order.updated_at.toISOString() : new Date().toISOString()
         };
       } catch (error) {
         throw new Error(`Error fetching order: ${error.message}`);
@@ -138,9 +154,17 @@ const resolvers = {
         }
         const order = orders[0];
         return {
-          ...order,
-          items: JSON.parse(order.items || '[]'),
-          id: order.id.toString()
+          id: order.id.toString(),
+          orderId: order.order_id || `ORD-${order.id}`,
+          tableNumber: order.table_number,
+          status: order.status,
+          items: safeParseJSON(order.items, []),
+          priority: order.priority || 0,
+          estimatedTime: order.estimated_time,
+          chefId: order.chef_id,
+          notes: order.notes,
+          createdAt: order.created_at ? order.created_at.toISOString() : new Date().toISOString(),
+          updatedAt: order.updated_at ? order.updated_at.toISOString() : new Date().toISOString()
         };
       } catch (error) {
         throw new Error(`Error fetching order: ${error.message}`);
@@ -253,9 +277,17 @@ const resolvers = {
           [chefId]
         );
         return orders.map(order => ({
-          ...order,
-          items: JSON.parse(order.items || '[]'),
-          id: order.id.toString()
+          id: order.id.toString(),
+          orderId: order.order_id || `ORD-${order.id}`,
+          tableNumber: order.table_number,
+          status: order.status,
+          items: safeParseJSON(order.items, []),
+          priority: order.priority || 0,
+          estimatedTime: order.estimated_time,
+          chefId: order.chef_id,
+          notes: order.notes,
+          createdAt: order.created_at ? order.created_at.toISOString() : new Date().toISOString(),
+          updatedAt: order.updated_at ? order.updated_at.toISOString() : new Date().toISOString()
         }));
       } catch (error) {
         throw new Error(`Error fetching orders by chef: ${error.message}`);
