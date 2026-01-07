@@ -253,12 +253,12 @@ const resolvers = {
 
     topCustomersByPoints: async (parent, { limit = 10 }, { db }) => {
       try {
+        const limitVal = parseInt(limit);
         const [loyalties] = await db.execute(
-          `SELECT * FROM customer_loyalty
-           WHERE status = 'active'
-           ORDER BY total_points DESC
-           LIMIT ?`,
-          [parseInt(limit)]
+          `SELECT * FROM customer_loyalty 
+           WHERE status = 'active' 
+           ORDER BY total_points DESC 
+           LIMIT ${limitVal}`
         );
         return loyalties.map(mapCustomerLoyalty);
       } catch (error) {
