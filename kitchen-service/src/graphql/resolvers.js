@@ -455,10 +455,40 @@ const resolvers = {
 
     assignChef: async (parent, { orderId, chefId }, { db }) => {
       try {
-        // Check if chef is available
-        const [chefs] = await db.execute('SELECT * FROM chefs WHERE id = ?', [chefId]);
+        // Check if chef is available locally
+        let [chefs] = await db.execute('SELECT * FROM chefs WHERE id = ?', [chefId]);
+
         if (chefs.length === 0) {
-          throw new Error('Chef not found');
+          // Try to fetch from User Service and sync
+          try {
+            const query = `
+              query GetChef($id: ID!) {
+                staffById(id: $id) {
+                  id
+                  name
+                  department
+                }
+              }
+            `;
+
+            const data = await callUserService(query, { id: chefId });
+            const staff = data.staffById;
+
+            if (staff) {
+              // Insert into local chefs table
+              await db.execute(
+                'INSERT INTO chefs (id, name, specialization, status, current_orders) VALUES (?, ?, ?, "available", 0)',
+                [staff.id, staff.name, staff.department || 'General']
+              );
+
+              // Refresh local variable
+              [chefs] = await db.execute('SELECT * FROM chefs WHERE id = ?', [chefId]);
+            } else {
+              throw new Error('Chef not found in User Service');
+            }
+          } catch (error) {
+            throw new Error(`Chef not found: ${error.message}`);
+          }
         }
 
         // Update order
