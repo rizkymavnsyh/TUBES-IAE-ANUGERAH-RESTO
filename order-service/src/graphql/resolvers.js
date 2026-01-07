@@ -729,6 +729,51 @@ const resolvers = {
       }
     },
 
+    clearCart: async (parent, { cartId }, context) => {
+      // Require authentication
+      requireAuth(context);
+      try {
+        const [cartRows] = await db.execute('SELECT * FROM carts WHERE cart_id = ?', [cartId]);
+        if (cartRows.length === 0) {
+          throw new Error('Cart not found');
+        }
+
+        // Reset items and totals
+        const items = [];
+        const subtotal = 0;
+        const tax = 0;
+        const serviceCharge = 0;
+        const total = 0;
+
+        // Update DB
+        await db.execute(`
+          UPDATE carts SET items = ?, subtotal = ?, tax = ?, service_charge = ?, total = ?
+          WHERE cart_id = ?
+        `, [JSON.stringify(items), subtotal, tax, serviceCharge, total, cartId]);
+
+        const [updatedRows] = await db.execute('SELECT * FROM carts WHERE cart_id = ?', [cartId]);
+        const row = updatedRows[0];
+
+        return {
+          id: row.id.toString(),
+          cartId: row.cart_id,
+          customerId: row.customer_id,
+          tableNumber: row.table_number,
+          items: [],
+          subtotal: 0,
+          tax: 0,
+          serviceCharge: 0,
+          discount: parseFloat(row.discount),
+          total: 0,
+          status: row.status,
+          createdAt: row.created_at.toISOString(),
+          updatedAt: row.updated_at.toISOString()
+        };
+      } catch (error) {
+        throw new Error(`Error clearing cart: ${error.message}`);
+      }
+    },
+
     createOrder: async (parent, { input }, context) => {
       // Require authentication
       requireAuth(context);
