@@ -338,8 +338,11 @@ Frontend berjalan di: `http://localhost:3000`
 | User | `http://localhost:4003/graphql` | ✅ |
 | Order | `http://localhost:4004/graphql` | ✅ |
 
+<<<<<<< HEAD
 
 
+=======
+>>>>>>> b32b6ea4f781ff57d97a961f7dbbc184adf40d73
 ### Contoh Query & Mutation
 
 #### Menu Management
@@ -454,6 +457,7 @@ mutation {
   }
 }
 ```
+<<<<<<< HEAD
 ---
 # 📸 Dokumentasi Tampilan Sistem – Anugerah Resto
 
@@ -528,6 +532,8 @@ Screenshot di atas menunjukkan bahwa:
 - Sistem terintegrasi dalam arsitektur microservices
 
 Dokumentasi ini digunakan sebagai pendukung laporan dan bukti implementasi aplikasi **Anugerah Resto**.
+=======
+>>>>>>> b32b6ea4f781ff57d97a961f7dbbc184adf40d73
 
 ---
 

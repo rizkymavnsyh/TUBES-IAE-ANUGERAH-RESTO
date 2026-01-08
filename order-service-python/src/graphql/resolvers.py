@@ -14,14 +14,28 @@ KITCHEN_SERVICE_URL = os.getenv("KITCHEN_SERVICE_URL", "http://localhost:4001/gr
 INVENTORY_SERVICE_URL = os.getenv("INVENTORY_SERVICE_URL", "http://localhost:4002/graphql")
 USER_SERVICE_URL = os.getenv("USER_SERVICE_URL", "http://localhost:4003/graphql")
 
+<<<<<<< HEAD
 async def call_graphql_service(url: str, query: str, variables: dict = None):
     """Helper function to call GraphQL service"""
     try:
+=======
+async def call_graphql_service(url: str, query: str, variables: dict = None, token: str = None):
+    """Helper function to call GraphQL service"""
+    try:
+        headers = {"Content-Type": "application/json"}
+        if token:
+            headers["Authorization"] = token
+
+>>>>>>> b32b6ea4f781ff57d97a961f7dbbc184adf40d73
         async with httpx.AsyncClient(timeout=10.0) as client:
             response = await client.post(
                 url,
                 json={"query": query, "variables": variables or {}},
+<<<<<<< HEAD
                 headers={"Content-Type": "application/json"}
+=======
+                headers=headers
+>>>>>>> b32b6ea4f781ff57d97a961f7dbbc184adf40d73
             )
             response.raise_for_status()
             data = response.json()
@@ -607,11 +621,21 @@ async def resolve_check_menu_stock(_, info, menuId: str, quantity: int):
                             }
                         }
                     """
+<<<<<<< HEAD
                     stock_data = await call_graphql_service(
                         INVENTORY_SERVICE_URL,
                         check_query,
                         {"ingredientId": ingredient_id, "quantity": required}
                     )
+=======
+                token = info.context.get('token')
+                stock_data = await call_graphql_service(
+                    INVENTORY_SERVICE_URL,
+                    check_query,
+                    {"ingredientId": ingredient_id, "quantity": required},
+                    token
+                )
+>>>>>>> b32b6ea4f781ff57d97a961f7dbbc184adf40d73
                     
                     stock_check = stock_data.get("checkStock", {})
                     results.append({
@@ -1224,8 +1248,13 @@ async def resolve_clear_cart(_, info, cartId: str):
 
 @mutation.field("createOrder")
 async def resolve_create_order(_, info, input: Dict[str, Any]):
+<<<<<<< HEAD
     """Create order"""
     # This is a simplified version - full implementation would integrate with kitchen and inventory services
+=======
+    """Create order - requires authentication"""
+    require_auth(info.context)
+>>>>>>> b32b6ea4f781ff57d97a961f7dbbc184adf40d73
     pool = get_db()
     if not pool:
         raise Exception("Database connection not available")
@@ -1233,15 +1262,33 @@ async def resolve_create_order(_, info, input: Dict[str, Any]):
     import uuid
     from datetime import datetime
     
+<<<<<<< HEAD
     order_id = f"ORD-{uuid.uuid4().hex[:8].upper()}"
+=======
+    # Check if orderId is provided, otherwise generate one
+    input_order_id = input.get("orderId")
+    order_id = input_order_id if input_order_id else f"ORD-{uuid.uuid4().hex[:8].upper()}"
+    
+>>>>>>> b32b6ea4f781ff57d97a961f7dbbc184adf40d73
     items = input.get("items", [])
     subtotal = sum(float(item.get("price", 0)) * int(item.get("quantity", 0)) for item in items)
     tax = subtotal * 0.1
     service_charge = subtotal * 0.05
+<<<<<<< HEAD
     discount = 0.0
     loyalty_points_used = float(input.get("loyaltyPointsUsed", 0))
     loyalty_points_earned = subtotal * 0.01
     total = subtotal + tax + service_charge - discount - (loyalty_points_used * 0.01)
+=======
+    
+    # Loyalty logic
+    loyalty_points_used = float(input.get("loyaltyPointsUsed", 0))
+    discount = loyalty_points_used * 100.0 if loyalty_points_used else 0.0 # 1 point = 100 rupiah (matched JS)
+    
+    total = subtotal + tax + service_charge - discount
+    
+    token = info.context.get('token')
+>>>>>>> b32b6ea4f781ff57d97a961f7dbbc184adf40d73
     
     async with pool.acquire() as conn:
         async with conn.cursor() as cur:
@@ -1253,13 +1300,137 @@ async def resolve_create_order(_, info, input: Dict[str, Any]):
                 VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             """, (
                 order_id, input.get("customerId"), input.get("tableNumber"), items_json,
+<<<<<<< HEAD
                 subtotal, tax, service_charge, discount, loyalty_points_used, loyalty_points_earned, total,
+=======
+                subtotal, tax, service_charge, discount, loyalty_points_used, 0, total,
+>>>>>>> b32b6ea4f781ff57d97a961f7dbbc184adf40d73
                 input.get("paymentMethod", "cash"), "pending", "pending", input.get("notes")
             ))
             
             order_db_id = cur.lastrowid
             await conn.commit()
             
+<<<<<<< HEAD
+=======
+            # 1. Integrate with Kitchen Service
+            kitchen_order_created = False
+            try:
+                kitchen_query = """
+                    mutation CreateKitchenOrder($input: CreateKitchenOrderInput!) {
+                      createKitchenOrder(input: $input) {
+                        id
+                        orderId
+                        status
+                      }
+                    }
+                """
+                
+                kitchen_items = [
+                    {
+                        "menuId": item.get("menuId"),
+                        "name": item.get("name"),
+                        "quantity": int(item.get("quantity")),
+                        "specialInstructions": item.get("specialInstructions")
+                    }
+                    for item in items
+                ]
+                
+                await call_graphql_service(
+                    KITCHEN_SERVICE_URL,
+                    kitchen_query,
+                    {
+                        "input": {
+                            "orderId": order_id,
+                            "tableNumber": input.get("tableNumber"),
+                            "items": kitchen_items,
+                            "priority": 0,
+                            "notes": input.get("notes")
+                        }
+                    },
+                    token
+                )
+                kitchen_order_created = True
+                
+                # Update order kitchen status
+                await cur.execute("UPDATE orders SET kitchen_status = 'pending' WHERE id = %s", (order_db_id,))
+                await conn.commit()
+                
+            except Exception as e:
+                print(f"Error creating kitchen order: {str(e)}")
+            
+            # 2. Integrate with Inventory Service
+            stock_updated = False
+            try:
+                # Fetch menus to get ingredients
+                for order_item in items:
+                    menu_id = order_item.get("menuId")
+                    await cur.execute("SELECT * FROM menus WHERE menu_id = %s", (menu_id,))
+                    menu_row = await cur.fetchone()
+                    
+                    if menu_row:
+                        ingredients = parse_json_field(menu_row.get("ingredients")) or []
+                        for ingredient in ingredients:
+                            reduce_query = """
+                                mutation ReduceStock($ingredientId: ID!, $quantity: Float!, $reason: String, $referenceId: String, $referenceType: String) {
+                                  reduceStock(ingredientId: $ingredientId, quantity: $quantity, reason: $reason, referenceId: $referenceId, referenceType: $referenceType) {
+                                    id
+                                    quantity
+                                  }
+                                }
+                            """
+                            
+                            await call_graphql_service(
+                                INVENTORY_SERVICE_URL,
+                                reduce_query,
+                                {
+                                    "ingredientId": ingredient.get("ingredientId"),
+                                    "quantity": float(ingredient.get("quantity", 0)) * int(order_item.get("quantity", 1)),
+                                    "reason": f"Order {order_id}",
+                                    "referenceId": order_id,
+                                    "referenceType": "order"
+                                },
+                                token
+                            )
+                stock_updated = True
+            except Exception as e:
+                print(f"Error updating inventory: {str(e)}")
+            
+            # 3. Integrate with User Service - earn loyalty points
+            loyalty_points_earned = 0
+            customer_id = input.get("customerId")
+            if customer_id:
+                try:
+                    # Logic 1% of total
+                    loyalty_points_earned = int(total * 0.01)
+                    
+                    earn_points_query = """
+                        mutation EarnPoints($customerId: ID!, $points: Float!, $orderId: String, $description: String) {
+                          earnPoints(customerId: $customerId, points: $points, orderId: $orderId, description: $description) {
+                            id
+                            points
+                          }
+                        }
+                    """
+                    
+                    await call_graphql_service(
+                        USER_SERVICE_URL,
+                        earn_points_query,
+                        {
+                            "customerId": customer_id,
+                            "points": float(loyalty_points_earned),
+                            "orderId": order_id,
+                            "description": f"Points earned from order {order_id}"
+                        },
+                        token
+                    )
+                    
+                    await cur.execute("UPDATE orders SET loyalty_points_earned = %s WHERE id = %s", (loyalty_points_earned, order_db_id))
+                    await conn.commit()
+                except Exception as e:
+                    print(f"Error earning loyalty points: {str(e)}")
+            
+>>>>>>> b32b6ea4f781ff57d97a961f7dbbc184adf40d73
             # Fetch created order
             await cur.execute("SELECT * FROM orders WHERE id = %s", (order_db_id,))
             row = await cur.fetchone()
@@ -1303,9 +1474,15 @@ async def resolve_create_order(_, info, input: Dict[str, Any]):
                     'updatedAt': row.get("updated_at").isoformat() if row.get("updated_at") else "",
                     'completedAt': row.get("completed_at").isoformat() if row.get("completed_at") else None
                 },
+<<<<<<< HEAD
                 'kitchenOrderCreated': False,
                 'stockUpdated': False,
                 'loyaltyPointsEarned': loyalty_points_earned,
+=======
+                'kitchenOrderCreated': kitchen_order_created,
+                'stockUpdated': stock_updated,
+                'loyaltyPointsEarned': float(loyalty_points_earned),
+>>>>>>> b32b6ea4f781ff57d97a961f7dbbc184adf40d73
                 'message': 'Order created successfully'
             }
 
@@ -1365,7 +1542,101 @@ async def resolve_update_order_status(_, info, orderId: str, status: str):
 @mutation.field("cancelOrder")
 async def resolve_cancel_order(_, info, orderId: str):
     """Cancel order"""
+<<<<<<< HEAD
     return await resolve_update_order_status(_, info, orderId, "cancelled")
+=======
+    # Integrate logic to sync with Kitchen Service
+    require_auth(info.context)
+    pool = get_db()
+    if not pool:
+        raise Exception("Database connection not available")
+    
+    token = info.context.get('token')
+    
+    async with pool.acquire() as conn:
+        async with conn.cursor() as cur:
+            # Update local order status
+            await cur.execute("UPDATE orders SET order_status = 'cancelled' WHERE order_id = %s", (orderId,))
+            await conn.commit()
+            
+            # Propagate to Kitchen Service
+            try:
+                # 1. Get Kitchen Order ID
+                kitchen_query = """
+                    query GetKitchenOrder($orderId: String!) {
+                      kitchenOrderByOrderId(orderId: $orderId) {
+                        id
+                      }
+                    }
+                """
+                kitchen_order_data = await call_graphql_service(KITCHEN_SERVICE_URL, kitchen_query, {"orderId": orderId}, token)
+                
+                if kitchen_order_data and kitchen_order_data.get("kitchenOrderByOrderId"):
+                    kitchen_id = kitchen_order_data["kitchenOrderByOrderId"]["id"]
+                    
+                    # 2. Cancel Kitchen Order
+                    cancel_mutation = """
+                        mutation CancelOrder($orderId: ID!) {
+                          cancelOrder(orderId: $orderId) {
+                            id
+                            status
+                          }
+                        }
+                    """
+                    await call_graphql_service(KITCHEN_SERVICE_URL, cancel_mutation, {"orderId": kitchen_id}, token)
+                    
+                    # Update local kitchen_status
+                    await cur.execute("UPDATE orders SET kitchen_status = 'cancelled' WHERE order_id = %s", (orderId,))
+                    await conn.commit()
+            except Exception as e:
+                print(f"Error synchronizing cancellation with Kitchen Service: {str(e)}")
+    
+    # Return updated order via resolve_update_order_status generic helper (fetching logic)
+    # Be careful, resolve_update_order_status expects to just update status, but we already did it.
+    # We can just fetch and return.
+    
+    async with pool.acquire() as conn:
+        async with conn.cursor() as cur:
+             await cur.execute("SELECT * FROM orders WHERE order_id = %s", (orderId,))
+             row = await cur.fetchone()
+             if not row:
+                 raise Exception("Order not found")
+             
+             items_data = parse_json_field(row.get("items")) or []
+             
+             return {
+                'id': str(row.get("id")),
+                'orderId': row.get("order_id", ""),
+                'customerId': row.get("customer_id"),
+                'tableNumber': row.get("table_number"),
+                'items': [
+                    {
+                        'menuId': item.get("menuId", "") if isinstance(item, dict) else "",
+                        'name': item.get("name", "") if isinstance(item, dict) else "",
+                        'quantity': item.get("quantity", 0) if isinstance(item, dict) else 0,
+                        'price': float(item.get("price", 0) if isinstance(item, dict) else 0),
+                        'specialInstructions': item.get("specialInstructions") if isinstance(item, dict) else None
+                    }
+                    for item in items_data
+                ],
+                'subtotal': float(row.get("subtotal", 0) or 0),
+                'tax': float(row.get("tax", 0) or 0),
+                'serviceCharge': float(row.get("service_charge", 0) or 0),
+                'discount': float(row.get("discount", 0) or 0),
+                'loyaltyPointsUsed': float(row.get("loyalty_points_used", 0) or 0),
+                'loyaltyPointsEarned': float(row.get("loyalty_points_earned", 0) or 0),
+                'total': float(row.get("total", 0) or 0),
+                'paymentMethod': row.get("payment_method", "cash"),
+                'paymentStatus': row.get("payment_status", "pending"),
+                'orderStatus': row.get("order_status", "pending"),
+                'kitchenStatus': row.get("kitchen_status"),
+                'staffId': row.get("staff_id"),
+                'notes': row.get("notes"),
+                'createdAt': row.get("created_at").isoformat() if row.get("created_at") else "",
+                'updatedAt': row.get("updated_at").isoformat() if row.get("updated_at") else "",
+                'completedAt': row.get("completed_at").isoformat() if row.get("completed_at") else None
+            }
+>>>>>>> b32b6ea4f781ff57d97a961f7dbbc184adf40d73
 
 @mutation.field("updateOrder")
 async def resolve_update_order(_, info, orderId: str, input: Dict[str, Any]):
