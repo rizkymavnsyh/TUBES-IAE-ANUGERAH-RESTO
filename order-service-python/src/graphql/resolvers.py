@@ -14,11 +14,6 @@ KITCHEN_SERVICE_URL = os.getenv("KITCHEN_SERVICE_URL", "http://localhost:4001/gr
 INVENTORY_SERVICE_URL = os.getenv("INVENTORY_SERVICE_URL", "http://localhost:4002/graphql")
 USER_SERVICE_URL = os.getenv("USER_SERVICE_URL", "http://localhost:4003/graphql")
 
-<<<<<<< HEAD
-async def call_graphql_service(url: str, query: str, variables: dict = None):
-    """Helper function to call GraphQL service"""
-    try:
-=======
 async def call_graphql_service(url: str, query: str, variables: dict = None, token: str = None):
     """Helper function to call GraphQL service"""
     try:
@@ -26,16 +21,11 @@ async def call_graphql_service(url: str, query: str, variables: dict = None, tok
         if token:
             headers["Authorization"] = token
 
->>>>>>> b32b6ea4f781ff57d97a961f7dbbc184adf40d73
         async with httpx.AsyncClient(timeout=10.0) as client:
             response = await client.post(
                 url,
                 json={"query": query, "variables": variables or {}},
-<<<<<<< HEAD
-                headers={"Content-Type": "application/json"}
-=======
                 headers=headers
->>>>>>> b32b6ea4f781ff57d97a961f7dbbc184adf40d73
             )
             response.raise_for_status()
             data = response.json()
@@ -621,13 +611,6 @@ async def resolve_check_menu_stock(_, info, menuId: str, quantity: int):
                             }
                         }
                     """
-<<<<<<< HEAD
-                    stock_data = await call_graphql_service(
-                        INVENTORY_SERVICE_URL,
-                        check_query,
-                        {"ingredientId": ingredient_id, "quantity": required}
-                    )
-=======
                 token = info.context.get('token')
                 stock_data = await call_graphql_service(
                     INVENTORY_SERVICE_URL,
@@ -635,7 +618,6 @@ async def resolve_check_menu_stock(_, info, menuId: str, quantity: int):
                     {"ingredientId": ingredient_id, "quantity": required},
                     token
                 )
->>>>>>> b32b6ea4f781ff57d97a961f7dbbc184adf40d73
                     
                     stock_check = stock_data.get("checkStock", {})
                     results.append({
@@ -1248,13 +1230,8 @@ async def resolve_clear_cart(_, info, cartId: str):
 
 @mutation.field("createOrder")
 async def resolve_create_order(_, info, input: Dict[str, Any]):
-<<<<<<< HEAD
-    """Create order"""
-    # This is a simplified version - full implementation would integrate with kitchen and inventory services
-=======
     """Create order - requires authentication"""
     require_auth(info.context)
->>>>>>> b32b6ea4f781ff57d97a961f7dbbc184adf40d73
     pool = get_db()
     if not pool:
         raise Exception("Database connection not available")
@@ -1262,33 +1239,21 @@ async def resolve_create_order(_, info, input: Dict[str, Any]):
     import uuid
     from datetime import datetime
     
-<<<<<<< HEAD
-    order_id = f"ORD-{uuid.uuid4().hex[:8].upper()}"
-=======
-    # Check if orderId is provided, otherwise generate one
+# Check if orderId is provided, otherwise generate one
     input_order_id = input.get("orderId")
     order_id = input_order_id if input_order_id else f"ORD-{uuid.uuid4().hex[:8].upper()}"
     
->>>>>>> b32b6ea4f781ff57d97a961f7dbbc184adf40d73
     items = input.get("items", [])
     subtotal = sum(float(item.get("price", 0)) * int(item.get("quantity", 0)) for item in items)
     tax = subtotal * 0.1
     service_charge = subtotal * 0.05
-<<<<<<< HEAD
-    discount = 0.0
-    loyalty_points_used = float(input.get("loyaltyPointsUsed", 0))
-    loyalty_points_earned = subtotal * 0.01
-    total = subtotal + tax + service_charge - discount - (loyalty_points_used * 0.01)
-=======
-    
-    # Loyalty logic
+# Loyalty logic
     loyalty_points_used = float(input.get("loyaltyPointsUsed", 0))
     discount = loyalty_points_used * 100.0 if loyalty_points_used else 0.0 # 1 point = 100 rupiah (matched JS)
     
     total = subtotal + tax + service_charge - discount
     
     token = info.context.get('token')
->>>>>>> b32b6ea4f781ff57d97a961f7dbbc184adf40d73
     
     async with pool.acquire() as conn:
         async with conn.cursor() as cur:
@@ -1300,19 +1265,13 @@ async def resolve_create_order(_, info, input: Dict[str, Any]):
                 VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             """, (
                 order_id, input.get("customerId"), input.get("tableNumber"), items_json,
-<<<<<<< HEAD
-                subtotal, tax, service_charge, discount, loyalty_points_used, loyalty_points_earned, total,
-=======
                 subtotal, tax, service_charge, discount, loyalty_points_used, 0, total,
->>>>>>> b32b6ea4f781ff57d97a961f7dbbc184adf40d73
                 input.get("paymentMethod", "cash"), "pending", "pending", input.get("notes")
             ))
             
             order_db_id = cur.lastrowid
             await conn.commit()
             
-<<<<<<< HEAD
-=======
             # 1. Integrate with Kitchen Service
             kitchen_order_created = False
             try:
@@ -1430,7 +1389,6 @@ async def resolve_create_order(_, info, input: Dict[str, Any]):
                 except Exception as e:
                     print(f"Error earning loyalty points: {str(e)}")
             
->>>>>>> b32b6ea4f781ff57d97a961f7dbbc184adf40d73
             # Fetch created order
             await cur.execute("SELECT * FROM orders WHERE id = %s", (order_db_id,))
             row = await cur.fetchone()
@@ -1474,15 +1432,9 @@ async def resolve_create_order(_, info, input: Dict[str, Any]):
                     'updatedAt': row.get("updated_at").isoformat() if row.get("updated_at") else "",
                     'completedAt': row.get("completed_at").isoformat() if row.get("completed_at") else None
                 },
-<<<<<<< HEAD
-                'kitchenOrderCreated': False,
-                'stockUpdated': False,
-                'loyaltyPointsEarned': loyalty_points_earned,
-=======
                 'kitchenOrderCreated': kitchen_order_created,
                 'stockUpdated': stock_updated,
                 'loyaltyPointsEarned': float(loyalty_points_earned),
->>>>>>> b32b6ea4f781ff57d97a961f7dbbc184adf40d73
                 'message': 'Order created successfully'
             }
 
@@ -1542,9 +1494,6 @@ async def resolve_update_order_status(_, info, orderId: str, status: str):
 @mutation.field("cancelOrder")
 async def resolve_cancel_order(_, info, orderId: str):
     """Cancel order"""
-<<<<<<< HEAD
-    return await resolve_update_order_status(_, info, orderId, "cancelled")
-=======
     # Integrate logic to sync with Kitchen Service
     require_auth(info.context)
     pool = get_db()
@@ -1636,7 +1585,6 @@ async def resolve_cancel_order(_, info, orderId: str):
                 'updatedAt': row.get("updated_at").isoformat() if row.get("updated_at") else "",
                 'completedAt': row.get("completed_at").isoformat() if row.get("completed_at") else None
             }
->>>>>>> b32b6ea4f781ff57d97a961f7dbbc184adf40d73
 
 @mutation.field("updateOrder")
 async def resolve_update_order(_, info, orderId: str, input: Dict[str, Any]):

@@ -8,11 +8,7 @@ from functools import wraps
 from typing import Optional, List, Callable, Any
 
 # JWT Secret - should match User Service
-<<<<<<< HEAD
-JWT_SECRET = os.getenv("JWT_SECRET", "your-super-secret-key-change-in-production")
-=======
 JWT_SECRET = os.getenv("JWT_SECRET", "rahasia-negara-api-key-2024")
->>>>>>> b32b6ea4f781ff57d97a961f7dbbc184adf40d73
 
 # Role hierarchy for access control
 ROLE_HIERARCHY = {

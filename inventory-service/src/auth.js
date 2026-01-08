@@ -5,11 +5,7 @@
 const jwt = require('jsonwebtoken');
 
 // JWT Secret - should match User Service
-<<<<<<< HEAD
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
-=======
 const JWT_SECRET = process.env.JWT_SECRET || 'rahasia-negara-api-key-2024';
->>>>>>> b32b6ea4f781ff57d97a961f7dbbc184adf40d73
 
 // Role hierarchy for access control
 const ROLE_HIERARCHY = {

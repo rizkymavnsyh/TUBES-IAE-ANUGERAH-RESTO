@@ -183,10 +183,7 @@ const resolvers = {
         return orders.map(order => ({
           ...order,
           id: order.id.toString(),
-<<<<<<< HEAD
-=======
           orderNumber: order.order_number || `PO-${order.id}`,
->>>>>>> b32b6ea4f781ff57d97a961f7dbbc184adf40d73
           totalAmount: parseFloat(order.total_amount)
         }));
       } catch (error) {

@@ -105,11 +105,8 @@ async function startServer() {
         "ALTER TABLE purchase_orders ADD COLUMN notes TEXT",
         "ALTER TABLE purchase_orders ADD COLUMN expected_delivery_date DATE",
         "ALTER TABLE purchase_orders ADD COLUMN received_date DATE",
-<<<<<<< HEAD
-=======
         "ALTER TABLE purchase_orders ADD COLUMN created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP",
         "ALTER TABLE purchase_orders ADD COLUMN updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP",
->>>>>>> b32b6ea4f781ff57d97a961f7dbbc184adf40d73
         // purchase_order_items
         "ALTER TABLE purchase_order_items ADD COLUMN unit_price DECIMAL(10,2) DEFAULT 0",
         "ALTER TABLE purchase_order_items ADD COLUMN total_price DECIMAL(10,2) DEFAULT 0",
@@ -127,11 +124,8 @@ async function startServer() {
       // Also handle status column type change for purchase_orders (from ENUM to VARCHAR)
       try {
         await db.query("ALTER TABLE purchase_orders MODIFY COLUMN status VARCHAR(50) DEFAULT 'pending'");
-<<<<<<< HEAD
-=======
         // Fix null order_numbers
         await db.query("UPDATE purchase_orders SET order_number = CONCAT('PO-', id) WHERE order_number IS NULL");
->>>>>>> b32b6ea4f781ff57d97a961f7dbbc184adf40d73
       } catch (e) { /* ignore */ }
 
       // Seed dummy data if needed

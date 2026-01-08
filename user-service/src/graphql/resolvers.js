@@ -3,11 +3,7 @@ const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const { requireAuth, requireMinRole } = require('../auth');
 
-<<<<<<< HEAD
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
-=======
 const JWT_SECRET = process.env.JWT_SECRET || 'rahasia-negara-api-key-2024';
->>>>>>> b32b6ea4f781ff57d97a961f7dbbc184adf40d73
 const REFRESH_TOKEN_SECRET = process.env.REFRESH_TOKEN_SECRET || 'refresh-secret-key-change-in-production';
 
 // Token expiry times
