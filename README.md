@@ -326,6 +326,70 @@ Frontend berjalan di: `http://localhost:3000`
 | Users | `/users` | Staff & customer management |
 
 ---
+# 📸 Dokumentasi Tampilan Sistem – Anugerah Resto
+
+Dokumen ini berisi screenshot tampilan aplikasi **Anugerah Resto** .
+Setiap gambar menunjukkan fitur dan tampilan dari masing-masing service yang telah diimplementasikan.
+
+---
+
+## 🔹 User Service
+
+### Halaman Login
+![Login](docs/user%20service/tampilan%20login.png)
+
+### Dashboard Admin
+![Dashboard Admin](docs/user%20service/dashboard%20(admin).png)
+
+### Dashboard Chef
+![Dashboard Chef](docs/user%20service/dashboard%20(chef).png)
+
+### Dashboard Waiter
+![Dashboard Waiter](docs/user%20service/waiter%20dashboard.png)
+
+### Kitchen Dashboard (User Service)
+![Kitchen Dashboard](docs/user%20service/kitchen-dashboard.png)
+
+### Tampilan Halaman Kitchen
+![Halaman Kitchen](docs/user%20service/tampilan%20halaman%20kitcheb.png)
+
+---
+
+## 🔹 Order Service
+
+### Daftar Menu
+![Menu](docs/order/menu.png)
+
+### Membuat Menu Baru
+![Tambah Menu](docs/order/membuat%20menu%20baru.png)
+
+### Membuat Order
+![Membuat Order](docs/order/membuat%20order.png)
+
+### Buat Pesanan
+![Buat Pesanan](docs/order/order-buat%20pesanan.png)
+
+---
+
+## 🔹 Kitchen Service
+
+### Dashboard Kitchen
+![Dashboard Kitchen](docs/kitchen/dashboard-kitchen.png)
+
+### Kitchen Display
+![Kitchen Display](docs/kitchen/kitcheb%20display.png)
+
+---
+
+## 🔹 Inventory Service
+
+### Beli Barang
+![Beli Barang](docs/inventory/iventory-beli%20barang.png)
+
+### Tambah Bahan Baku
+![Tambah Bahan](docs/inventory/iventory%20tambah%20bahan%20baku.png)
+
+---
 
 ## 🌐 GraphQL API Endpoints
 
@@ -338,11 +402,6 @@ Frontend berjalan di: `http://localhost:3000`
 | User | `http://localhost:4003/graphql` | ✅ |
 | Order | `http://localhost:4004/graphql` | ✅ |
 
-<<<<<<< HEAD
-
-
-=======
->>>>>>> b32b6ea4f781ff57d97a961f7dbbc184adf40d73
 ### Contoh Query & Mutation
 
 #### Menu Management
@@ -457,83 +516,6 @@ mutation {
   }
 }
 ```
-<<<<<<< HEAD
----
-# 📸 Dokumentasi Tampilan Sistem – Anugerah Resto
-
-Dokumen ini berisi screenshot tampilan aplikasi **Anugerah Resto** sebagai bukti implementasi sistem berbasis arsitektur microservices.  
-Setiap gambar menunjukkan fitur dan tampilan dari masing-masing service yang telah diimplementasikan.
-
----
-
-## 🔹 User Service
-
-### Halaman Login
-![Login](docs/user%20service/tampilan%20login.png)
-
-### Dashboard Admin
-![Dashboard Admin](docs/user%20service/dashboard%20(admin).png)
-
-### Dashboard Chef
-![Dashboard Chef](docs/user%20service/dashboard%20(chef).png)
-
-### Dashboard Waiter
-![Dashboard Waiter](docs/user%20service/waiter%20dashboard.png)
-
-### Kitchen Dashboard (User Service)
-![Kitchen Dashboard](docs/user%20service/kitchen-dashboard.png)
-
-### Tampilan Halaman Kitchen
-![Halaman Kitchen](docs/user%20service/tampilan%20halaman%20kitcheb.png)
-
----
-
-## 🔹 Order Service
-
-### Daftar Menu
-![Menu](docs/order/menu.png)
-
-### Membuat Menu Baru
-![Tambah Menu](docs/order/membuat%20menu%20baru.png)
-
-### Membuat Order
-![Membuat Order](docs/order/membuat%20order.png)
-
-### Buat Pesanan
-![Buat Pesanan](docs/order/order-buat%20pesanan.png)
-
----
-
-## 🔹 Kitchen Service
-
-### Dashboard Kitchen
-![Dashboard Kitchen](docs/kitchen/dashboard-kitchen.png)
-
-### Kitchen Display
-![Kitchen Display](docs/kitchen/kitcheb%20display.png)
-
----
-
-## 🔹 Inventory Service
-
-### Beli Barang
-![Beli Barang](docs/inventory/iventory-beli%20barang.png)
-
-### Tambah Bahan Baku
-![Tambah Bahan](docs/inventory/iventory%20tambah%20bahan%20baku.png)
-
----
-
-## 📌 Keterangan
-
-Screenshot di atas menunjukkan bahwa:
-- Setiap service berhasil dijalankan
-- Fitur utama pada masing-masing service dapat diakses
-- Sistem terintegrasi dalam arsitektur microservices
-
-Dokumentasi ini digunakan sebagai pendukung laporan dan bukti implementasi aplikasi **Anugerah Resto**.
-=======
->>>>>>> b32b6ea4f781ff57d97a961f7dbbc184adf40d73
 
 ---
 
@@ -1777,11 +1759,10 @@ Use provided Dockerfiles with container orchestration.
 
 | Nama | Kontribusi |
 |------|------------|
-| Anggota 1 | Kitchen Service |
-| Anggota 2 | Inventory Service |
-| Anggota 3 | User Service |
-| Anggota 4 | Order Service |
-| Anggota 5 | Frontend Dashboard |
+| 102022300102 - Alvina Sulistina | Kitchen Service |
+| 102022300021 - Mochamad Rizky Maulana Aviansyah| Inventory Service |
+| 102022330069 - Bimo Alfarizy Lukman | User Service |
+| 102022330325 - Revaldo A.Nainggolan | Order Service |
 
 ---
 
