@@ -542,18 +542,10 @@ const resolvers = {
         const total = subtotal + tax + serviceCharge - (input.discount || 0);
 
         const [result] = await db.execute(`
-<<<<<<< HEAD
-          INSERT INTO carts (cart_id, user_id, customer_id, table_number, items, subtotal, tax, service_charge, discount, total, status)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        `, [
-          input.cartId,
-          input.customerId || input.cartId,
-=======
           INSERT INTO carts (cart_id, customer_id, table_number, items, subtotal, tax, service_charge, discount, total, status)
           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `, [
           input.cartId,
->>>>>>> b32b6ea4f781ff57d97a961f7dbbc184adf40d73
           input.customerId || null,
           input.tableNumber || null,
           JSON.stringify(items),
