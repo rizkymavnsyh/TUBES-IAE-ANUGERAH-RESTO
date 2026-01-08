@@ -763,6 +763,14 @@ const resolvers = {
             ingredientId = ingResult.insertId;
           } else {
             ingredientId = activeIngredients[0].id;
+
+            // Update min_stock_level if provided in input
+            if (item.minStockLevel) {
+              await db.execute(
+                'UPDATE ingredients SET min_stock_level = ? WHERE id = ?',
+                [item.minStockLevel, ingredientId]
+              );
+            }
           }
 
           // Create purchase order item
