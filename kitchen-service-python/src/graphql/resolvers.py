@@ -392,8 +392,8 @@ def resolve_update_order_status(_, info, id: str, status: str):
     try:
         cursor.execute("UPDATE kitchen_orders SET status = %s WHERE id = %s", (status, id))
         
-        # Update chef status if order is completed
-        if status == 'completed':
+        # Update chef status if order is ready or completed
+        if status in ('ready', 'completed'):
             cursor.execute("SELECT chef_id FROM kitchen_orders WHERE id = %s", (id,))
             order = cursor.fetchone()
             if order and order.get('chef_id'):

@@ -198,7 +198,7 @@ const resolvers = {
         // Get current orders count for each chef from kitchen_orders
         const chefsWithOrders = await Promise.all(staffChefs.map(async (chef) => {
           const [orders] = await db.execute(
-            'SELECT COUNT(*) as count FROM kitchen_orders WHERE chef_id = ? AND status NOT IN ("completed", "cancelled")',
+            'SELECT COUNT(*) as count FROM kitchen_orders WHERE chef_id = ? AND status NOT IN ("ready", "completed", "cancelled")',
             [chef.id]
           );
           return {
@@ -250,7 +250,7 @@ const resolvers = {
 
         // Get current orders count
         const [orders] = await db.execute(
-          'SELECT COUNT(*) as count FROM kitchen_orders WHERE chef_id = ? AND status NOT IN ("completed", "cancelled")',
+          'SELECT COUNT(*) as count FROM kitchen_orders WHERE chef_id = ? AND status NOT IN ("ready", "completed", "cancelled")',
           [id]
         );
 

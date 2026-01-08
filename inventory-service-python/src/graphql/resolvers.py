@@ -985,7 +985,10 @@ async def resolve_purchase_from_toko_sembako(_, info, input: Dict[str, Any]):
             stock_added = False
             
             # Process each item
-            for item in product_details:
+            for idx, item in enumerate(product_details):
+                # Get minStockLevel from original input
+                min_stock_level = items[idx].get('minStockLevel', 10) if idx < len(items) else 10
+                
                 # Find or create ingredient
                 cursor.execute("SELECT id FROM ingredients WHERE name = %s", (item['name'],))
                 ingredient = cursor.fetchone()
@@ -996,11 +999,18 @@ async def resolve_purchase_from_toko_sembako(_, info, input: Dict[str, Any]):
                         """INSERT INTO ingredients (name, unit, category, min_stock_level, current_stock, 
                            supplier_id, cost_per_unit, status)
                            VALUES (%s, %s, %s, %s, %s, %s, %s, %s)""",
-                        (item['name'], item['unit'], category, 10, 0, supplier_id, item['price'], 'active')
+                        (item['name'], item['unit'], category, min_stock_level, 0, supplier_id, item['price'], 'active')
                     )
                     ingredient_id = cursor.lastrowid
                 else:
                     ingredient_id = ingredient['id']
+                    
+                    # Update min_stock_level if provided in input
+                    if items[idx].get('minStockLevel'):
+                        cursor.execute(
+                            "UPDATE ingredients SET min_stock_level = %s WHERE id = %s",
+                            (items[idx]['minStockLevel'], ingredient_id)
+                        )
                 
                 # Create purchase order item
                 cursor.execute(

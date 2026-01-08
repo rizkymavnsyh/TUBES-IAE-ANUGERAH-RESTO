@@ -179,7 +179,7 @@ services:
       DB_PASSWORD: order_pass
       DB_NAME: order_db
       KITCHEN_SERVICE_URL: http://kitchen-service:4001/graphql
-      INVENTORY_SERVICE_URL: http://inventory-service:4002/graphql
+      INVENTORY_SERVICE_URL: https://tubes-iae-anugerah-resto-production.up.railway.app/graphql
       USER_SERVICE_URL: http://user-service:4003/graphql
       JWT_SECRET: "rahasia-negara-api-key-2024"
     depends_on:
