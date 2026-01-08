@@ -332,62 +332,163 @@ Dokumen ini berisi screenshot tampilan aplikasi **Anugerah Resto** .
 Setiap gambar menunjukkan fitur dan tampilan dari masing-masing service yang telah diimplementasikan.
 
 ---
+### Login
+![Login](docs/Interface/1.%20Login.png)
 
-## 🔹 User Service
+### Login Invalid
+![Login Invalid](docs/Interface/2.%20Login%20Invalid.png)
 
-### Halaman Login
-![Login](docs/user%20service/tampilan%20login.png)
+---
+## 📊 Dashboard & Main Pages
 
-### Dashboard Admin
-![Dashboard Admin](docs/user%20service/dashboard%20(admin).png)
+### Dashboard
+![Dashboard](docs/Interface/3.%20Dashboard.png)
 
-### Dashboard Chef
-![Dashboard Chef](docs/user%20service/dashboard%20(chef).png)
+### Menu
+![Menu](docs/Interface/4.%20Menu.png)
 
-### Dashboard Waiter
-![Dashboard Waiter](docs/user%20service/waiter%20dashboard.png)
+### Orders
+![Orders](docs/Interface/5.%20Orders.png)
 
-### Kitchen Dashboard (User Service)
-![Kitchen Dashboard](docs/user%20service/kitchen-dashboard.png)
+### Kitchen
+![Kitchen](docs/Interface/6.%20Kitchen.png)
 
-### Tampilan Halaman Kitchen
-![Halaman Kitchen](docs/user%20service/tampilan%20halaman%20kitcheb.png)
+### Inventory
+![Inventory](docs/Interface/7.%20Inventory.png)
+
+### Users - Staff
+![Users Staff](docs/Interface/8.%20UsersStaff.png)
+
+### Users - Pelanggan
+![Users Pelanggan](docs/Interface/9.%20UserPelanggan.png)
 
 ---
 
-## 🔹 Order Service
+## 🍽️ Menu Management
 
-### Daftar Menu
-![Menu](docs/order/menu.png)
+### Tambah Menu Baru
+![Tambah Menu Baru](docs/Interface/10.%20Tambah%20Menu%20Baru.png)
 
-### Membuat Menu Baru
-![Tambah Menu](docs/order/membuat%20menu%20baru.png)
+### Hasil Tambah Menu
+![Hasil Tambah Menu](docs/Interface/11.%20Hasil%20Tambah%20Menu.png)
 
-### Membuat Order
-![Membuat Order](docs/order/membuat%20order.png)
+### Hasil Edit Menu
+![Hasil Edit Menu](docs/Interface/12.%20Hasil%20Edit%20Menu.png)
 
-### Buat Pesanan
-![Buat Pesanan](docs/order/order-buat%20pesanan.png)
+### Hapus Menu
+![Hapus Menu](docs/Interface/13.%20Hapus%20Menu.png)
 
----
-
-## 🔹 Kitchen Service
-
-### Dashboard Kitchen
-![Dashboard Kitchen](docs/kitchen/dashboard-kitchen.png)
-
-### Kitchen Display
-![Kitchen Display](docs/kitchen/kitcheb%20display.png)
+### Hasil Hapus Menu
+![Hasil Hapus Menu](docs/Interface/14.%20hasil%20Hapus%20Menu%20.png)
 
 ---
 
-## 🔹 Inventory Service
+## 📦 Order Management
 
-### Beli Barang
-![Beli Barang](docs/inventory/iventory-beli%20barang.png)
+### Order Pending
+![Order Pending](docs/Interface/15.%20Order%20Pending%20.png)
 
-### Tambah Bahan Baku
-![Tambah Bahan](docs/inventory/iventory%20tambah%20bahan%20baku.png)
+### Order Confirm
+![Order Confirm](docs/Interface/16.%20Order%20Confirm.png)
+
+### Order Preparing
+![Order Preparing](docs/Interface/17.%20Order%20Preparing.png)
+
+### Order Ready
+![Order Ready](docs/Interface/18.%20Order%20Ready.png)
+
+### Order Completed
+![Order Completed](docs/Interface/19.%20Order%20Completed.png)
+
+### Order Cancel
+![Order Cancel](docs/Interface/20.%20Order%20Cancel.png)
+
+### Edit Order
+![Edit Order](docs/Interface/22.%20Edit%20Order.png)
+
+---
+
+## 👨‍🍳 Kitchen Management
+
+### Kitchen Order Pending
+![Kitchen Order Pending](docs/Interface/21.%20Kitchen%20Order%20Pending.png)
+
+### Kitchen Order Process
+![Kitchen Order Process](docs/Interface/21.%20Kitchen%20Order%20Process.png)
+
+---
+
+## 📋 Inventory Management
+
+### Beli Produk
+![Beli Produk](docs/Interface/23.%20Beli%20Produk.png)
+
+### Beli Produk
+![Beli Produk](docs/Interface/24.%20Beli%20Produk.png)
+
+### Beli Produk
+![Beli Produk](docs/Interface/25.%20Beli%20Produk.png)
+
+### Berhasil Membeli Produk
+![Berhasil Membeli Produk](docs/Interface/26.%20Berhasil%20Membeli%20Beli%20Produk.png)
+
+### Edit Bahan Baku
+![Edit Bahan Baku](docs/Interface/27.%20Edit%20Bahan%20Baku.png)
+
+### Berhasil Edit Bahan Baku
+![Berhasil Edit Bahan Baku](docs/Interface/28.%20Berhasil%20Edit%20Bahan%20Baku.png)
+
+### Hapus Bahan Baku
+![Hapus Bahan Baku](docs/Interface/29.%20Hapus%20Bahan%20Baku.png)
+
+### Bahan Baku Berhasil Dihapus
+![Bahan Baku Berhasil Dihapus](docs/Interface/30.%20Bahan%20Baku%20Berhasil%20Dihapus.png)
+
+---
+
+## 👥 Staff Management
+
+### Tambah Staff
+![Tambah Staff](docs/Interface/31.%20%20Tambah%20Staff.png)
+
+### Berhasil Tambah Staff
+![Berhasil Tambah Staff](docs/Interface/32.%20Berhasil%20Tambah%20Staff.png)
+
+### Hasil Edit Staff
+![Hasil Edit Staff](docs/Interface/33.%20Hasil%20Edit%20Staff.png)
+
+### Hapus Staff
+![Hapus Staff](docs/Interface/34.%20Hapus%20Staff.png)
+
+### Berhasil Hapus Staff
+![Berhasil Hapus Staff](docs/Interface/35.%20Brhasil%20Hapus%20Staff.png)
+
+### Hasil Hapus Staff
+![Hasil Hapus Staff](docs/Interface/36.%20Hail%20Hapus%20staff.png)
+
+---
+
+## 👤 Customer Management
+
+### Tambah Pelanggan
+![Tambah Pelanggan](docs/Interface/37.%20%20Tambah%20Pelanggan.png)
+
+### Berhasil Tambah Pelanggan
+![Berhasil Tambah Pelanggan](docs/Interface/38.%20Berhasil%20Tambah%20Pelanggan.png)
+
+### Edit Pelanggan
+![Edit Pelanggan](docs/Interface/39.%20Edit%20Pelanggan.png)
+
+### Berhasil Edit Pelanggan
+![Berhasil Edit Pelanggan](docs/Interface/40.%20Berhasil%20Edit%20Pelanggan.png)
+
+### Hapus Pelanggan
+![Hapus Pelanggan](docs/Interface/41.%20Hapus%20Pelanggan.png)
+
+### Berhasil Hapus Pelanggan
+![Berhasil Hapus Pelanggan](docs/Interface/42.%20Berhasil%20Hapus%20Pelanggan.png)
+
+---
 
 ---
 
@@ -516,6 +617,268 @@ mutation {
   }
 }
 ```
+
+---
+# 📡 GraphQL Documentation
+
+Dokumentasi ini menjelaskan implementasi GraphQL pada sistem Anugerah Resto
+
+---
+
+## Integration GraphQL
+Digunakan untuk integrasi data antara **Anugerah Resto** dan **Toko Sembako**.
+
+### 1. Create Produk Bumbu
+![Create Produk Bumbu](docs/Graphql/integration/1.%20CREATE%20-%20produk%20bumbu.png)
+
+### 2. Read Produk Toko Sembako
+![Read Produk](docs/Graphql/integration/2.%20READ%20-Toko%20sembako%20produk.png)
+
+### 3. Increase Stock
+![Increase Stock](docs/Graphql/integration/3.%20Toko%20sembako%20increase%20stock.png)
+
+### 4. Check Stock dari Anugerah Resto
+![Check Stock](docs/Graphql/integration/4.%20anugrah%20check%20toko%20sembako%20stock.png)
+
+---
+
+## GraphQL – Inventory Service
+
+### 1. Get Toko Sembako Product by ID
+![Get Product by ID](docs/Graphql/inventory/1.%20READ%20–%20Get%20Toko%20Sembako%20Product%20by%20ID.png)
+
+### 2. Check Toko Sembako Stock
+![Check Stock](docs/Graphql/inventory/2.%20READ%20–%20Check%20Toko%20Sembako%20Stock.png)
+
+### 3. Purchase From Toko Sembako (Single Item)
+![Purchase Single](docs/Graphql/inventory/3.%20CREATE%20–%20Purchase%20From%20Toko%20Sembako%20(Single%20Item).png)
+
+### 4. Purchase From Toko Sembako (Multiple Items)
+![Purchase Multiple](docs/Graphql/inventory/4.%20CREATE%20–%20Purchase%20From%20Toko%20Sembako%20(Multiple%20Items).png)
+
+### 5. Purchase From Toko Sembako (High Minimum Stock)
+![Purchase High Min](docs/Graphql/inventory/5CREATE%20–%20Purchase%20From%20Toko%20Sembako%20(High%20Minimum%20Stock).png)
+
+### 6. Get Ingredients
+![Get Ingredients](docs/Graphql/inventory/6.%20READ%20–%20Get%20Ingredients.png)
+
+### 7. Get Low Stock Ingredients
+![Low Stock](docs/Graphql/inventory/7.%20READ%20–%20Get%20Low%20Stock%20Ingredients.png)
+
+### 8. Get Suppliers
+![Get Suppliers](docs/Graphql/inventory/8.%20READ%20–%20Get%20Suppliers.png)
+
+### 9. Get Purchase Order
+![Get Purchase Order](docs/Graphql/inventory/9.%20READ%20-%20Get%20Purchase%20Order.png)
+
+### 10. Get Toko Sembako Product
+![Get Toko Sembako Product](docs/Graphql/inventory/10.%20Get%20Toko%20Sembako%20Product.png)
+
+---
+
+## GraphQL – Kitchen Service 
+
+### 1. Buat Kitchen Order
+![Create Kitchen Order](docs/Graphql/Kitchen/1.%20CREATE%20-%20Buat%20Kitchen%20Order.png)
+
+### 2. Ambil Semua Kitchen Orders
+![Get Kitchen Orders](docs/Graphql/Kitchen/2.%20READ%20-%20Ambil%20Semua%20Kitchen%20Orders.png)
+
+### 3. Ambil Kitchen Order by ID
+![Get by ID](docs/Graphql/Kitchen/3.%20READ%20-%20Ambil%20Kitchen%20Order%20by%20ID.png)
+
+### 4. Ambil Kitchen Order by Order ID
+![Get by Order ID](docs/Graphql/Kitchen/4.%20READ%20-%20Ambil%20Kitchen%20Order%20by%20Order%20ID.png)
+
+### 5. Filter Kitchen Orders by Status
+![Filter by Status](docs/Graphql/Kitchen/5.%20READ%20-%20Filter%20Kitchen%20Orders%20by%20Status.png)
+
+### 6. Update Order Status
+![Update Status](docs/Graphql/Kitchen/6.%20UPDATE%20-%20Update%20Order%20Status.png)
+
+### 7. Assign Chef
+![Assign Chef](docs/Graphql/Kitchen/7.%20UPDATE%20-%20Assign%20Chef.png)
+
+### 8. Update Estimated Time
+![Update Time](docs/Graphql/Kitchen/8.%20UPDATE%20-%20Update%20Estimated%20Time.png)
+
+### 9. Complete Order
+![Complete Order](docs/Graphql/Kitchen/9.%20UPDATE%20-%20Complete%20Order.png)
+
+### 10. Cancel Kitchen Order
+![Cancel Order](docs/Graphql/Kitchen/10.%20DELETE%20-%20Cancel%20Kitchen%20Order.png)
+
+### 11. Ambil Semua Chef
+![Get Chef](docs/Graphql/Kitchen/11.%20READ%20-%20Ambil%20Semua%20Chef.png)
+
+### 12. Ambil Chef by ID
+![Chef by ID](docs/Graphql/Kitchen/12.%20READ%20-%20Ambil%20Chef%20by%20ID.png)
+
+### 13. Ambil Orders by Chef
+![Orders by Chef](docs/Graphql/Kitchen/13.%20READ%20-%20Ambil%20Orders%20by%20Chef.png)
+
+---
+
+## GraphQL – Order Service
+
+### Menu Management
+
+#### 1. Buat Menu Baru
+![Create Menu](docs/Graphql/order/1.%20CREATE%20-%20Buat%20Menu%20Baru.png)
+
+#### 2. Ambil Semua Menu
+![Get All Menu](docs/Graphql/order/2.%20READ%20-%20Ambil%20Semua%20Menu.png)
+
+#### 3. Ambil Menu by ID
+![Get Menu by ID](docs/Graphql/order/3.%20READ%20-%20Ambil%20Menu%20by%20ID.png)
+
+#### 4. Ambil Menu by Menu ID
+![Get Menu by Menu ID](docs/Graphql/order/4.%20READ%20-%20Ambil%20Menu%20by%20Menu%20ID.png)
+
+#### 5. Filter Menu by Category
+![Filter Menu](docs/Graphql/order/5.%20READ%20-%20Filter%20Menu%20by%20Category.png)
+
+#### 6. Ambil Kategori Menu
+![Get Categories](docs/Graphql/order/6.%20READ%20-%20Ambil%20Kategori%20Menu.png)
+
+#### 7. Update Menu
+![Update Menu](docs/Graphql/order/7.%20UPDATE%20-%20Update%20Menu.png)
+
+#### 8. Toggle Availability
+![Toggle Availability](docs/Graphql/order/8.%20UPDATE%20-%20Toggle%20Availability.png)
+
+#### 9. Hapus Menu
+![Delete Menu](docs/Graphql/order/9.%20DELETE%20-%20Hapus%20Menu.png)
+
+### Cart Management
+
+#### 10. Buat Cart Baru
+![Create Cart](docs/Graphql/order/10.%20CREATE%20-%20Buat%20Cart%20Baru.png)
+
+#### 11. Tambah Item ke Cart
+![Add to Cart](docs/Graphql/order/11.%20UPDATE%20-%20Tambah%20Item%20ke%20Cart.png)
+
+#### 12. Update Item di Cart
+![Update Cart Item](docs/Graphql/order/12.%20Picture43UPDATE%20-%20Update%20Item%20di%20Cart.png)
+
+#### 13. Hapus Item dari Cart
+![Remove from Cart](docs/Graphql/order/13.%20DELETE%20-%20Hapus%20Item%20dari%20Cart.png)
+
+#### 14. Clear Cart
+![Clear Cart](docs/Graphql/order/14.%20DELETE%20-%20Clear%20Cart.png)
+
+#### 15. Ambil Cart
+![Get Cart](docs/Graphql/order/15.%20READ%20-%20Ambil%20Cart.png)
+
+### Order Management
+
+#### 16. Buat Order dari Cart
+![Create Order from Cart](docs/Graphql/order/16.%20CREATE%20-%20Buat%20Order%20dari%20Cart.png)
+
+#### 17. Buat Order Langsung
+![Create Direct Order](docs/Graphql/order/17.%20%20CREATE%20-%20Buat%20Order%20Langsung.png)
+
+#### 18. Ambil Semua Order
+![Get All Orders](docs/Graphql/order/18.%20READ%20-%20Ambil%20Semua%20Order.png)
+
+#### 19. Ambil Order by ID
+![Get Order by ID](docs/Graphql/order/19.%20READ%20-%20Ambil%20Order%20by%20ID.png)
+
+#### 20. Filter Orders by Status
+![Filter by Status](docs/Graphql/order/20.%20READ%20-%20Filter%20Orders%20by%20Status.png)
+
+#### 21. Filter Orders by Customer
+![Filter by Customer](docs/Graphql/order/21.%20READ%20-%20Filter%20Orders%20by%20Customer.png)
+
+#### 22. Cek Stock Menu
+![Check Stock](docs/Graphql/order/22.%20READ%20-%20Cek%20Stock%20Menu.png)
+
+#### 23. Update Order Status
+![Update Status](docs/Graphql/order/23.%20UPDATE%20-%20Update%20Order%20Status.png)
+
+#### 24. Kirim ke Dapur
+![Send to Kitchen](docs/Graphql/order/24.%20UPDATE%20-%20Kirim%20ke%20Dapur.png)
+
+#### 25. Update Payment Status
+![Update Payment Status](docs/Graphql/order/25.%20UPDATE%20-%20Update%20Payment%20Status.png)
+
+#### 26. Cancel Order
+![Cancel Order](docs/Graphql/order/26.%20DELETE%20-%20Cancel%20Order.png)
+
+---
+
+## GraphQL – User Service
+
+### Staff Management
+
+#### 1. Buat Staff Baru
+![Create Staff](docs/Graphql/user/1.%20CREATE%20-%20Buat%20Staff%20Baru.png)
+
+#### 2. Ambil Semua Staff
+![Get All Staff](docs/Graphql/user/2.%20READ%20-%20Ambil%20Semua%20Staff.png)
+
+#### 3. Ambil Staff by ID
+![Get Staff by ID](docs/Graphql/user/3.%20READ%20-%20Ambil%20Staff%20by%20ID.png)
+
+#### 4. Ambil Staff by Employee ID
+![Get Staff by Employee ID](docs/Graphql/user/4.%20READ%20-%20Ambil%20Staff%20by%20Employee%20ID.png)
+
+#### 5. Filter Staff by Role
+![Filter Staff by Role](docs/Graphql/user/5.%20READ%20-%20Filter%20Staff%20by%20Role.png)
+
+#### 6. Update Staff
+![Update Staff](docs/Graphql/user/6.%20UPDATE%20-Update%20Staff.png)
+
+#### 7. Hapus Staff
+![Delete Staff](docs/Graphql/user/7.%20DELETE%20-%20Hapus%20Staff.png)
+
+### Customer Management
+
+#### 8. Buat Customer Baru
+![Create Customer](docs/Graphql/user/8.%20CREATE%20-%20Buat%20Customer%20Baru.png)
+
+#### 9. Ambil Semua Customer
+![Get All Customers](docs/Graphql/user/9.%20READ%20-%20Ambil%20Semua%20Customer.png)
+
+#### 10. Ambil Customer by ID
+![Get Customer by ID](docs/Graphql/user/10.%20READ%20-%20Ambil%20Customer%20%20by%20ID.png)
+
+#### 11. Ambil Customer by Customer ID
+![Get Customer by Customer ID](docs/Graphql/user/11.%20READ%20-%20Ambil%20Customer%20%20by%20Customer%20ID.png)
+
+#### 12. Update Customer
+![Update Customer](docs/Graphql/user/12.%20UPDATE%20-%20Update%20Customer.png)
+
+#### 13. Hapus Customer
+![Delete Customer](docs/Graphql/user/13.%20DELETE%20-%20Hapus%20Customer.png)
+
+### Loyalty Program
+
+#### 14. Ambil Semua Loyalty Programs
+![Get Loyalty Programs](docs/Graphql/user/14.%20READ%20-Ambil%20Semua%20Loyalty%20Programs.png)
+
+#### 15. Enroll Customer ke Loyalty
+![Enroll to Loyalty](docs/Graphql/user/15.%20CREATE%20-%20Enroll%20Customer%20ke%20Loyalty.png)
+
+#### 16. Earn Point
+![Earn Points](docs/Graphql/user/16.%20UPDATE%20-%20Earn%20Point.png)
+
+#### 17. Redeem Points
+![Redeem Points](docs/Graphql/user/17.%20UPDATE%20-Redeem%20Points.png)
+
+#### 18. Top Customers by Point
+![Top Customers](docs/Graphql/user/18.%20READ%20-%20Top%20Customers%20by%20Point.png)
+
+### Authentication
+
+#### 19. Login
+![Login](docs/Graphql/user/19.%20LOGIN%20-Returns%20Access%20token%20(7h)%20and%20Refresh%20Token.png)
+
+#### 20. Refresh Token
+![Refresh Token](docs/Graphql/user/20.%20REFRESH%20TOKEN%20-%20Get%20New%20Access.png)
+
+#### 21. Logout
+![Logout](docs/Graphql/user/21.%20LOGOUT%20-%20Revoke%20Refresh%20Token.png)
 
 ---
 
