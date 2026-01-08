@@ -1,0 +1,152 @@
+# ==================================================
+# USER SERVICE - GraphQL Schema
+# Anugerah Resto - Sistem Manajemen Restoran
+# ==================================================
+# Service: User Service (Authentication & Authorization)
+# Port: 4003
+# Database: MySQL (user_db)
+# ==================================================
+
+# ==================== QUERIES ====================
+
+type Query {
+  # Staff queries
+  customers(status: String): [Customer!]!
+  customer(id: String!): Customer
+  staff(status: String, role: String): [Staff!]!
+  staffById(id: String!): Staff
+  
+  # Loyalty queries
+  customerLoyalty(customerId: String!): CustomerLoyalty
+  loyaltyTransactions(customerId: String!): [LoyaltyTransaction!]!
+}
+
+# ==================== MUTATIONS ====================
+
+type Mutation {
+  # Customer operations
+  createCustomer(input: CreateCustomerInput!): Customer!
+  updateCustomer(id: String!, input: CreateCustomerInput!): Customer!
+  deleteCustomer(id: String!): Boolean!
+  
+  # Staff operations
+  createStaff(input: CreateStaffInput!): Staff!
+  updateStaff(id: String!, input: CreateStaffInput!): Staff!
+  deleteStaff(id: String!): Boolean!
+  
+  # Authentication
+  loginStaff(username: String!, password: String!): AuthResponse!
+  refreshToken(refreshToken: String!): RefreshTokenResponse!
+  logout(refreshToken: String!): LogoutResponse!
+  
+  # Loyalty operations
+  addLoyaltyPoints(customerId: String!, points: Float!, orderId: String, description: String): LoyaltyTransaction!
+  redeemLoyaltyPoints(customerId: String!, points: Float!, orderId: String, description: String): LoyaltyTransaction!
+}
+
+# ==================== TYPES ====================
+
+type Staff {
+  id: String!
+  employeeId: String!
+  username: String!
+  name: String!
+  email: String
+  phone: String
+  role: String!
+  department: String
+  status: String!
+  hireDate: String
+  salary: Float
+}
+
+type Customer {
+  id: String!
+  customerId: String!
+  name: String!
+  email: String
+  phone: String
+  address: String
+  dateOfBirth: String
+  registrationDate: String
+  status: String!
+  loyalty: CustomerLoyalty
+  createdAt: String
+  updatedAt: String
+}
+
+type CustomerLoyalty {
+  id: String!
+  customerId: String!
+  totalPoints: Float!
+  redeemedPoints: Float!
+  availablePoints: Float!
+  tier: String!
+  joinDate: String
+  lastActivityDate: String
+  status: String!
+}
+
+type LoyaltyTransaction {
+  id: String!
+  customerId: String!
+  transactionType: String!
+  points: Float!
+  orderId: String
+  description: String
+  createdAt: String!
+}
+
+# Authentication Response Types
+type AuthResponse {
+  token: String
+  refreshToken: String
+  expiresAt: String
+  staff: Staff
+  message: String!
+}
+
+type RefreshTokenResponse {
+  token: String
+  expiresAt: String
+  message: String!
+}
+
+type LogoutResponse {
+  success: Boolean!
+  message: String!
+}
+
+# ==================== ENUMS ====================
+
+enum StaffRole {
+  MANAGER
+  CHEF
+  WAITER
+  CASHIER
+  ADMIN
+}
+
+# ==================== INPUTS ====================
+
+input CreateStaffInput {
+  employeeId: String!
+  username: String
+  name: String!
+  email: String
+  phone: String
+  role: String!
+  department: String
+  password: String
+  hireDate: String
+  salary: Float
+}
+
+input CreateCustomerInput {
+  customerId: String!
+  name: String!
+  email: String
+  phone: String
+  address: String
+  dateOfBirth: String
+}

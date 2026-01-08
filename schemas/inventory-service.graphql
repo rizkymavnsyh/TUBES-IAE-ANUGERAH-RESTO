@@ -1,0 +1,245 @@
+# ==================================================
+# INVENTORY SERVICE - GraphQL Schema
+# Anugerah Resto - Sistem Manajemen Restoran
+# ==================================================
+# Service: Inventory Service (Inventory & Supplier Management)
+# Port: 4002
+# Database: MySQL (inventory_db)
+# External Integration: Toko Sembako (Consumer)
+# ==================================================
+
+# ==================== QUERIES ====================
+
+type Query {
+  # Supplier queries
+  suppliers(status: String): [Supplier!]!
+  supplier(id: String!): Supplier
+  
+  # Ingredient queries
+  ingredients(category: String, status: String): [Ingredient!]!
+  ingredient(id: String!): Ingredient
+  lowStockIngredients: [Ingredient!]!
+  outOfStockIngredients: [Ingredient!]!
+  
+  # Stock movement queries
+  stockMovements(ingredientId: String, movementType: String): [StockMovement!]!
+  
+  # Purchase order queries
+  purchaseOrders(status: String): [PurchaseOrder!]!
+  purchaseOrder(id: String!): PurchaseOrder
+  
+  # Stock check
+  checkStock(ingredientId: String!, quantity: Float!): StockCheckResult!
+  
+  # Toko Sembako Integration (Consumer)
+  tokoSembakoProducts(category: String): [TokoSembakoProduct!]!
+  tokoSembakoProduct(id: String!): TokoSembakoProduct
+  checkTokoSembakoStock(productId: String!, quantity: Float!): TokoSembakoStockCheck!
+  tokoSembakoOrderStatus(orderId: String!): TokoSembakoOrder
+}
+
+# ==================== MUTATIONS ====================
+
+type Mutation {
+  # Supplier operations
+  createSupplier(input: CreateSupplierInput!): Supplier!
+  updateSupplier(id: String!, input: UpdateSupplierInput!): Supplier!
+  
+  # Ingredient operations
+  createIngredient(input: CreateIngredientInput!): Ingredient!
+  updateIngredient(id: String!, input: UpdateIngredientInput!): Ingredient!
+  
+  # Stock operations
+  addStock(ingredientId: String!, quantity: Float!, reason: String): StockMovement!
+  reduceStock(ingredientId: String!, quantity: Float!, reason: String, referenceId: String, referenceType: String): StockMovement!
+  adjustStock(ingredientId: String!, newQuantity: Float!, reason: String): StockMovement!
+  
+  # Purchase order operations
+  createPurchaseOrder(input: CreatePurchaseOrderInput!): PurchaseOrder!
+  updatePurchaseOrderStatus(id: String!, status: String!): PurchaseOrder!
+  receivePurchaseOrder(id: String!): PurchaseOrder!
+  
+  # Toko Sembako Integration (Consumer)
+  purchaseFromTokoSembako(input: PurchaseFromTokoSembakoInput!): PurchaseFromTokoSembakoResult!
+  syncStockFromTokoSembako(productId: String!, quantity: Float!): StockMovement!
+}
+
+# ==================== TYPES ====================
+
+type Supplier {
+  id: String!
+  name: String!
+  contactPerson: String
+  email: String
+  phone: String
+  address: String
+  status: String!
+  createdAt: String!
+  updatedAt: String!
+}
+
+type Ingredient {
+  id: String!
+  name: String!
+  unit: String!
+  category: String
+  minStockLevel: Float!
+  currentStock: Float!
+  supplier: Supplier
+  costPerUnit: Float!
+  status: String!
+  createdAt: String!
+  updatedAt: String!
+}
+
+type StockMovement {
+  id: String!
+  ingredient: Ingredient
+  movementType: String!
+  quantity: Float!
+  reason: String
+  referenceId: String
+  referenceType: String
+  createdBy: Int
+  createdAt: String!
+}
+
+type PurchaseOrder {
+  id: String!
+  supplier: Supplier
+  orderNumber: String!
+  status: String!
+  totalAmount: Float!
+  orderDate: String
+  expectedDeliveryDate: String
+  receivedDate: String
+  notes: String
+  items: [PurchaseOrderItem!]!
+  createdAt: String!
+  updatedAt: String!
+}
+
+type PurchaseOrderItem {
+  id: String!
+  ingredient: Ingredient
+  quantity: Float!
+  unitPrice: Float!
+  totalPrice: Float!
+  receivedQuantity: Float!
+}
+
+type StockCheckResult {
+  available: Boolean!
+  currentStock: Float!
+  requestedQuantity: Float!
+  message: String!
+}
+
+# ==================== TOKO SEMBAKO INTEGRATION ====================
+
+type TokoSembakoProduct {
+  id: String!
+  name: String!
+  category: String
+  price: Float!
+  unit: String!
+  available: Boolean!
+  description: String
+}
+
+type TokoSembakoStockCheck {
+  available: Boolean!
+  currentStock: Float!
+  requestedQuantity: Float!
+  message: String!
+}
+
+type TokoSembakoOrder {
+  id: String!
+  orderId: String!
+  status: String!
+  total: Float!
+  items: [TokoSembakoOrderItem!]!
+  createdAt: String
+}
+
+type TokoSembakoOrderItem {
+  productId: String!
+  name: String!
+  quantity: Float!
+  price: Float!
+}
+
+type PurchaseFromTokoSembakoResult {
+  success: Boolean!
+  message: String!
+  purchaseOrder: PurchaseOrder
+  tokoSembakoOrder: TokoSembakoOrder
+  stockAdded: Boolean!
+}
+
+# ==================== INPUTS ====================
+
+input CreateSupplierInput {
+  name: String!
+  contactPerson: String
+  email: String
+  phone: String
+  address: String
+}
+
+input UpdateSupplierInput {
+  name: String
+  contactPerson: String
+  email: String
+  phone: String
+  address: String
+  status: String
+}
+
+input CreateIngredientInput {
+  name: String!
+  unit: String!
+  category: String
+  minStockLevel: Float!
+  currentStock: Float!
+  supplierId: String
+  costPerUnit: Float!
+}
+
+input UpdateIngredientInput {
+  name: String
+  unit: String
+  category: String
+  minStockLevel: Float
+  supplierId: String
+  costPerUnit: Float
+  status: String
+}
+
+input CreatePurchaseOrderInput {
+  supplierId: String!
+  orderNumber: String!
+  orderDate: String
+  expectedDeliveryDate: String
+  notes: String
+  items: [PurchaseOrderItemInput!]!
+}
+
+input PurchaseOrderItemInput {
+  ingredientId: String!
+  quantity: Float!
+  unitPrice: Float!
+}
+
+input PurchaseFromTokoSembakoInput {
+  orderNumber: String!
+  items: [TokoSembakoOrderItemInput!]!
+  notes: String
+}
+
+input TokoSembakoOrderItemInput {
+  productId: String!
+  quantity: Float!
+  minStockLevel: Float  # Optional, default 10 if not provided
+}

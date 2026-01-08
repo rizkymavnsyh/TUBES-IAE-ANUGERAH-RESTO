@@ -1,0 +1,222 @@
+const { gql } = require('apollo-server-express');
+
+const typeDefs = gql`
+  type Staff {
+    id: ID!
+    employeeId: String!
+    username: String
+    name: String!
+    email: String
+    phone: String
+    role: StaffRole!
+    department: String
+    status: StaffStatus!
+    hireDate: String
+    salary: Float
+    createdAt: String!
+    updatedAt: String!
+  }
+
+  type Customer {
+    id: ID!
+    customerId: String!
+    name: String!
+    email: String
+    phone: String
+    address: String
+    dateOfBirth: String
+    registrationDate: String!
+    status: CustomerStatus!
+    loyalty: CustomerLoyalty
+    createdAt: String!
+    updatedAt: String!
+  }
+
+  type LoyaltyProgram {
+    id: ID!
+    name: String!
+    description: String
+    pointsPerRupiah: Float!
+    minPointsToRedeem: Int!
+    status: ProgramStatus!
+    createdAt: String!
+    updatedAt: String!
+  }
+
+  type CustomerLoyalty {
+    id: ID!
+    customer: Customer!
+    loyaltyProgram: LoyaltyProgram!
+    totalPoints: Float!
+    redeemedPoints: Float!
+    availablePoints: Float!
+    tier: String!
+    joinDate: String!
+    lastActivityDate: String
+    status: LoyaltyStatus!
+    transactions: [LoyaltyTransaction!]!
+    createdAt: String!
+    updatedAt: String!
+  }
+
+  type LoyaltyTransaction {
+    id: ID!
+    customerLoyalty: CustomerLoyalty!
+    transactionType: TransactionType!
+    points: Float!
+    orderId: String
+    description: String
+    createdAt: String!
+  }
+
+  type AuthResponse {
+    token: String
+    refreshToken: String
+    expiresAt: String
+    staff: Staff
+    message: String!
+  }
+
+  type RefreshTokenResponse {
+    token: String
+    expiresAt: String
+    message: String!
+  }
+
+  type LogoutResponse {
+    success: Boolean!
+    message: String!
+  }
+
+  enum StaffRole {
+    manager
+    chef
+    waiter
+    cashier
+    admin
+  }
+
+  enum StaffStatus {
+    active
+    inactive
+    suspended
+  }
+
+  enum CustomerStatus {
+    active
+    inactive
+  }
+
+  enum ProgramStatus {
+    active
+    inactive
+  }
+
+  enum LoyaltyStatus {
+    active
+    inactive
+    suspended
+  }
+
+  enum TransactionType {
+    earn
+    redeem
+    expire
+    adjustment
+  }
+
+  type Query {
+    # Staff queries
+    staff(employeeId: String, role: StaffRole, status: StaffStatus): [Staff!]!
+    staffById(id: ID!): Staff
+    staffByEmployeeId(employeeId: String!): Staff
+    
+    # Customer queries
+    customers(status: CustomerStatus): [Customer!]!
+    customer(id: ID!): Customer
+    customerByCustomerId(customerId: String!): Customer
+    customerByEmail(email: String!): Customer
+    
+    # Loyalty queries
+    loyaltyPrograms(status: ProgramStatus): [LoyaltyProgram!]!
+    loyaltyProgram(id: ID!): LoyaltyProgram
+    
+    customerLoyalty(customerId: ID!): CustomerLoyalty
+    loyaltyTransactions(customerLoyaltyId: ID!): [LoyaltyTransaction!]!
+    
+    # Top customers by points
+    topCustomersByPoints(limit: Int): [CustomerLoyalty!]!
+  }
+
+  type Mutation {
+    # Staff operations
+    createStaff(input: CreateStaffInput!): Staff!
+    updateStaff(id: ID!, input: UpdateStaffInput!): Staff!
+    deleteStaff(id: ID!): Boolean!
+    
+    # Customer operations
+    createCustomer(input: CreateCustomerInput!): Customer!
+    updateCustomer(id: ID!, input: UpdateCustomerInput!): Customer!
+    deleteCustomer(id: ID!): Boolean!
+    
+    # Loyalty operations
+    enrollCustomerInLoyalty(customerId: ID!, loyaltyProgramId: ID!): CustomerLoyalty!
+    earnPoints(customerId: ID!, points: Float!, orderId: String, description: String): LoyaltyTransaction!
+    redeemPoints(customerId: ID!, points: Float!, description: String): LoyaltyTransaction!
+    updateLoyaltyTier(customerId: ID!, tier: String!): CustomerLoyalty!
+    
+    # Authentication
+    loginStaff(username: String!, password: String!): AuthResponse!
+    refreshToken(refreshToken: String!): RefreshTokenResponse!
+    logout(refreshToken: String!): LogoutResponse!
+  }
+
+  input CreateStaffInput {
+    employeeId: String!
+    name: String!
+    email: String
+    phone: String
+    role: StaffRole!
+    department: String
+    password: String
+    hireDate: String
+    salary: Float
+  }
+
+  input UpdateStaffInput {
+    name: String
+    email: String
+    phone: String
+    role: StaffRole
+    department: String
+    status: StaffStatus
+    salary: Float
+  }
+
+  input CreateCustomerInput {
+    customerId: String!
+    name: String!
+    email: String
+    phone: String
+    address: String
+    dateOfBirth: String
+  }
+
+  input UpdateCustomerInput {
+    name: String
+    email: String
+    phone: String
+    address: String
+    status: CustomerStatus
+  }
+`;
+
+module.exports = typeDefs;
+
+
+
+
+
+
+
+

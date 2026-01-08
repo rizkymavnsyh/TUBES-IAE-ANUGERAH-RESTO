@@ -1,0 +1,35 @@
+# Dependencies
+node_modules/
+__pycache__/
+*.pyc
+.env
+*.env.local
+
+# IDE
+.vscode/
+.idea/
+
+# Build
+dist/
+build/
+.next/
+
+# Logs
+*.log
+npm-debug.log*
+
+# Docker
+*.tar
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Python virtual env
+venv/
+.venv/
+
+# Gemini artifacts (local only)
+.gemini/
+
+

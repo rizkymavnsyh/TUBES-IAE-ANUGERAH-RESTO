@@ -1,0 +1,946 @@
+# ==================================================
+# COMPLETE CRUD QUERIES & MUTATIONS
+# Anugerah Resto - All Services
+# ==================================================
+
+# ██╗   ██╗███████╗███████╗██████╗     ███████╗███████╗██████╗ ██╗   ██╗██╗ ██████╗███████╗
+# ██║   ██║██╔════╝██╔════╝██╔══██╗    ██╔════╝██╔════╝██╔══██╗██║   ██║██║██╔════╝██╔════╝
+# ██║   ██║███████╗█████╗  ██████╔╝    ███████╗█████╗  ██████╔╝██║   ██║██║██║     █████╗  
+# ██║   ██║╚════██║██╔══╝  ██╔══██╗    ╚════██║██╔══╝  ██╔══██╗╚██╗ ██╔╝██║██║     ██╔══╝  
+# ╚██████╔╝███████║███████╗██║  ██║    ███████║███████╗██║  ██║ ╚████╔╝ ██║╚██████╗███████╗
+#  ╚═════╝ ╚══════╝╚══════╝╚═╝  ╚═╝    ╚══════╝╚══════╝╚═╝  ╚═╝  ╚═══╝  ╚═╝ ╚═════╝╚══════╝
+# Port: 4003 | http://localhost:4003/graphql
+
+# ==================== STAFF CRUD ====================
+
+# CREATE - Buat Staff Baru
+mutation CreateStaff {
+  createStaff(input: {
+    employeeId: "EMP001"
+    name: "Ahmad Chef"
+    email: "ahmad@resto.com"
+    phone: "08123456789"
+    role: chef
+    department: "Dapur"
+    password: "password123"
+    hireDate: "2024-01-15"
+    salary: 5000000
+  }) {
+    id
+    employeeId
+    name
+    role
+    status
+  }
+}
+
+# READ - Ambil Semua Staff
+query GetAllStaff {
+  staff {
+    id
+    employeeId
+    name
+    email
+    phone
+    role
+    department
+    status
+    hireDate
+    salary
+    createdAt
+  }
+}
+
+# READ - Ambil Staff by ID
+query GetStaffById {
+  staffById(id: "1") {
+    id
+    employeeId
+    name
+    role
+    status
+  }
+}
+
+# READ - Ambil Staff by Employee ID
+query GetStaffByEmployeeId {
+  staffByEmployeeId(employeeId: "EMP001") {
+    id
+    name
+    role
+    department
+  }
+}
+
+# READ - Filter Staff by Role
+query GetStaffByRole {
+  staff(role: chef) {
+    id
+    name
+    role
+  }
+}
+
+# UPDATE - Update Staff
+mutation UpdateStaff {
+  updateStaff(id: "1", input: {
+    name: "Ahmad Chef Updated"
+    salary: 6000000
+    department: "Dapur Utama"
+  }) {
+    id
+    name
+    salary
+    department
+  }
+}
+
+# DELETE - Hapus Staff
+mutation DeleteStaff {
+  deleteStaff(id: "1")
+}
+
+# ==================== CUSTOMER CRUD ====================
+
+# CREATE - Buat Customer Baru
+mutation CreateCustomer {
+  createCustomer(input: {
+    customerId: "CUST001"
+    name: "Budi Pelanggan"
+    email: "budi@email.com"
+    phone: "08198765432"
+    address: "Jl. Merdeka No. 10"
+    dateOfBirth: "1990-05-15"
+  }) {
+    id
+    customerId
+    name
+    email
+    status
+  }
+}
+
+# READ - Ambil Semua Customer
+query GetAllCustomers {
+  customers {
+    id
+    customerId
+    name
+    email
+    phone
+    address
+    status
+    loyalty {
+      totalPoints
+      tier
+    }
+  }
+}
+
+# READ - Ambil Customer by ID
+query GetCustomerById {
+  customer(id: "1") {
+    id
+    customerId
+    name
+    loyalty {
+      totalPoints
+      availablePoints
+      tier
+    }
+  }
+}
+
+# READ - Ambil Customer by Customer ID
+query GetCustomerByCustomerId {
+  customerByCustomerId(customerId: "CUST001") {
+    id
+    name
+    email
+    phone
+  }
+}
+
+# UPDATE - Update Customer
+mutation UpdateCustomer {
+  updateCustomer(id: "1", input: {
+    name: "Budi Pelanggan Setia"
+    phone: "08111222333"
+    address: "Jl. Merdeka No. 15"
+  }) {
+    id
+    name
+    phone
+    address
+  }
+}
+
+# DELETE - Hapus Customer
+mutation DeleteCustomer {
+  deleteCustomer(id: "1")
+}
+
+# ==================== LOYALTY CRUD ====================
+
+# READ - Ambil Semua Loyalty Programs
+query GetLoyaltyPrograms {
+  loyaltyPrograms {
+    id
+    name
+    description
+    pointsPerRupiah
+    minPointsToRedeem
+    status
+  }
+}
+
+# CREATE - Enroll Customer ke Loyalty
+mutation EnrollCustomerLoyalty {
+  enrollCustomerInLoyalty(customerId: "1", loyaltyProgramId: "1") {
+    id
+    totalPoints
+    tier
+    status
+  }
+}
+
+# UPDATE - Earn Points
+mutation EarnLoyaltyPoints {
+  earnPoints(
+    customerId: "1"
+    points: 150
+    orderId: "ORD001"
+    description: "Points dari pembelian"
+  ) {
+    id
+    points
+    transactionType
+    description
+  }
+}
+
+# UPDATE - Redeem Points
+mutation RedeemLoyaltyPoints {
+  redeemPoints(
+    customerId: "1"
+    points: 50
+    description: "Redeem untuk diskon"
+  ) {
+    id
+    points
+    transactionType
+  }
+}
+
+# READ - Top Customers by Points
+query GetTopCustomers {
+  topCustomersByPoints(limit: 10) {
+    customer {
+      name
+    }
+    totalPoints
+    tier
+  }
+}
+
+# ==================== AUTHENTICATION ====================
+
+# LOGIN - Returns access token (7h) and refresh token (7d)
+mutation LoginStaff {
+  loginStaff(username: "admin", password: "admin123") {
+    token
+    refreshToken
+    expiresAt
+    staff {
+      id
+      name
+      role
+    }
+    message
+  }
+}
+
+# REFRESH TOKEN - Get new access token using refresh token
+mutation RefreshToken {
+  refreshToken(refreshToken: "<REFRESH_TOKEN_FROM_LOGIN>") {
+    token
+    expiresAt
+    message
+  }
+}
+
+# LOGOUT - Revoke refresh token
+mutation Logout {
+  logout(refreshToken: "<REFRESH_TOKEN_FROM_LOGIN>") {
+    success
+    message
+  }
+}
+
+
+# ██████╗ ██████╗ ██████╗ ███████╗██████╗     ███████╗███████╗██████╗ ██╗   ██╗██╗ ██████╗███████╗
+# ██╔═══██╗██╔══██╗██╔══██╗██╔════╝██╔══██╗    ██╔════╝██╔════╝██╔══██╗██║   ██║██║██╔════╝██╔════╝
+# ██║   ██║██████╔╝██║  ██║█████╗  ██████╔╝    ███████╗█████╗  ██████╔╝██║   ██║██║██║     █████╗  
+# ██║   ██║██╔══██╗██║  ██║██╔══╝  ██╔══██╗    ╚════██║██╔══╝  ██╔══██╗╚██╗ ██╔╝██║██║     ██╔══╝  
+# ╚██████╔╝██║  ██║██████╔╝███████╗██║  ██║    ███████║███████║██║  ██║ ╚████╔╝ ██║╚██████╗███████╗
+#  ╚═════╝ ╚═╝  ╚═╝╚═════╝ ╚══════╝╚═╝  ╚═╝    ╚══════╝╚══════╝╚═╝  ╚═╝  ╚═══╝  ╚═╝ ╚═════╝╚══════╝
+# Port: 4004 | http://localhost:4004/graphql
+
+# ==================== MENU CRUD ====================
+
+# CREATE - Buat Menu Baru
+mutation CreateMenu {
+  createMenu(input: {
+    menuId: "MENU001"
+    name: "Nasi Goreng Spesial"
+    description: "Nasi goreng dengan telur, ayam, dan sayuran segar"
+    category: "Main Course"
+    price: 35000
+    ingredients: [
+      { ingredientId: "ING001", ingredientName: "Nasi", quantity: 200, unit: "gram" }
+      { ingredientId: "ING002", ingredientName: "Telur", quantity: 2, unit: "butir" }
+      { ingredientId: "ING003", ingredientName: "Ayam", quantity: 100, unit: "gram" }
+    ]
+    preparationTime: 15
+    tags: ["populer", "pedas"]
+    available: true
+  }) {
+    id
+    menuId
+    name
+    price
+    available
+  }
+}
+
+# READ - Ambil Semua Menu
+query GetAllMenus {
+  menus {
+    id
+    menuId
+    name
+    description
+    category
+    price
+    available
+    preparationTime
+    tags
+    ingredients {
+      ingredientName
+      quantity
+      unit
+    }
+  }
+}
+
+# READ - Ambil Menu by ID
+query GetMenuById {
+  menu(id: "1") {
+    id
+    menuId
+    name
+    price
+    category
+    available
+  }
+}
+
+# READ - Ambil Menu by Menu ID
+query GetMenuByMenuId {
+  menuByMenuId(menuId: "MENU001") {
+    id
+    name
+    price
+    ingredients {
+      ingredientName
+      quantity
+    }
+  }
+}
+
+# READ - Filter Menu by Category
+query GetMenusByCategory {
+  menus(category: "Main Course") {
+    id
+    name
+    price
+  }
+}
+
+# READ - Ambil Kategori Menu
+query GetMenuCategories {
+  menuCategories
+}
+
+# UPDATE - Update Menu
+mutation UpdateMenu {
+  updateMenu(id: "1", input: {
+    name: "Nasi Goreng Super Spesial"
+    price: 40000
+    description: "Nasi goreng premium dengan topping lengkap"
+  }) {
+    id
+    name
+    price
+    description
+  }
+}
+
+# UPDATE - Toggle Availability
+mutation ToggleMenuAvailability {
+  toggleMenuAvailability(id: "1") {
+    id
+    name
+    available
+  }
+}
+
+# DELETE - Hapus Menu
+mutation DeleteMenu {
+  deleteMenu(id: "1")
+}
+
+# ==================== CART CRUD ====================
+
+# CREATE - Buat Cart Baru
+mutation CreateCart {
+  createCart(input: {
+    cartId: "CART001"
+    customerId: "CUST001"
+    tableNumber: "5"
+  }) {
+    id
+    cartId
+    tableNumber
+    status
+    total
+  }
+}
+
+# UPDATE - Tambah Item ke Cart
+mutation AddItemToCart {
+  addItemToCart(
+    cartId: "CART001"
+    item: {
+      menuId: "MENU001"
+      name: "Nasi Goreng Spesial"
+      quantity: 2
+      price: 35000
+      specialInstructions: "Tidak pedas"
+    }
+  ) {
+    id
+    items {
+      menuId
+      name
+      quantity
+      price
+    }
+    subtotal
+    tax
+    total
+  }
+}
+
+# UPDATE - Update Item di Cart
+mutation UpdateCartItem {
+  updateCartItem(
+    cartId: "CART001"
+    menuId: "MENU001"
+    quantity: 3
+  ) {
+    id
+    items {
+      menuId
+      quantity
+    }
+    total
+  }
+}
+
+# DELETE - Hapus Item dari Cart
+mutation RemoveItemFromCart {
+  removeItemFromCart(
+    cartId: "CART001"
+    menuId: "MENU001"
+  ) {
+    id
+    items {
+      menuId
+      name
+    }
+    total
+  }
+}
+
+# DELETE - Clear Cart
+mutation ClearCart {
+  clearCart(cartId: "CART001") {
+    id
+    items {
+      name
+    }
+    total
+  }
+}
+
+# READ - Ambil Cart
+query GetCart {
+  cart(cartId: "CART001") {
+    id
+    cartId
+    items {
+      menuId
+      name
+      quantity
+      price
+    }
+    subtotal
+    tax
+    serviceCharge
+    discount
+    total
+    status
+  }
+}
+
+# ==================== ORDER CRUD ====================
+
+# CREATE - Buat Order dari Cart
+mutation CreateOrderFromCart {
+  createOrderFromCart(
+    cartId: "CART001"
+    input: {
+      orderId: "ORD001"
+      paymentMethod: cash
+      notes: "Minta sendok tambahan"
+    }
+  ) {
+    order {
+      id
+      orderId
+      total
+      orderStatus
+    }
+    kitchenOrderCreated
+    stockUpdated
+    loyaltyPointsEarned
+    message
+  }
+}
+
+# CREATE - Buat Order Langsung
+mutation CreateOrderDirect {
+  createOrder(input: {
+    orderId: "ORD002"
+    customerId: "CUST001"
+    tableNumber: "7"
+    items: [
+      {
+        menuId: "MENU001"
+        name: "Nasi Goreng Spesial"
+        quantity: 2
+        price: 35000
+        specialInstructions: "Extra pedas"
+      }
+      {
+        menuId: "MENU002"
+        name: "Es Teh Manis"
+        quantity: 2
+        price: 8000
+      }
+    ]
+    paymentMethod: card
+    loyaltyPointsUsed: 0
+    notes: "Meja dekat jendela"
+  }) {
+    order {
+      id
+      orderId
+      items {
+        name
+        quantity
+        price
+      }
+      subtotal
+      tax
+      total
+      orderStatus
+      paymentStatus
+    }
+    kitchenOrderCreated
+    stockUpdated
+    message
+  }
+}
+
+# READ - Ambil Semua Order
+query GetAllOrders {
+  orders {
+    id
+    orderId
+    customerId
+    tableNumber
+    items {
+      name
+      quantity
+      price
+    }
+    total
+    paymentMethod
+    paymentStatus
+    orderStatus
+    createdAt
+  }
+}
+
+# READ - Ambil Order by ID
+query GetOrderById {
+  order(id: "1") {
+    id
+    orderId
+    items {
+      name
+      quantity
+    }
+    total
+    orderStatus
+    paymentStatus
+  }
+}
+
+# READ - Filter Orders by Status
+query GetOrdersByStatus {
+  orders(status: pending) {
+    id
+    orderId
+    orderStatus
+    total
+  }
+}
+
+# READ - Filter Orders by Customer
+query GetOrdersByCustomer {
+  orders(customerId: "CUST001") {
+    id
+    orderId
+    total
+    orderStatus
+    createdAt
+  }
+}
+
+# READ - Cek Stock Menu
+query CheckMenuStock {
+  checkMenuStock(menuId: "MENU001", quantity: 5) {
+    available
+    message
+    ingredientName
+    required
+    availableQuantity
+  }
+}
+
+# UPDATE - Update Order Status
+mutation UpdateOrderStatus {
+  updateOrderStatus(orderId: "ORD001", status: preparing) {
+    id
+    orderId
+    orderStatus
+  }
+}
+
+# UPDATE - Update Payment Status
+mutation UpdatePaymentStatus {
+  updatePaymentStatus(orderId: "ORD001", paymentStatus: paid) {
+    id
+    orderId
+    paymentStatus
+  }
+}
+
+# UPDATE - Kirim ke Dapur
+mutation SendToKitchen {
+  sendToKitchen(orderId: "ORD001") {
+    id
+    orderId
+    kitchenStatus
+  }
+}
+
+# DELETE - Cancel Order
+mutation CancelOrder {
+  cancelOrder(orderId: "ORD001") {
+    id
+    orderId
+    orderStatus
+  }
+}
+
+
+# ██╗  ██╗██╗████████╗ ██████╗██╗  ██╗███████╗███╗   ██╗    ███████╗███████╗██████╗ ██╗   ██╗██╗ ██████╗███████╗
+# ██║ ██╔╝██║╚══██╔══╝██╔════╝██║  ██║██╔════╝████╗  ██║    ██╔════╝██╔════╝██╔══██╗██║   ██║██║██╔════╝██╔════╝
+# █████╔╝ ██║   ██║   ██║     ███████║█████╗  ██╔██╗ ██║    ███████╗█████╗  ██████╔╝██║   ██║██║██║     █████╗  
+# ██╔═██╗ ██║   ██║   ██║     ██╔══██║██╔══╝  ██║╚██╗██║    ╚════██║██╔══╝  ██╔══██╗╚██╗ ██╔╝██║██║     ██╔══╝  
+# ██║  ██╗██║   ██║   ╚██████╗██║  ██║███████╗██║ ╚████║    ███████║███████╗██║  ██║ ╚████╔╝ ██║╚██████╗███████╗
+# ╚═╝  ╚═╝╚═╝   ╚═╝    ╚═════╝╚═╝  ╚═╝╚══════╝╚═╝  ╚═══╝    ╚══════╝╚══════╝╚═╝  ╚═╝  ╚═══╝  ╚═╝ ╚═════╝╚══════╝
+# Port: 4001 | http://localhost:4001/graphql
+
+# ==================== KITCHEN ORDER CRUD ====================
+
+# CREATE - Buat Kitchen Order
+mutation CreateKitchenOrder {
+  createKitchenOrder(input: {
+    orderId: "ORD001"
+    tableNumber: "5"
+    items: [
+      {
+        menuId: "MENU001"
+        name: "Nasi Goreng Spesial"
+        quantity: 2
+        specialInstructions: "Extra pedas"
+      }
+      {
+        menuId: "MENU002"
+        name: "Ayam Bakar"
+        quantity: 1
+        specialInstructions: "Sambal terpisah"
+      }
+    ]
+    priority: 1
+    notes: "Pelanggan VIP"
+  }) {
+    id
+    orderId
+    status
+    items {
+      name
+      quantity
+    }
+    priority
+  }
+}
+
+# READ - Ambil Semua Kitchen Orders
+query GetAllKitchenOrders {
+  kitchenOrders {
+    id
+    orderId
+    tableNumber
+    status
+    items {
+      menuId
+      name
+      quantity
+      specialInstructions
+    }
+    priority
+    estimatedTime
+    chef {
+      id
+      name
+    }
+    notes
+    createdAt
+  }
+}
+
+# READ - Ambil Kitchen Order by ID
+query GetKitchenOrderById {
+  kitchenOrder(id: "1") {
+    id
+    orderId
+    status
+    items {
+      name
+      quantity
+    }
+    chef {
+      name
+    }
+  }
+}
+
+# READ - Ambil Kitchen Order by Order ID
+query GetKitchenOrderByOrderId {
+  kitchenOrderByOrderId(orderId: "ORD001") {
+    id
+    status
+    estimatedTime
+    chef {
+      name
+    }
+  }
+}
+
+# READ - Filter Kitchen Orders by Status
+query GetKitchenOrdersByStatus {
+  kitchenOrders(status: pending) {
+    id
+    orderId
+    status
+    priority
+  }
+}
+
+# UPDATE - Update Order Status
+mutation UpdateKitchenOrderStatus {
+  updateOrderStatus(id: "1", status: preparing) {
+    id
+    orderId
+    status
+  }
+}
+
+# UPDATE - Assign Chef
+mutation AssignChefToOrder {
+  assignChef(orderId: "1", chefId: "1") {
+    id
+    orderId
+    chef {
+      id
+      name
+      specialization
+    }
+  }
+}
+
+# UPDATE - Update Estimated Time
+mutation UpdateEstimatedTime {
+  updateEstimatedTime(orderId: "1", estimatedTime: 20) {
+    id
+    orderId
+    estimatedTime
+  }
+}
+
+# UPDATE - Complete Order
+mutation CompleteKitchenOrder {
+  completeOrder(orderId: "1") {
+    id
+    orderId
+    status
+  }
+}
+
+# DELETE - Cancel Kitchen Order
+mutation CancelKitchenOrder {
+  cancelOrder(orderId: "1") {
+    id
+    orderId
+    status
+  }
+}
+
+# ==================== CHEF QUERIES ====================
+
+# READ - Ambil Semua Chef
+query GetAllChefs {
+  chefs {
+    id
+    name
+    specialization
+    status
+    currentOrders
+  }
+}
+
+# READ - Ambil Chef by ID
+query GetChefById {
+  chef(id: "1") {
+    id
+    name
+    specialization
+    status
+    currentOrders
+  }
+}
+
+# READ - Ambil Orders by Chef
+query GetOrdersByChef {
+  ordersByChef(chefId: "1") {
+    id
+    orderId
+    status
+    items {
+      name
+      quantity
+    }
+  }
+}
+
+
+# ██╗███╗   ██╗██╗   ██╗███████╗███╗   ██╗████████╗ ██████╗ ██████╗ ██╗   ██╗    ███████╗███████╗██████╗ ██╗   ██╗██╗ ██████╗███████╗
+# ██║████╗  ██║██║   ██║██╔════╝████╗  ██║╚══██╔══╝██╔═══██╗██╔══██╗╚██╗ ██╔╝    ██╔════╝██╔════╝██╔══██╗██║   ██║██║██╔════╝██╔════╝
+# ██║██╔██╗ ██║██║   ██║█████╗  ██╔██╗ ██║   ██║   ██║   ██║██████╔╝ ╚████╔╝     ███████╗█████╗  ██████╔╝██║   ██║██║██║     █████╗  
+# ██║██║╚██╗██║╚██╗ ██╔╝██╔══╝  ██║╚██╗██║   ██║   ██║   ██║██╔══██╗  ╚██╔╝      ╚════██║██╔══╝  ██╔══██╗╚██╗ ██╔╝██║██║     ██╔══╝  
+# ██║██║ ╚████║ ╚████╔╝ ███████╗██║ ╚████║   ██║   ╚██████╔╝██║  ██║   ██║       ███████║███████╗██║  ██║ ╚████╔╝ ██║╚██████╗███████╗
+# ╚═╝╚═╝  ╚═══╝  ╚═══╝  ╚══════╝╚═╝  ╚═══╝   ╚═╝    ╚═════╝ ╚═╝  ╚═╝   ╚═╝       ╚══════╝╚══════╝╚═╝  ╚═╝  ╚═══╝  ╚═╝ ╚═════╝╚══════╝
+# Port: 4002 | http://localhost:4002/graphql
+
+# ==================== INGREDIENT STOCK CHECK ====================
+
+# READ - Ambil Stock Bahan Baku (Otomatis dari Toko Sembako)
+query GetIngredients($category: String, $status: IngredientStatus) {
+  ingredients(category: $category, status: $status) {
+    id
+    name
+    unit
+    category
+    minStockLevel
+    currentStock
+    costPerUnit
+    status
+    supplier {
+      name
+    }
+  }
+}
+
+# READ - Ambil Low Stock Ingredients
+query GetLowStockIngredients {
+  lowStockIngredients {
+    id
+    name
+    currentStock
+    minStockLevel
+    unit
+  }
+}
+
+# ==================== TOKO SEMBAKO INTEGRATION ====================
+
+# 1. CEK PRODUK - Lihat katalog Toko Sembako
+query GetTokoSembakoProducts($category: String) {
+  tokoSembakoProducts(category: $category) {
+    id
+    name
+    category
+    price
+    unit
+    available
+    description
+  }
+}
+
+# 2. BELI BAHAN - Order dari Toko Sembako (Otomatis menambah Stock)
+mutation PurchaseFromTokoSembako {
+  purchaseFromTokoSembako(input: {
+    orderNumber: "PO-TS-TEST-001"
+    items: [
+      { productId: "1", quantity: 50 } # Beras
+      { productId: "2", quantity: 25 } # Minyak/Gula
+    ]
+    notes: "Restock bahan baku"
+  }) {
+    success
+    message
+    tokoSembakoOrder {
+      id
+      orderId
+      status
+      total
+    }
+    stockAdded
+  }
+}

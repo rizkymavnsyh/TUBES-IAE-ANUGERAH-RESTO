@@ -1,0 +1,201 @@
+services:
+  # MySQL Database for Kitchen Service
+  kitchen-db:
+    image: mysql:8.0
+    container_name: kitchen-db
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: kitchen_db
+      MYSQL_USER: kitchen_user
+      MYSQL_PASSWORD: kitchen_pass
+    ports:
+      - "3307:3306"
+    volumes:
+      - kitchen_db_data:/var/lib/mysql
+    networks:
+      - resto-network
+    healthcheck:
+      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-prootpassword" ]
+      interval: 10s
+      timeout: 10s
+      retries: 10
+      start_period: 40s
+
+  # MySQL Database for Inventory Service
+  inventory-db:
+    image: mysql:8.0
+    container_name: inventory-db
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: inventory_db
+      MYSQL_USER: inventory_user
+      MYSQL_PASSWORD: inventory_pass
+    ports:
+      - "3311:3306"
+    volumes:
+      - inventory_db_data:/var/lib/mysql
+    networks:
+      - resto-network
+    healthcheck:
+      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-prootpassword" ]
+      interval: 10s
+      timeout: 10s
+      retries: 10
+      start_period: 40s
+
+  # MySQL Database for User Service
+  user-db:
+    image: mysql:8.0
+    container_name: user-db
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: user_db
+      MYSQL_USER: user_user
+      MYSQL_PASSWORD: user_pass
+    ports:
+      - "3312:3306"
+    volumes:
+      - user_db_data:/var/lib/mysql
+    networks:
+      - resto-network
+    healthcheck:
+      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-prootpassword" ]
+      interval: 10s
+      timeout: 10s
+      retries: 10
+      start_period: 40s
+
+  # MySQL Database for Order Service
+  order-db:
+    image: mysql:8.0
+    container_name: order-db
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: order_db
+      MYSQL_USER: order_user
+      MYSQL_PASSWORD: order_pass
+    ports:
+      - "3310:3306"
+    volumes:
+      - order_db_data:/var/lib/mysql
+    networks:
+      - resto-network
+    healthcheck:
+      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-prootpassword" ]
+      interval: 10s
+      timeout: 10s
+      retries: 10
+      start_period: 40s
+
+  # Kitchen Service (Node.js/Apollo)
+  kitchen-service:
+    build:
+      context: ./kitchen-service
+      dockerfile: Dockerfile
+    container_name: kitchen-service
+    ports:
+      - "4001:4001"
+    environment:
+      PORT: 4001
+      DB_HOST: kitchen-db
+      DB_PORT: 3306
+      DB_USER: kitchen_user
+      DB_PASSWORD: kitchen_pass
+      DB_NAME: kitchen_db
+      ORDER_SERVICE_URL: http://order-service:4004/graphql
+      USER_SERVICE_URL: http://user-service:4003/graphql
+      JWT_SECRET: "rahasia-negara-api-key-2024"
+    depends_on:
+      kitchen-db:
+        condition: service_healthy
+    networks:
+      - resto-network
+    restart: unless-stopped
+
+  # Inventory Service (Node.js/Apollo)
+  inventory-service:
+    build:
+      context: ./inventory-service
+      dockerfile: Dockerfile
+    container_name: inventory-service
+    ports:
+      - "4002:4002"
+    environment:
+      PORT: 4002
+      DB_HOST: inventory-db
+      DB_PORT: 3306
+      DB_USER: inventory_user
+      DB_PASSWORD: inventory_pass
+      DB_NAME: inventory_db
+      ORDER_SERVICE_URL: http://order-service:4004/graphql
+      # Toko Sembako Integration URLs (Railway Cloud)
+      TOKO_SEMBAKO_INVENTORY_URL: https://toko-sembako-revisi-production.up.railway.app/graphql/inventory
+      TOKO_SEMBAKO_ORDER_URL: https://toko-sembako-revisi-production.up.railway.app/graphql/order
+      JWT_SECRET: "rahasia-negara-api-key-2024"
+    depends_on:
+      inventory-db:
+        condition: service_healthy
+    networks:
+      - resto-network
+    restart: unless-stopped
+
+  # User Service (Node.js/Apollo)
+  user-service:
+    build:
+      context: ./user-service
+      dockerfile: Dockerfile
+    container_name: user-service
+    ports:
+      - "4003:4003"
+    environment:
+      PORT: 4003
+      DB_HOST: user-db
+      DB_PORT: 3306
+      DB_USER: user_user
+      DB_PASSWORD: user_pass
+      DB_NAME: user_db
+      ORDER_SERVICE_URL: http://order-service:4004/graphql
+      JWT_SECRET: "rahasia-negara-api-key-2024"
+    depends_on:
+      user-db:
+        condition: service_healthy
+    networks:
+      - resto-network
+    restart: unless-stopped
+
+  # Order Service (Node.js/Apollo)
+  order-service:
+    build:
+      context: ./order-service
+      dockerfile: Dockerfile
+    container_name: order-service
+    ports:
+      - "4004:4004"
+    environment:
+      PORT: 4004
+      DB_HOST: order-db
+      DB_PORT: 3306
+      DB_USER: order_user
+      DB_PASSWORD: order_pass
+      DB_NAME: order_db
+      KITCHEN_SERVICE_URL: http://kitchen-service:4001/graphql
+      INVENTORY_SERVICE_URL: http://inventory-service:4002/graphql
+      USER_SERVICE_URL: http://user-service:4003/graphql
+      JWT_SECRET: "rahasia-negara-api-key-2024"
+    depends_on:
+      order-db:
+        condition: service_healthy
+    networks:
+      - resto-network
+    restart: unless-stopped
+
+volumes:
+  kitchen_db_data:
+  inventory_db_data:
+  user_db_data:
+  order_db_data:
+
+
+networks:
+  resto-network:
+    driver: bridge

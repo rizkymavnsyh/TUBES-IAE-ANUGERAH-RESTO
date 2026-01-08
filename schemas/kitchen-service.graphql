@@ -1,0 +1,110 @@
+# ==================================================
+# KITCHEN SERVICE - GraphQL Schema
+# Anugerah Resto - Sistem Manajemen Restoran
+# ==================================================
+# Service: Kitchen Service (Kitchen Queue Management)
+# Port: 4001
+# Database: MySQL (kitchen_db)
+# ==================================================
+
+# ==================== QUERIES ====================
+
+type Query {
+  # Kitchen order queries
+  kitchenOrders(status: String): [KitchenOrder!]!
+  kitchenOrder(id: String!): KitchenOrder
+  kitchenOrderByOrderId(orderId: String!): KitchenOrder
+  pendingOrders: [KitchenOrder!]!
+  preparingOrders: [KitchenOrder!]!
+  
+  # Chef queries
+  chefs: [Chef!]!
+  chef(id: String!): Chef
+  ordersByChef(chefId: String!): [KitchenOrder!]!
+}
+
+# ==================== MUTATIONS ====================
+
+type Mutation {
+  # Kitchen order operations
+  createKitchenOrder(input: CreateKitchenOrderInput!): KitchenOrder!
+  updateKitchenOrder(id: String!, input: UpdateKitchenOrderInput!): KitchenOrder!
+  updateOrderStatus(id: String!, status: String!): KitchenOrder!
+  assignChef(orderId: String!, chefId: String!): KitchenOrder!
+  updateEstimatedTime(orderId: String!, estimatedTime: Int!): KitchenOrder!
+  completeOrder(orderId: String!): KitchenOrder!
+  cancelOrder(orderId: String!): KitchenOrder!
+}
+
+# ==================== TYPES ====================
+
+type KitchenOrder {
+  id: String!
+  orderId: String!
+  tableNumber: String
+  status: String!
+  items: [OrderItem!]!
+  priority: Int!
+  estimatedTime: Int
+  chefId: Int
+  chef: Chef
+  notes: String
+  createdAt: String!
+  updatedAt: String!
+}
+
+type OrderItem {
+  menuId: String!
+  name: String!
+  quantity: Int!
+  specialInstructions: String
+}
+
+type Chef {
+  id: String!
+  name: String!
+  specialization: String
+  status: String!
+  currentOrders: Int!
+}
+
+# ==================== ENUMS ====================
+
+enum OrderStatus {
+  PENDING
+  PREPARING
+  READY
+  COMPLETED
+  CANCELLED
+}
+
+enum ChefStatus {
+  AVAILABLE
+  BUSY
+  OFFLINE
+}
+
+# ==================== INPUTS ====================
+
+input CreateKitchenOrderInput {
+  orderId: String!
+  tableNumber: String
+  items: [OrderItemInput!]!
+  priority: Int
+  notes: String
+}
+
+input UpdateKitchenOrderInput {
+  tableNumber: String
+  items: [OrderItemInput!]
+  priority: Int
+  notes: String
+  estimatedTime: Int
+}
+
+input OrderItemInput {
+  menuId: String!
+  name: String!
+  quantity: Int!
+  specialInstructions: String
+}

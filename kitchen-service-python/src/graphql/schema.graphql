@@ -1,0 +1,91 @@
+type Query {
+  kitchenOrders(status: String): [KitchenOrder!]!
+  kitchenOrder(id: String!): KitchenOrder
+  kitchenOrderByOrderId(orderId: String!): KitchenOrder
+  pendingOrders: [KitchenOrder!]!
+  preparingOrders: [KitchenOrder!]!
+  chefs: [Chef!]!
+  chef(id: String!): Chef
+  ordersByChef(chefId: String!): [KitchenOrder!]!
+}
+
+type Mutation {
+  createKitchenOrder(input: CreateKitchenOrderInput!): KitchenOrder!
+  updateKitchenOrder(id: String!, input: UpdateKitchenOrderInput!): KitchenOrder!
+  updateOrderStatus(id: String!, status: String!): KitchenOrder!
+  assignChef(orderId: String!, chefId: String!): KitchenOrder!
+  updateEstimatedTime(orderId: String!, estimatedTime: Int!): KitchenOrder!
+  completeOrder(orderId: String!): KitchenOrder!
+  cancelOrder(orderId: String!): KitchenOrder!
+}
+
+enum OrderStatus {
+  PENDING
+  PREPARING
+  READY
+  COMPLETED
+  CANCELLED
+}
+
+enum ChefStatus {
+  AVAILABLE
+  BUSY
+  OFFLINE
+}
+
+type OrderItem {
+  menuId: String!
+  name: String!
+  quantity: Int!
+  specialInstructions: String
+}
+
+type Chef {
+  id: String!
+  name: String!
+  specialization: String
+  status: String!
+  currentOrders: Int!
+}
+
+type KitchenOrder {
+  id: String!
+  orderId: String!
+  tableNumber: String
+  status: String!
+  items: [OrderItem!]!
+  priority: Int!
+  estimatedTime: Int
+  chefId: Int
+  chef: Chef
+  notes: String
+  createdAt: String!
+  updatedAt: String!
+}
+
+input OrderItemInput {
+  menuId: String!
+  name: String!
+  quantity: Int!
+  specialInstructions: String
+}
+
+input CreateKitchenOrderInput {
+  orderId: String!
+  tableNumber: String
+  items: [OrderItemInput!]!
+  priority: Int
+  notes: String
+}
+
+input UpdateKitchenOrderInput {
+  tableNumber: String
+  items: [OrderItemInput!]
+  priority: Int
+  notes: String
+  estimatedTime: Int
+}
+
+
+
+

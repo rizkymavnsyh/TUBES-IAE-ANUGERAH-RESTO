@@ -1,0 +1,339 @@
+# Example GraphQL Queries untuk Testing
+# Copy paste queries ini ke GraphQL Playground
+
+# ============================================
+# ORDER SERVICE (http://localhost:4004/graphql)
+# ============================================
+
+# Get all menus
+query GetMenus {
+  menus {
+    id
+    menuId
+    name
+    category
+    price
+    available
+  }
+}
+
+# Get menus by category
+query GetMainCourseMenus {
+  menus(category: "Main Course") {
+    name
+    price
+    preparationTime
+  }
+}
+
+# Check stock for menu
+query CheckMenuStock {
+  checkMenuStock(menuId: "MENU001", quantity: 2) {
+    available
+    ingredientName
+    required
+    available
+    message
+  }
+}
+
+# Create cart
+mutation CreateCart {
+  createCart(input: {
+    cartId: "CART001"
+    customerId: "1"
+    tableNumber: "T01"
+  }) {
+    id
+    cartId
+    total
+  }
+}
+
+# Add item to cart
+mutation AddToCart {
+  addItemToCart(
+    cartId: "CART001"
+    item: {
+      menuId: "MENU001"
+      name: "Nasi Goreng Spesial"
+      quantity: 2
+      price: 25000
+    }
+  ) {
+    id
+    items {
+      name
+      quantity
+    }
+    total
+  }
+}
+
+# Create order (Full integration test)
+mutation CreateOrder {
+  createOrder(input: {
+    orderId: "ORD001"
+    customerId: "1"
+    tableNumber: "T01"
+    items: [
+      {
+        menuId: "MENU001"
+        name: "Nasi Goreng Spesial"
+        quantity: 2
+        price: 25000
+      }
+    ]
+    paymentMethod: cash
+  }) {
+    order {
+      orderId
+      total
+      orderStatus
+      kitchenStatus
+    }
+    kitchenOrderCreated
+    stockUpdated
+    loyaltyPointsEarned
+    message
+  }
+}
+
+# Get order
+query GetOrder {
+  orderByOrderId(orderId: "ORD001") {
+    orderId
+    tableNumber
+    total
+    orderStatus
+    kitchenStatus
+    items {
+      name
+      quantity
+    }
+  }
+}
+
+# ============================================
+# KITCHEN SERVICE (http://localhost:4001/graphql)
+# ============================================
+
+# Get all kitchen orders
+query GetKitchenOrders {
+  kitchenOrders {
+    id
+    orderId
+    tableNumber
+    status
+    items {
+      name
+      quantity
+    }
+    chef {
+      name
+      specialization
+    }
+    estimatedTime
+  }
+}
+
+# Get pending orders
+query GetPendingKitchenOrders {
+  kitchenOrders(status: pending) {
+    orderId
+    tableNumber
+    items {
+      name
+      quantity
+    }
+  }
+}
+
+# Get all chefs
+query GetChefs {
+  chefs {
+    id
+    name
+    specialization
+    status
+    currentOrders
+  }
+}
+
+# Assign chef to order
+mutation AssignChef {
+  assignChef(orderId: "1", chefId: "1") {
+    id
+    orderId
+    chef {
+      name
+    }
+    status
+  }
+}
+
+# Update order status
+mutation UpdateKitchenOrderStatus {
+  updateOrderStatus(id: "1", status: ready) {
+    id
+    status
+  }
+}
+
+# ============================================
+# INVENTORY SERVICE (http://localhost:4002/graphql)
+# ============================================
+
+# Get all ingredients
+query GetIngredients {
+  ingredients {
+    id
+    name
+    unit
+    currentStock
+    minStockLevel
+    status
+    supplier {
+      name
+    }
+  }
+}
+
+# Get low stock ingredients
+query GetLowStock {
+  lowStockIngredients {
+    name
+    currentStock
+    minStockLevel
+    status
+  }
+}
+
+# Check stock
+query CheckStock {
+  checkStock(ingredientId: "1", quantity: 10) {
+    available
+    currentStock
+    requestedQuantity
+    message
+  }
+}
+
+# Get stock movements
+query GetStockMovements {
+  stockMovements(movementType: out) {
+    id
+    ingredient {
+      name
+    }
+    quantity
+    reason
+    referenceId
+    createdAt
+  }
+}
+
+# Add stock
+mutation AddStock {
+  addStock(ingredientId: "1", quantity: 50, reason: "Restock") {
+    id
+    quantity
+    movementType
+  }
+}
+
+# ============================================
+# USER SERVICE (http://localhost:4003/graphql)
+# ============================================
+
+# Get all customers
+query GetCustomers {
+  customers {
+    id
+    customerId
+    name
+    email
+    phone
+    loyalty {
+      totalPoints
+      availablePoints
+      tier
+    }
+  }
+}
+
+# Get customer by ID
+query GetCustomer {
+  customer(id: "1") {
+    customerId
+    name
+    loyalty {
+      totalPoints
+      availablePoints
+      tier
+      transactions {
+        transactionType
+        points
+        description
+        createdAt
+      }
+    }
+  }
+}
+
+# Get all staff
+query GetStaff {
+  staff {
+    id
+    employeeId
+    name
+    role
+    department
+    status
+  }
+}
+
+# Get top customers
+query GetTopCustomers {
+  topCustomersByPoints(limit: 10) {
+    customer {
+      name
+    }
+    totalPoints
+    tier
+  }
+}
+
+# Staff login
+mutation LoginStaff {
+  loginStaff(employeeId: "EMP001", password: "password123") {
+    token
+    staff {
+      name
+      role
+    }
+    message
+  }
+}
+
+# Earn loyalty points
+mutation EarnPoints {
+  earnPoints(
+    customerId: "1"
+    points: 50
+    orderId: "ORD001"
+    description: "Points from order ORD001"
+  ) {
+    id
+    points
+    transactionType
+  }
+}
+
+
+
+
+
+
+
+
