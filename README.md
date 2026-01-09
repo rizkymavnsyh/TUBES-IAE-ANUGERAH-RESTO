@@ -4,7 +4,7 @@
 
 > **Mata Kuliah:** Integrasi Aplikasi Enterprise (IAE)  
 > **Tahun Akademik:** 2024/2025  
-> **Kelompok:** 5
+> **Kelompok:** Love IAE
 
 ---
 
@@ -930,7 +930,7 @@ Order Service
 
 ### 📋 Overview Integrasi
 
-Sistem **Anugerah Resto** (Kelompok 5) terintegrasi secara langsung dengan sistem **Toko Sembako** (Kelompok Mitra) melalui **Railway Cloud Platform**. Integrasi ini memungkinkan restoran untuk:
+Sistem **Anugerah Resto** (Kelompok Love IAE) terintegrasi secara langsung dengan sistem **Toko Sembako** (Kelompok Mitra) melalui **Railway Cloud Platform**. Integrasi ini memungkinkan restoran untuk:
 
 - 📦 **Melihat katalog produk** bahan baku dari Toko Sembako
 - ✅ **Mengecek ketersediaan stok** sebelum order
@@ -939,7 +939,7 @@ Sistem **Anugerah Resto** (Kelompok 5) terintegrasi secara langsung dengan siste
 
 ### 🌍 Railway Deployment - Link Project
 
-#### 🍽️ Anugerah Resto (Consumer - Kelompok 5)
+#### 🍽️ Anugerah Resto (Consumer - Kelompok Love IAE)
 
 | Komponen | URL |
 |----------|-----|
@@ -2118,7 +2118,7 @@ Use provided Dockerfiles with container orchestration.
 
 ## 👥 Kontributor
 
-**Tim Kelompok 5** - Integrasi Aplikasi Enterprise (IAE)
+**Tim Kelompok Love IAE** - Integrasi Aplikasi Enterprise (IAE)
 
 | Nama | Kontribusi |
 |------|------------|
